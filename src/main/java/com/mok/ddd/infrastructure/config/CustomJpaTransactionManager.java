@@ -8,7 +8,9 @@ import org.hibernate.Session;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.stereotype.Component;
 
-@Component
+/**
+ * 不要加@Component 会自动成为一个Bean导致 TransactionManager Bean重复
+ */
 public class CustomJpaTransactionManager extends JpaTransactionManager {
 
     public CustomJpaTransactionManager(EntityManagerFactory emf) {
