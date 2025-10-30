@@ -13,5 +13,8 @@ public class User extends TenantBaseEntity {
     private String username;
     private String password;
     private String nickname;
-    private Boolean locked;
+    /**
+     * 1正常， 0禁用
+     */
+    private Integer state;
 }

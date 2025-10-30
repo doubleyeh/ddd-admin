@@ -35,7 +35,7 @@ public class UserInitializer {
                 rootUser.setPassword(passwordEncoder.encode(rawPassword));
                 rootUser.setTenantId(defaultTenantId);
                 rootUser.setNickname(rootUsername);
-                rootUser.setLocked(false);
+                rootUser.setState(1);
 
                 userRepository.save(rootUser);
             }

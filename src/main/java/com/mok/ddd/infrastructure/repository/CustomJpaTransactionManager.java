@@ -1,4 +1,4 @@
-package com.mok.ddd.infrastructure.config;
+package com.mok.ddd.infrastructure.repository;
 
 import com.mok.ddd.infrastructure.security.TenantContextHolder;
 import jakarta.annotation.Nonnull;
