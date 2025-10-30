@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public abstract class BaseServiceImpl<E extends BaseEntity, ID, DTO, Query> implements BaseService<E, ID, DTO, Query> {
 
@@ -18,7 +19,6 @@ public abstract class BaseServiceImpl<E extends BaseEntity, ID, DTO, Query> impl
 
     protected abstract E toEntity(DTO dto);
     protected abstract DTO toDto(E entity);
-    protected abstract Predicate buildCondition(Query query);
 
     @Override
     @Transactional(readOnly = true)
@@ -37,8 +37,15 @@ public abstract class BaseServiceImpl<E extends BaseEntity, ID, DTO, Query> impl
 
     @Override
     @Transactional(readOnly = true)
-    public Page<DTO> findPage(Query query, Pageable pageable) {
-        Predicate predicate = buildCondition(query);
+    public List<DTO> findAll(Predicate predicate) {
+            return StreamSupport.stream(getRepository().findAll(predicate).spliterator(), false)
+                    .map(this::toDto)
+                    .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<DTO> findPage(Predicate predicate, Pageable pageable) {
         Page<E> entityPage = getRepository().findAll(predicate, pageable);
 
         List<DTO> dtoList = entityPage.getContent().stream()

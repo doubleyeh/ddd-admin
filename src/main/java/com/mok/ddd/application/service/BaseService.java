@@ -1,6 +1,7 @@
 package com.mok.ddd.application.service;
 
 import com.mok.ddd.domain.entity.BaseEntity;
+import com.querydsl.core.types.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -12,7 +13,9 @@ public interface BaseService<E extends BaseEntity, ID, DTO, Query> {
 
     List<DTO> findAll();
 
-    Page<DTO> findPage(Query query, Pageable pageable);
+    List<DTO> findAll(Predicate predicate);
+
+    Page<DTO> findPage(Predicate predicate, Pageable pageable);
 
     DTO save(DTO dto);
 

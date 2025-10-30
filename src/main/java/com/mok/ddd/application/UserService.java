@@ -1,7 +1,11 @@
 package com.mok.ddd.application;
 
 import com.mok.ddd.application.dto.UserDTO;
+import com.mok.ddd.application.dto.UserPostDTO;
+import com.mok.ddd.application.dto.UserPutDTO;
 import com.mok.ddd.application.dto.UserQuery;
+import com.mok.ddd.application.exception.BizException;
+import com.mok.ddd.application.exception.NotFoundException;
 import com.mok.ddd.application.mapper.UserMapper;
 import com.mok.ddd.application.service.BaseServiceImpl;
 import com.mok.ddd.common.SysUtil;
@@ -9,8 +13,6 @@ import com.mok.ddd.domain.entity.QUser;
 import com.mok.ddd.domain.entity.User;
 import com.mok.ddd.domain.repository.UserRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
-import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.types.Predicate;
 import lombok.AllArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,16 +29,31 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO, UserQuery>
     private final QUser user = QUser.user;
     private final PasswordEncoder passwordEncoder;
 
-    @Override
     @Transactional
-    public UserDTO save(UserDTO dto) {
-        Optional<User> existingUser = userRepository.findByUsername(dto.getUsername());
-
-        if (existingUser.isPresent() && !existingUser.get().getId().equals(dto.getId())) {
+    public UserDTO create(UserPostDTO dto) {
+        if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
             throw new RuntimeException("用户名已存在");
         }
+        User entity = userMapper.postToEntity(dto);
+        entity.setPassword(passwordEncoder.encode(dto.getPassword()));
+        return this.toDto(userRepository.save(entity));
+    }
 
-        return super.save(dto);
+    @Transactional
+    public UserDTO updateUser(UserPutDTO dto) {
+        User entity = userRepository.findById(dto.getId())
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+
+        userMapper.putToEntity(dto, entity);
+        return this.toDto(userRepository.save(entity));
+    }
+
+    @Transactional
+    public void updatePassword(Long userId, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 
     @Override
@@ -44,8 +61,11 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO, UserQuery>
     public void deleteById(Long id) {
         Optional<User> userToDelete = userRepository.findById(id);
 
+        if(userToDelete.isEmpty()){
+            throw new NotFoundException();
+        }
         if (SysUtil.isSuperAdmin(userToDelete.get().getTenantId(), userToDelete.get().getUsername())) {
-            throw new RuntimeException("用户不允许删除");
+            throw new BizException("用户不允许删除");
         }
 
         super.deleteById(id);
@@ -65,23 +85,4 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO, UserQuery>
     protected UserDTO toDto(User entity) {
         return userMapper.toDto(entity);
     }
-
-    @Override
-    protected Predicate buildCondition(UserQuery query) {
-        BooleanBuilder builder = new BooleanBuilder();
-        if (query.getUsername() != null && !query.getUsername().isEmpty()) {
-            builder.and(user.username.containsIgnoreCase(query.getUsername()));
-        }
-
-        if (query.getNickname() != null && !query.getNickname().isEmpty()) {
-            builder.and(user.nickname.containsIgnoreCase(query.getNickname()));
-        }
-
-        if (query.getState() != null) {
-            builder.and(user.state.eq(query.getState()));
-        }
-
-        return builder.getValue();
-    }
-
 }
