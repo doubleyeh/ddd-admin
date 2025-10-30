@@ -1,8 +1,9 @@
 package com.mok.ddd.infrastructure.security;
 
+import com.mok.ddd.common.SysUtil;
+
 public class TenantContextHolder {
-    private static final String DEFAULT_TENANT_ID = "000000";
-    private static final String SUPER_ADMIN_USERNAME = "root";
+
 
     private static final ThreadLocal<String> TENANT_ID = new ThreadLocal<>();
     private static final ThreadLocal<String> USERNAME = new ThreadLocal<>();
@@ -31,6 +32,6 @@ public class TenantContextHolder {
     public static boolean isSuperAdmin() {
         String tenantId = getTenantId();
         String username = getUsername();
-        return DEFAULT_TENANT_ID.equals(tenantId) && SUPER_ADMIN_USERNAME.equals(username);
+        return SysUtil.isSuperAdmin(tenantId, username);
     }
 }

@@ -17,6 +17,9 @@ public interface UserMapper {
     @Mapping(source = "id", target = "id")
     UserDTO toDto(User entity);
 
+    @Mapping(source = "id", target = "id")
+    User toEntity(UserDTO dto);
+
     default Page<UserDTO> toDtoPage(Page<User> entityPage) {
         if (entityPage == null) {
             return Page.empty();

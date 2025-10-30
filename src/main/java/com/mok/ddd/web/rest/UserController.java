@@ -4,26 +4,51 @@ import com.mok.ddd.application.UserService;
 import com.mok.ddd.application.dto.UserDTO;
 import com.mok.ddd.application.dto.UserQuery;
 import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/users")
+@RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
-
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
 
     @Operation(summary = "获取用户分页列表")
     @GetMapping
     public RestResponse<Page<UserDTO>> findPage(UserQuery query, Pageable pageable) {
         Page<UserDTO> page = userService.findPage(query, pageable);
         return RestResponse.success(page);
+    }
+
+    @Operation(summary = "获取用户详情")
+    @GetMapping("/{id}")
+    public RestResponse<UserDTO> getById(@PathVariable Long id) {
+        UserDTO userDTO = userService.getById(id);
+        return RestResponse.success(userDTO);
+    }
+
+    @Operation(summary = "新增用户")
+    @PostMapping
+    public RestResponse<UserDTO> save(@RequestBody UserDTO userDTO) {
+        UserDTO savedUser = userService.save(userDTO);
+        return RestResponse.success(savedUser);
+    }
+
+    @Operation(summary = "修改用户")
+    @PutMapping("/{id}")
+    public RestResponse<UserDTO> update(@PathVariable Long id, @RequestBody UserDTO userDTO) {
+        userDTO.setId(id);
+        UserDTO updatedUser = userService.update(userDTO);
+        return RestResponse.success(updatedUser);
+    }
+
+    @Operation(summary = "删除用户")
+    @DeleteMapping("/{id}")
+    public RestResponse<Void> deleteById(@PathVariable Long id) {
+        userService.deleteById(id);
+        return RestResponse.success();
     }
 }
