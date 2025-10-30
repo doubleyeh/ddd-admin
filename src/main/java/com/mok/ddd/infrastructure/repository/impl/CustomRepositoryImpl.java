@@ -39,7 +39,7 @@ public class CustomRepositoryImpl<T extends BaseEntity, ID extends Serializable>
     public CustomRepositoryImpl(JpaEntityInformation<T, ?> entityInformation, EntityManager entityManager) {
         super(entityInformation, entityManager);
         this.dslQueryFactory = new JPAQueryFactory(entityManager);
-        this.pathBuilder = new PathBuilder<T>(entityInformation.getJavaType(), entityInformation.getEntityName());
+        this.pathBuilder = new PathBuilder<>(entityInformation.getJavaType(), entityInformation.getEntityName());
         this.querydsl = new Querydsl(entityManager, pathBuilder);
     }
 
@@ -79,54 +79,54 @@ public class CustomRepositoryImpl<T extends BaseEntity, ID extends Serializable>
 
     @Override
     public Optional<T> findOne(Predicate predicate) {
-        JPAQuery<T> query = createQuery((EntityPath<T>) pathBuilder, predicate);
+        JPAQuery<T> query = createQuery(pathBuilder, predicate);
         return Optional.ofNullable(query.fetchOne());
     }
 
     @Override
     public Iterable<T> findAll(Predicate predicate) {
-        JPAQuery<T> query = createQuery((EntityPath<T>) pathBuilder, predicate);
+        JPAQuery<T> query = createQuery(pathBuilder, predicate);
         return query.fetch();
     }
 
     @Override
     public Iterable<T> findAll(Predicate predicate, Sort sort) {
-        JPAQuery<T> query = createQuery((EntityPath<T>) pathBuilder, predicate);
+        JPAQuery<T> query = createQuery(pathBuilder, predicate);
         return querydsl.applySorting(sort, query).fetch();
     }
 
     @Override
     public Iterable<T> findAll(Predicate predicate, OrderSpecifier<?>... orders) {
-        JPAQuery<T> query = createQuery((EntityPath<T>) pathBuilder, predicate);
+        JPAQuery<T> query = createQuery(pathBuilder, predicate);
         return query.orderBy(orders).fetch();
     }
 
     @Override
     public Iterable<T> findAll(OrderSpecifier<?>... orders) {
-        JPAQuery<T> query = createQuery((EntityPath<T>) pathBuilder);
+        JPAQuery<T> query = createQuery(pathBuilder);
         return query.orderBy(orders).fetch();
     }
 
     @Override
     public Page<T> findAll(Predicate predicate, Pageable pageable) {
-        JPAQuery<T> query = createQuery((EntityPath<T>) pathBuilder, predicate);
-        JPQLQuery<T> paginatedQuery = querydsl.applyPagination(pageable, (JPQLQuery<T>) query);
+        JPAQuery<T> query = createQuery(pathBuilder, predicate);
+        JPQLQuery<T> paginatedQuery = querydsl.applyPagination(pageable, query);
 
         return PageableExecutionUtils.getPage(paginatedQuery.fetch(), pageable, () -> {
-            JPAQuery<T> countQuery = createQuery((EntityPath<T>) pathBuilder, predicate);
-            return countQuery.fetchCount();
+            JPAQuery<Long> countQuery = createQuery(pathBuilder, predicate).select(pathBuilder.count());
+            return Optional.ofNullable(countQuery.fetchOne()).orElse(0L);
         });
     }
 
     @Override
     public long count(Predicate predicate) {
-        JPAQuery<T> query = createQuery((EntityPath<T>) pathBuilder, predicate);
-        return query.fetchCount();
+        JPAQuery<Long> countQuery = createQuery(pathBuilder, predicate).select(pathBuilder.count());
+        return Optional.ofNullable(countQuery.fetchOne()).orElse(0L);
     }
 
     @Override
     public boolean exists(Predicate predicate) {
-        JPAQuery<T> query = createQuery((EntityPath<T>) pathBuilder, predicate);
+        JPAQuery<T> query = createQuery(pathBuilder, predicate);
         return query.fetchFirst() != null;
     }
 
@@ -137,9 +137,9 @@ public class CustomRepositoryImpl<T extends BaseEntity, ID extends Serializable>
 
     // getPath 方法保持原样
     protected Path<?> getPath(Expression<?> expression) {
-        if (expression instanceof EntityPath entityPath) {
+        if (expression instanceof EntityPath<?> entityPath) {
             return entityPath;
-        } else if (expression instanceof Path propertyPath) {
+        } else if (expression instanceof Path<?> propertyPath) {
             return propertyPath.getRoot();
         }
         throw new UnsupportedOperationException("expression require EntityPath(Table) or StringPath(field)");
