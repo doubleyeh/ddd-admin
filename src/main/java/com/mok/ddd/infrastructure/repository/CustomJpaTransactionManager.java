@@ -1,6 +1,6 @@
 package com.mok.ddd.infrastructure.repository;
 
-import com.mok.ddd.infrastructure.security.TenantContextHolder;
+import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import jakarta.annotation.Nonnull;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;

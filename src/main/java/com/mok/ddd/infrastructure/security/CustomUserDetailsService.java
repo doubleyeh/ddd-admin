@@ -4,6 +4,7 @@ import com.mok.ddd.application.service.PermissionService;
 import com.mok.ddd.common.SysUtil;
 import com.mok.ddd.domain.entity.User;
 import com.mok.ddd.domain.repository.UserRepository;
+import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -25,7 +26,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final PermissionService permissionService;
-    
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         String tenantId = TenantContextHolder.getTenantId();

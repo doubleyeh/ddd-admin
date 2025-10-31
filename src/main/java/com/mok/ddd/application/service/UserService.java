@@ -12,6 +12,7 @@ import com.mok.ddd.common.SysUtil;
 import com.mok.ddd.domain.entity.User;
 import com.mok.ddd.domain.repository.UserRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
+import com.mok.ddd.infrastructure.tenant.SkipTenantFilter;
 import lombok.AllArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,19 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
         }
         User entity = userMapper.postToEntity(dto);
         entity.setPassword(passwordEncoder.encode(dto.getPassword()));
+        return this.toDto(userRepository.save(entity));
+    }
+
+    @Transactional
+    @SkipTenantFilter
+    public UserDTO createForTenant(UserPostDTO dto, String tenantId) {
+        if (userRepository.findByTenantIdAndUsername(tenantId, dto.getUsername()).isPresent()) {
+            throw new BizException("用户名已存在");
+        }
+        User entity = userMapper.postToEntity(dto);
+        entity.setPassword(passwordEncoder.encode(dto.getPassword()));
+        entity.setTenantId(tenantId);
+
         return this.toDto(userRepository.save(entity));
     }
 

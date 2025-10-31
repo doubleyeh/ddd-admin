@@ -1,5 +1,6 @@
 package com.mok.ddd.infrastructure.security;
 
+import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import io.jsonwebtoken.Claims;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;

@@ -5,4 +5,8 @@ public interface Const {
     String SUPER_ADMIN_USERNAME = "root";
 
     String NOT_FOUND_MESSAGE = "数据不存在";
+
+
+
+    String DEFAULT_ADMIN_USERNAME = "admin";
 }

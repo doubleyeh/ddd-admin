@@ -4,7 +4,7 @@ import com.mok.ddd.application.dto.SelfPasswordUpdateDTO;
 import com.mok.ddd.application.dto.UserDTO;
 import com.mok.ddd.application.dto.UserPasswordDTO;
 import com.mok.ddd.application.service.UserService;
-import com.mok.ddd.infrastructure.security.TenantContextHolder;
+import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

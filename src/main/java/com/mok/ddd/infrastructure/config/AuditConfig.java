@@ -1,10 +1,11 @@
 package com.mok.ddd.infrastructure.config;
 
+import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
-import com.mok.ddd.infrastructure.security.TenantContextHolder;
+
 import java.util.Optional;
 
 @Configuration

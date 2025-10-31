@@ -1,6 +1,6 @@
 package com.mok.ddd.domain.entity;
 
-import com.mok.ddd.infrastructure.security.TenantContextHolder;
+import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;

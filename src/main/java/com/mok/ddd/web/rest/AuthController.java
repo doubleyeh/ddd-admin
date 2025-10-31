@@ -3,7 +3,7 @@ package com.mok.ddd.web.rest;
 import com.mok.ddd.application.dto.LoginRequest;
 import com.mok.ddd.application.dto.LoginResDTO;
 import com.mok.ddd.infrastructure.security.JwtTokenProvider;
-import com.mok.ddd.infrastructure.security.TenantContextHolder;
+import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import jakarta.validation.Valid;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

@@ -1,4 +1,4 @@
-package com.mok.ddd.infrastructure.security;
+package com.mok.ddd.infrastructure.tenant;
 
 import com.mok.ddd.common.SysUtil;
 
