@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class JwtAuthenticationResponse {
+public class LoginResDTO {
     private String token;
     private String username;
     private String tenantId;

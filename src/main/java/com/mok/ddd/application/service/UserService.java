@@ -1,10 +1,12 @@
-package com.mok.ddd.application;
+package com.mok.ddd.application.service;
 
-import com.mok.ddd.application.dto.*;
+import com.mok.ddd.application.dto.UserDTO;
+import com.mok.ddd.application.dto.UserPasswordDTO;
+import com.mok.ddd.application.dto.UserPostDTO;
+import com.mok.ddd.application.dto.UserPutDTO;
 import com.mok.ddd.application.exception.BizException;
 import com.mok.ddd.application.exception.NotFoundException;
 import com.mok.ddd.application.mapper.UserMapper;
-import com.mok.ddd.application.service.BaseServiceImpl;
 import com.mok.ddd.common.Const;
 import com.mok.ddd.common.SysUtil;
 import com.mok.ddd.domain.entity.User;
@@ -19,7 +21,7 @@ import java.util.Optional;
 
 @Service
 @AllArgsConstructor
-public class UserService extends BaseServiceImpl<User, Long, UserDTO, UserQuery> {
+public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;

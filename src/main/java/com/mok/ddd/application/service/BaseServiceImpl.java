@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-public abstract class BaseServiceImpl<E extends BaseEntity, ID, DTO, Query> implements BaseService<E, ID, DTO, Query> {
+public abstract class BaseServiceImpl<E extends BaseEntity, ID, DTO> implements BaseService<E, ID, DTO> {
 
     protected abstract CustomRepository<E, ID> getRepository();
 

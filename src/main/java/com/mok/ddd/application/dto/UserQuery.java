@@ -14,6 +14,7 @@ public class UserQuery extends BaseQuery{
     private String nickname;
     private Integer state;
 
+    @Override
     public Predicate toPredicate() {
         UserQuery query = this;
         BooleanBuilder builder = new BooleanBuilder();

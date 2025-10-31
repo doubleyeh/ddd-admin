@@ -1,5 +1,6 @@
-package com.mok.ddd.infrastructure.aop;
+package com.mok.ddd.infrastructure.repository;
 
+import com.mok.ddd.infrastructure.security.TenantContextHolder;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -9,7 +10,6 @@ import org.hibernate.Filter;
 import org.hibernate.Session;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import com.mok.ddd.infrastructure.security.TenantContextHolder;
 
 @Aspect
 @Component

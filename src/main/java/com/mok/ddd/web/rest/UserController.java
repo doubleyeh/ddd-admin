@@ -1,7 +1,7 @@
 package com.mok.ddd.web.rest;
 
-import com.mok.ddd.application.UserService;
 import com.mok.ddd.application.dto.*;
+import com.mok.ddd.application.service.UserService;
 import com.mok.ddd.common.Const;
 import com.mok.ddd.common.PasswordGenerator;
 import io.swagger.v3.oas.annotations.Operation;

@@ -1,9 +1,10 @@
 package com.mok.ddd.web.rest;
 
-import com.mok.ddd.application.dto.JwtAuthenticationResponse;
 import com.mok.ddd.application.dto.LoginRequest;
+import com.mok.ddd.application.dto.LoginResDTO;
 import com.mok.ddd.infrastructure.security.JwtTokenProvider;
 import com.mok.ddd.infrastructure.security.TenantContextHolder;
+import jakarta.validation.Valid;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -27,7 +27,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public RestResponse<JwtAuthenticationResponse> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+    public RestResponse<LoginResDTO> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         TenantContextHolder.setTenantId(loginRequest.getTenantId());
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -43,7 +43,7 @@ public class AuthController {
                 loginRequest.getTenantId()
         );
 
-        return RestResponse.success(new JwtAuthenticationResponse(
+        return RestResponse.success(new LoginResDTO(
                 jwt,
                 loginRequest.getUsername(),
                 loginRequest.getTenantId()
