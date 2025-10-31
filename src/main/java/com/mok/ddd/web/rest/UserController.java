@@ -3,12 +3,14 @@ package com.mok.ddd.web.rest;
 import com.mok.ddd.application.UserService;
 import com.mok.ddd.application.dto.*;
 import com.mok.ddd.common.Const;
+import com.mok.ddd.common.PasswordGenerator;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Objects;
@@ -22,6 +24,7 @@ public class UserController {
 
     @Operation(summary = "获取用户分页列表")
     @GetMapping
+    @PreAuthorize("hasAuthority('user:list')")
     public RestResponse<Page<UserDTO>> findPage(@ParameterObject UserQuery query, Pageable pageable) {
         Page<UserDTO> page = userService.findPage(query.toPredicate(), pageable);
         return RestResponse.success(page);
@@ -29,6 +32,7 @@ public class UserController {
 
     @Operation(summary = "获取用户详情")
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('user:list')")
     public RestResponse<UserDTO> getById(@PathVariable Long id) {
         UserDTO userDTO = userService.getById(id);
         if(Objects.isNull(userDTO)){
@@ -39,6 +43,7 @@ public class UserController {
 
     @Operation(summary = "新增用户")
     @PostMapping
+    @PreAuthorize("hasAuthority('user:create')")
     public RestResponse<UserDTO> save(@RequestBody @Valid UserPostDTO userDTO) {
         UserDTO savedUser = userService.create(userDTO);
         return RestResponse.success(savedUser);
@@ -46,22 +51,30 @@ public class UserController {
 
     @Operation(summary = "修改用户")
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('user:update')")
     public RestResponse<UserDTO> update(@PathVariable Long id, @RequestBody @Valid UserPutDTO userDTO) {
         userDTO.setId(id);
         UserDTO updatedUser = userService.updateUser(userDTO);
         return RestResponse.success(updatedUser);
     }
 
-    @Operation(summary = "修改用户密码")
+    @Operation(summary = "重置用户密码")
     @PutMapping("/{id}/password")
-    public RestResponse<Boolean> changePassword(@PathVariable Long id, @RequestBody @Valid UserPasswordDTO passwordDTO) {
+    @PreAuthorize("hasAuthority('user:update')")
+    public RestResponse<String> resetPassword(@PathVariable Long id) {
+        String newPassword = PasswordGenerator.generateRandomPassword();
+
+        UserPasswordDTO passwordDTO = new UserPasswordDTO();
         passwordDTO.setId(id);
+        passwordDTO.setPassword(newPassword);
+
         userService.updatePassword(passwordDTO);
-        return RestResponse.success(true);
+        return RestResponse.success(newPassword);
     }
 
     @Operation(summary = "删除用户")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('user:delete')")
     public RestResponse<Void> deleteById(@PathVariable Long id) {
         userService.deleteById(id);
         return RestResponse.success();

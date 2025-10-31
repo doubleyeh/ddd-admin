@@ -67,6 +67,12 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO, UserQuery>
         super.deleteById(id);
     }
 
+    @Transactional(readOnly = true)
+    public UserDTO findByUsername(String username) {
+        return this.toDto(userRepository.findByUsername(username)
+                .orElseThrow(() -> new NotFoundException(Const.NOT_FOUND_MESSAGE)));
+    }
+
     @Override
     protected CustomRepository<User, Long> getRepository() {
         return userRepository;
