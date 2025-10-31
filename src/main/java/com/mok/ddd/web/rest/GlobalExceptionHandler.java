@@ -1,18 +1,17 @@
 package com.mok.ddd.web.rest;
 
+import com.mok.ddd.application.exception.BizException;
+import com.mok.ddd.application.exception.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.security.access.AccessDeniedException;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
 @Slf4j
@@ -37,6 +36,20 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public RestResponse<String> handleAccessDenied(AccessDeniedException ex) {
         return RestResponse.failure(HttpStatus.FORBIDDEN.value(), "权限不足，拒绝访问");
+    }
+
+    @ExceptionHandler(BizException.class)
+    @ResponseStatus(value = HttpStatus.OK)
+    public RestResponse<String> handleBizException(BizException ex) {
+        log.error("BizException exception occurred:", ex);
+        return RestResponse.failure(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    @ResponseStatus(value = HttpStatus.OK)
+    public RestResponse<String> handleNotFoundException(NotFoundException ex) {
+        log.error("NotFoundException exception occurred:", ex);
+        return RestResponse.failure(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
