@@ -6,22 +6,34 @@ import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
+@Profile("debug")
 public class UserInitializer {
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final ResourceLoader resourceLoader;
+    private final JdbcTemplate jdbcTemplate;
 
-    public UserInitializer(PasswordEncoder passwordEncoder, UserRepository userRepository) {
+    public UserInitializer(PasswordEncoder passwordEncoder, UserRepository userRepository,
+                           ResourceLoader resourceLoader, JdbcTemplate jdbcTemplate) {
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
+        this.resourceLoader = resourceLoader;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Bean
     public CommandLineRunner initDatabase() {
         return args -> {
+
+            executeSqlScript("classpath:init.sql");
 
             String defaultTenantId = "000000";
             String rootUsername = "root";
@@ -42,5 +54,13 @@ public class UserInitializer {
 
             TenantContextHolder.clear();
         };
+    }
+
+    private void executeSqlScript(String resourcePath) {
+        ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
+        populator.addScript(resourceLoader.getResource(resourcePath));
+        populator.setSeparator(";");
+        assert jdbcTemplate.getDataSource() != null;
+        populator.execute(jdbcTemplate.getDataSource());
     }
 }
