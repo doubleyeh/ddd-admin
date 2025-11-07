@@ -8,10 +8,7 @@ import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/account")
@@ -30,5 +27,12 @@ public class AccountController {
         passwordDTO.setPassword(dto.getNewPassword());
         userService.updatePassword(passwordDTO);
         return RestResponse.success(true);
+    }
+
+    @Operation(summary = "用户信息")
+    @GetMapping("/info")
+    public RestResponse<UserDTO> getMyInfo() {
+        UserDTO user = userService.findByUsername(TenantContextHolder.getUsername());
+        return RestResponse.success(user);
     }
 }

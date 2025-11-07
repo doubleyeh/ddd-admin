@@ -42,6 +42,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     String tenantId = tokenProvider.getTenantIdFromClaims(claims);
 
                     TenantContextHolder.setTenantId(tenantId);
+                    TenantContextHolder.setUsername(username);
 
                     UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
