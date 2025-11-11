@@ -1,7 +1,7 @@
 <template>
     <div class="dashboard-container">
         <n-space vertical :size="20">
-            <n-card :bordered="false" size="large" title="欢迎回来" style="border-radius: 8px;">
+            <n-card :bordered="true" size="large" title="欢迎回来" style="border-radius: 8px;">
                 <n-grid x-gap="12" :cols="4">
                     <n-gi>
                         <n-statistic label="今日访问量" :value="data.todayVisits" value-style="color: #409eff">
@@ -28,7 +28,7 @@
 
             <n-grid x-gap="20" :cols="2">
                 <n-gi>
-                    <n-card title="系统公告" :bordered="false" style="border-radius: 8px;">
+                    <n-card title="系统公告" :bordered="true" style="border-radius: 8px;">
                         <n-list hoverable clickable>
                             <n-list-item v-for="(notice, index) in data.announcements" :key="index">
                                 <template #default>
@@ -43,7 +43,7 @@
                     </n-card>
                 </n-gi>
                 <n-gi>
-                    <n-card title="项目信息" :bordered="false" style="border-radius: 8px;">
+                    <n-card title="项目信息" :bordered="true" style="border-radius: 8px;">
                         <n-descriptions :column="1" label-placement="left" size="medium">
                             <n-descriptions-item label="项目名称">DDD-Admin</n-descriptions-item>
                             <n-descriptions-item label="前端技术栈">Vue 3 / Naive UI / Pinia / JS</n-descriptions-item>

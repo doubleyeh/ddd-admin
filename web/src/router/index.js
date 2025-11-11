@@ -23,45 +23,45 @@ export const constantRoutes = [
 ];
 
 export const asyncRoutes = [
-    // {
-    //     path: '/system',
-    //     component: Layout,
-    //     redirect: '/system/user',
-    //     name: 'System',
-    //     meta: { 
-    //         title: '系统管理', 
-    //         icon: 'i-ant-design:setting-filled',
-    //     },
-    //     children: [
-    //         {
-    //             path: 'tenant',
-    //             component: () => import('@/views/system/tenant/index.vue'),
-    //             name: 'TenantManagement',
-    //             meta: { 
-    //                 title: '租户管理', 
-    //                 roles: ['tenant:list'] 
-    //             }
-    //         },
-    //         {
-    //             path: 'user',
-    //             component: () => import('@/views/system/user/index.vue'),
-    //             name: 'UserManagement',
-    //             meta: { 
-    //                 title: '用户管理', 
-    //                 roles: ['user:list'] 
-    //             }
-    //         },
-    //         {
-    //             path: 'role',
-    //             component: () => import('@/views/system/role/index.vue'),
-    //             name: 'RoleManagement',
-    //             meta: { 
-    //                 title: '角色管理', 
-    //                 roles: ['role:list'] 
-    //             }
-    //         }
-    //     ]
-    // },
+    {
+        path: '/system',
+        component: Layout,
+        redirect: '/system/user',
+        name: 'System',
+        meta: { 
+            title: '系统管理', 
+            icon: 'i-ant-design:setting-filled',
+        },
+        children: [
+            {
+                path: 'tenant',
+                component: () => import('@/views/system/tenant/index.vue'),
+                name: 'TenantManagement',
+                meta: { 
+                    title: '租户管理', 
+                    roles: ['tenant:list'] 
+                }
+            },
+            {
+                path: 'user',
+                component: () => import('@/views/system/user/index.vue'),
+                name: 'UserManagement',
+                meta: { 
+                    title: '用户管理', 
+                    roles: ['user:list'] 
+                }
+            },
+            {
+                path: 'role',
+                component: () => import('@/views/system/role/index.vue'),
+                name: 'RoleManagement',
+                meta: { 
+                    title: '角色管理', 
+                    roles: ['role:list'] 
+                }
+            }
+        ]
+    },
     { 
         path: '/:pathMatch(.*)*', 
         name: 'NotFound', 
