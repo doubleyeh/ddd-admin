@@ -21,7 +21,7 @@
         </n-form-item>
       </n-form>
       <div class="mt-4 text-center">
-        <n-button type="primary">保存</n-button>
+        <n-button type="primary" :loading="saving" @click="handleSave">保存</n-button>
       </div>
     </n-spin>
   </n-card>
@@ -44,6 +44,7 @@ interface UserDTO {
 const user = useUserStore()
 const message = useMessage()
 const loading = ref(false)
+const saving = ref(false)
 
 const userInfo = reactive<UserDTO>({
   id: 0,
@@ -67,6 +68,27 @@ async function fetchUserInfo() {
     message.error(error.message || '获取信息失败')
   } finally {
     loading.value = false
+  }
+}
+
+async function handleSave() {
+  if (!userInfo.nickname) {
+    message.warning('昵称不能为空')
+    return
+  }
+  
+  saving.value = true
+  try {
+    await http.put('/account/nickname', {
+      nickname: userInfo.nickname
+    })
+    message.success('昵称修改成功')
+    
+  } catch (error: any) {
+    message.error(error.message || '修改昵称失败')
+    
+  } finally {
+    saving.value = false
   }
 }
 
