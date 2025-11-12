@@ -5,6 +5,7 @@ import autoprefixer from 'autoprefixer'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { NaiveUiResolver } from 'unplugin-vue-components/resolvers'
+import * as path from 'path'
 
 export default defineConfig({
   plugins: [
@@ -19,9 +20,23 @@ export default defineConfig({
       resolvers: [NaiveUiResolver()]
     })
   ],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src')
+    }
+  },
   css: {
     postcss: {
       plugins: [tailwindcss(), autoprefixer()]
+    }
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '/api')
+      }
     }
   }
 })
