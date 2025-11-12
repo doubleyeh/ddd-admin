@@ -1,34 +1,32 @@
 <template>
-  <n-config-provider :theme="isDark ? darkTheme : null">
+  <n-config-provider :theme="isDark ? darkTheme : null" :theme-overrides="themeOverrides">
     <n-message-provider>
-      <div class="h-screen flex flex-col bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-gray-100">
-        <header class="h-14 flex justify-between items-center px-6 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+      <div class="h-screen flex flex-col text-gray-800 dark:text-gray-100">
+        
+        <n-layout-header bordered class="h-14 flex justify-between items-center px-6 shadow-sm">
           <div class="flex items-center">
-            <n-button quaternary @click="collapsed = !collapsed" class="mr-4">
-              <n-icon size="20">
-                <Navigation24Regular v-if="!collapsed" />
-                <NavigationFilled24Regular v-else />
-              </n-icon>
-            </n-button>
             <div class="text-lg font-semibold">DDD Admin</div>
+            
+            <n-button quaternary @click="collapsed = !collapsed" class="mr-4">
+              <n-icon :component="collapsed ? ChevronForwardCircleOutline : ChevronBackCircleOutline" />
+            </n-button>
           </div>
           <div class="flex items-center gap-4">
             <n-switch v-model:value="isDark" size="small" />
             
             <n-dropdown :options="userMenuOptions" @select="handleUserMenuSelect">
               <div class="cursor-pointer flex items-center gap-2">
-                <span class="text-gray-700 dark:text-gray-100">{{ user.username || '用户' }}</span>
+                <span>{{ user.username || '用户' }}</span>
                 <n-button quaternary>
-                  <n-icon size="18">
-                    <Person24Regular />
-                  </n-icon>
+                  👤
                 </n-button>
               </div>
             </n-dropdown>
           </div>
-        </header>
+        </n-layout-header>
         
         <n-layout has-sider class="flex-1 min-h-0">
+          
           <n-layout-sider
             bordered
             collapse-mode="width"
@@ -38,7 +36,6 @@
             show-trigger="bar"
             @collapse="collapsed = true"
             @expand="collapsed = false"
-            class="!bg-white dark:!bg-slate-800"
           >
             <n-menu
               :options="menuOptions"
@@ -49,7 +46,7 @@
             />
           </n-layout-sider>
           
-          <n-layout-content content-style="padding: 24px;" class="flex-1 overflow-auto bg-gray-50 dark:bg-slate-900">
+          <n-layout-content content-style="padding: 24px;" class="flex-1 overflow-auto">
             <router-view />
           </n-layout-content>
         </n-layout>
@@ -59,29 +56,37 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, h } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../store/user'
-import { darkTheme, NConfigProvider, NMessageProvider, NMenu, NSwitch, NButton, NLayout, NLayoutSider, NLayoutContent, NDropdown, NIcon } from 'naive-ui'
-import { 
-  Person24Regular, 
-  Key24Regular, 
-  PersonCircle24Regular, 
-  ArrowExit20Regular, 
-  Home24Regular,
-  Navigation24Regular,
-  NavigationFilled24Regular
-} from '@vicons/fluent'
+import { darkTheme, NConfigProvider, NMessageProvider, NMenu, NSwitch, NButton, NLayout, NLayoutHeader, NLayoutSider, NLayoutContent, NDropdown, NIcon } from 'naive-ui'
+import { ChevronBackCircleOutline, ChevronForwardCircleOutline } from '@vicons/ionicons5'
 
 const router = useRouter()
 const user = useUserStore()
 const isDark = ref(localStorage.getItem('theme') === 'dark')
 const collapsed = ref(false)
 
+const themeOverrides = computed(() => {
+  if (isDark.value) {
+    return {
+      Layout: {
+        color: 'rgb(24, 24, 28)', 
+        headerBorderColor: 'rgb(60, 60, 60)', 
+        siderBorderColor: 'rgb(60, 60, 60)',
+      },
+      Menu: {
+        itemColorActive: 'rgba(255, 255, 255, 0.1)',
+      }
+    };
+  }
+  return null;
+});
+
 watch(isDark, v => {
   localStorage.setItem('theme', v ? 'dark' : 'light')
   if (v) {
-    document.documentElement.classList.add('dark')
+    document.documentElement.classList.add('dark') 
   } else {
     document.documentElement.classList.remove('dark')
   }
@@ -89,19 +94,15 @@ watch(isDark, v => {
 
 const active = ref('home')
 
-const renderIcon = (icon: any) => {
-  return () => h(NIcon, null, { default: () => h(icon) })
-}
-
 const menuOptions = [
-  { label: '首页', key: 'home', icon: renderIcon(Home24Regular), onClick: () => router.push('/') }
+  { label: '首页', key: 'home', icon: () => '🏠', onClick: () => router.push('/') }
 ]
 
 const userMenuOptions = [
-  { label: '个人信息', key: 'profile', icon: renderIcon(PersonCircle24Regular) },
-  { label: '修改密码', key: 'change-password', icon: renderIcon(Key24Regular) },
+  { label: '个人信息', key: 'profile' },
+  { label: '修改密码', key: 'change-password' },
   { type: 'divider', key: 'd1' },
-  { label: '退出登录', key: 'logout', icon: renderIcon(ArrowExit20Regular) }
+  { label: '退出登录', key: 'logout' }
 ]
 
 function handleUserMenuSelect(key: string) {
@@ -123,9 +124,3 @@ function logout() {
   router.push('/login')
 }
 </script>
-
-<style scoped>
-.n-layout {
-  background-color: inherit;
-}
-</style>
