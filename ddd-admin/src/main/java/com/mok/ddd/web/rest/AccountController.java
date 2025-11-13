@@ -1,5 +1,6 @@
 package com.mok.ddd.web.rest;
 
+import com.mok.ddd.application.dto.AccountInfoDTO;
 import com.mok.ddd.application.dto.SelfPasswordUpdateDTO;
 import com.mok.ddd.application.dto.UserDTO;
 import com.mok.ddd.application.dto.UserPasswordDTO;
@@ -36,8 +37,8 @@ public class AccountController {
 
     @Operation(summary = "用户信息")
     @GetMapping("/info")
-    public RestResponse<UserDTO> getMyInfo() {
-        UserDTO user = userService.findByUsername(TenantContextHolder.getUsername());
+    public RestResponse<AccountInfoDTO> getMyInfo() {
+        AccountInfoDTO user = userService.findByUsernameAndMenus(TenantContextHolder.getUsername());
         return RestResponse.success(user);
     }
 

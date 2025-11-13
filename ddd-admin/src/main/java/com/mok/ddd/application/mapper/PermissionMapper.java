@@ -5,10 +5,22 @@ import com.mok.ddd.domain.entity.Permission;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface PermissionMapper {
 
     PermissionDTO toDto(Permission entity);
 
     Permission toEntity(PermissionDTO dto);
+
+    default List<PermissionDTO> toDtoList(Collection<Permission> list){
+        if(list == null){
+            return Collections.emptyList();
+        }
+
+        return list.stream().map(this::toDto).toList();
+    }
 }
