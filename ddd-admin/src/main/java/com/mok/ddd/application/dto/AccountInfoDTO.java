@@ -1,15 +1,17 @@
 package com.mok.ddd.application.dto;
 
-import lombok.Data;
 import lombok.Builder;
+import lombok.Data;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.Collection;
 
 @Data
 @Builder
 public class AccountInfoDTO implements Serializable {
-    private UserDTO user;
-    private List<String> permissions;
-    private List<MenuDTO> menus;
+    UserDTO user;
+
+    Collection<MenuDTO> menus;
+
+    Collection<String> permissions;
 }

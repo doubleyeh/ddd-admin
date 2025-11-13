@@ -4,10 +4,10 @@ import com.mok.ddd.application.dto.*;
 import com.mok.ddd.application.exception.BizException;
 import com.mok.ddd.application.exception.NotFoundException;
 import com.mok.ddd.application.mapper.MenuMapper;
-import com.mok.ddd.application.mapper.PermissionMapper;
 import com.mok.ddd.application.mapper.UserMapper;
 import com.mok.ddd.common.Const;
 import com.mok.ddd.common.SysUtil;
+import com.mok.ddd.domain.entity.Menu;
 import com.mok.ddd.domain.entity.Permission;
 import com.mok.ddd.domain.entity.User;
 import com.mok.ddd.domain.repository.UserRepository;
@@ -18,8 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collection;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,7 +31,6 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
     private final MenuService menuService;
     private final MenuMapper menuMapper;
     private final PermissionService permissionService;
-    private final PermissionMapper permissionMapper;
 
     @Transactional
     public UserDTO create(UserPostDTO dto) {
@@ -96,28 +94,35 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
     }
 
     @Transactional(readOnly = true)
-    public AccountInfoDTO findByUsernameAndMenus(String username) {
+    public AccountInfoDTO findAccountInfoByUsername(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new NotFoundException(Const.NOT_FOUND_MESSAGE));
-        UserDTO userDTO = this.toDto(user);
 
-        AccountInfoDTO infoDTO = AccountInfoDTO.builder()
-                .user(userDTO).build();
-        Collection<MenuDTO> distinctMenus;
-        Collection<String> distinctPermissions;
+        List<MenuDTO> flatMenus;
+        Set<String> distinctPermissions;
+
         if(SysUtil.isSuperAdmin(user.getTenantId(), username)){
-            // 获取所有权限 和菜单
-            distinctMenus = menuService.findAll();
-            distinctPermissions = permissionService.getAllPermissionCodes();
+            flatMenus = menuService.findAll();
+            distinctPermissions = new HashSet<>(permissionService.getAllPermissionCodes());
         }else{
-            distinctMenus = menuMapper.toDtoList(user.getRoles().stream()
+            Set<Menu> distinctMenuEntities = user.getRoles().stream()
                     .flatMap(role -> role.getMenus().stream())
-                    .collect(Collectors.toSet()));
-            distinctPermissions = permissionMapper.toDtoList(user.getRoles().stream().flatMap(r->r.getPermissions().stream())
-                    .collect(Collectors.toList())
-                    .stream().map(Permission::getCode).collect(Collectors.toSet()));
+                    .collect(Collectors.toSet());
+
+            flatMenus = menuMapper.toDtoList(distinctMenuEntities);
+
+            distinctPermissions = user.getRoles().stream()
+                    .flatMap(r->r.getPermissions().stream())
+                    .map(Permission::getCode)
+                    .collect(Collectors.toSet());
         }
-        return infoDTO;
+        flatMenus.sort(Comparator.comparing(MenuDTO::getSort, Comparator.nullsLast(Comparator.naturalOrder())));
+        List<MenuDTO> menuTree = menuService.buildMenuTree(flatMenus);
+
+        return AccountInfoDTO.builder()
+                .user(this.toDto(user))
+                .menus(menuTree)
+                .permissions(distinctPermissions).build();
     }
 
     @Override

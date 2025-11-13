@@ -2,6 +2,8 @@ package com.mok.ddd.application.dto;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class MenuDTO {
     private Long id;
@@ -12,4 +14,5 @@ public class MenuDTO {
     private String icon;
     private Integer sort;
     private Boolean isHidden;
+    private List<MenuDTO> children;
 }

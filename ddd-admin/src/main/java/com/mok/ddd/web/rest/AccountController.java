@@ -38,7 +38,7 @@ public class AccountController {
     @Operation(summary = "用户信息")
     @GetMapping("/info")
     public RestResponse<AccountInfoDTO> getMyInfo() {
-        AccountInfoDTO user = userService.findByUsernameAndMenus(TenantContextHolder.getUsername());
+        AccountInfoDTO user = userService.findAccountInfoByUsername(TenantContextHolder.getUsername());
         return RestResponse.success(user);
     }
 
