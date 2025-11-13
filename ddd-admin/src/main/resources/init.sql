@@ -20,9 +20,9 @@ VALUES
 INSERT IGNORE INTO sys_menu (id, parent_id, name, path, component, icon, sort, is_hidden, created_at, updated_at)
 VALUES
 (100, NULL, '系统管理', '/system', 'Layout', 'SettingsSharp', 10, FALSE, NOW(), NOW()),
-(1001, 100, '租户管理', '/system/tenant', 'views/system/tenant/index', 'PeopleOutline', 11, FALSE, NOW(), NOW()),
-(1002, 100, '用户管理', '/system/user', 'views/system/user/index', 'PersonOutline', 21, FALSE, NOW(), NOW()),
-(1003, 100, '角色管理', '/system/role', 'views/system/role/index', 'ShieldOutline', 31, FALSE, NOW(), NOW()),
+(1001, 100, '租户管理', '/system/tenant', 'system/tenant', 'PeopleOutline', 11, FALSE, NOW(), NOW()),
+(1002, 100, '用户管理', '/system/user', 'system/user', 'PersonOutline', 21, FALSE, NOW(), NOW()),
+(1003, 100, '角色管理', '/system/role', 'system/role', 'ShieldOutline', 31, FALSE, NOW(), NOW()),
 
 (10001, 1001, '查询/详情', NULL, NULL, NULL, 1, FALSE, NOW(), NOW()),
 (10002, 1001, '新增租户', NULL, NULL, NULL, 2, FALSE, NOW(), NOW()),

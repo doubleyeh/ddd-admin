@@ -1,0 +1,3 @@
+<template>
+	Tenant 
+</template>

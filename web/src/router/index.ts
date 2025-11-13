@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { useMenuStore } from '@/store/menu'
+import { loadAndAddRoutes } from '@/permission'
 
 const Layout = () => import('@/layouts/layout.vue') 
 
@@ -19,13 +20,13 @@ const fixedRoutes: RouteRecordRaw[] = [
       {
         path: '/profile',
         name: 'Profile',
-        component: () => import('@/views/Profile.vue'), 
+        component: () => import('@/views/profile.vue'), 
         meta: { requiresAuth: true, title: '个人信息' }
       },
       {
         path: '/change-password',
         name: 'ChangePassword',
-        component: () => import('@/views/ChangePassword.vue'),
+        component: () => import('@/views/changePassword.vue'),
         meta: { requiresAuth: true, title: '修改密码' }
       },
     ]
@@ -33,14 +34,8 @@ const fixedRoutes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/views/Login.vue'),
+    component: () => import('@/views/login.vue'),
     meta: { requiresAuth: false, title: '登录' }
-  },
-  {
-    path: '/:pathMatch(.*)*',
-    name: 'NotFound',
-    component: () => import('@/views/NotFound.vue'),
-    meta: { requiresAuth: false, title: '404' }
   }
 ]
 
@@ -71,22 +66,26 @@ router.beforeEach(async (to, from, next) => {
   }
   
   if (userStore.isLoggedIn && !menuStore.isRoutesAdded) {
-    if (menuStore.dynamicRoutes.length > 0) {
-        const layoutRoute = fixedRoutes.find(r => r.component === Layout)
-        if (layoutRoute) {
-            menuStore.dynamicRoutes.forEach(route => {
-                layoutRoute.children?.push(route)
-            })
-            router.addRoute(layoutRoute)
-            menuStore.setRoutesAdded()
-            
-            next({ path: to.fullPath, replace: true })
-            return
-        }
+    const success = await loadAndAddRoutes(router)
+
+    if (success) {
+      next({ path: to.fullPath, replace: true })
+      return
+    } else {
+      userStore.logout()
+      next({ name: 'Login', replace: true })
+      return
     }
   }
 
   next()
+})
+
+router.addRoute({
+  path: '/:pathMatch(.*)*',
+  name: 'NotFound',
+  component: () => import('@/views/notFound.vue'),
+  meta: { requiresAuth: false, title: '404' }
 })
 
 export default router
