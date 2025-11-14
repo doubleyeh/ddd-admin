@@ -54,15 +54,12 @@ const mapMenusToRoutes = (menus: MenuDTO[]): RouteRecordRaw[] => {
   const routes: RouteRecordRaw[] = []
   menus.forEach(menu => {
     if (menu.component && menu.path && menu.component !== 'Layout') {
-      
-      const routePath = menu.path.startsWith('/') ? menu.path.substring(1) : menu.path
-
+      let routePath = menu.path.startsWith('/') ? menu.path : `/${menu.path}`
+      routePath = routePath.replace(/\/+/g, '/')
       let componentPath = menu.component
       if (componentPath.startsWith('views/')) componentPath = componentPath.substring(6)
-
       const componentKey = `../views/${componentPath}.vue`
       const component = modules[componentKey]
-
       if (component) {
         routes.push({
           path: routePath,

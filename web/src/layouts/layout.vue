@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { useMenuStore } from '@/store/menu'
 import { useThemeStore } from '@/store/theme'
-import { NMessageProvider, useMessage } from 'naive-ui'
+import { useMessage } from 'naive-ui'
 import { ChevronBackCircleOutline, ChevronForwardCircleOutline } from '@vicons/ionicons5'
 
 const router = useRouter()
@@ -38,7 +38,16 @@ function logout() {
 const homeMenuOption = computed(() => ({
   label: menuStore.renderLabel('首页'),
   key: 'Home',
-  icon: menuStore.renderIcon('HomeOutline')
+  icon: menuStore.renderIcon('HomeOutline'),
+  onClick: async (e?: Event) => {
+    if (e && e.stopPropagation) e.stopPropagation()
+    try {
+      await router.push({ name: 'Home' })
+    } catch (error) {
+      console.error('首页跳转失败:', error)
+      message.error('无法导航到首页')
+    }
+  }
 }))
 
 const allMenuOptions = computed(() => {
@@ -47,13 +56,17 @@ const allMenuOptions = computed(() => {
       const newOpt = { ...opt }
       if (newOpt.children && newOpt.children.length) {
         newOpt.children = process(newOpt.children)
-      } else {
-        newOpt.onClick = (e?: Event) => {
+      } else if (!newOpt.onClick) {
+        newOpt.onClick = async (e?: Event) => {
           if (e && e.stopPropagation) e.stopPropagation()
-          if (newOpt.path) {
-            router.push(newOpt.path)
-          } else if (newOpt.key) {
-            router.push({ name: String(newOpt.key) })
+          try {
+            let targetPath = newOpt.path || ''
+            targetPath = targetPath.startsWith('/') ? targetPath : `/${targetPath}`
+            targetPath = targetPath.replace(/\/+/g, '/')
+            await router.push(targetPath)
+          } catch (error) {
+            console.error('路由跳转失败:', error)
+            message.error('无法导航到该页面')
           }
         }
       }
@@ -62,7 +75,6 @@ const allMenuOptions = computed(() => {
   }
   return [homeMenuOption.value, ...process(menuStore.menuOptions)]
 })
-
 </script>
 
 <template>
