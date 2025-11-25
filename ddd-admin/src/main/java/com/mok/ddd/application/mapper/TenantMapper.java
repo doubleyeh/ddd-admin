@@ -1,12 +1,13 @@
 package com.mok.ddd.application.mapper;
 
-import com.mok.ddd.application.dto.TenantCreateResultDTO;
-import com.mok.ddd.application.dto.TenantDTO;
-import com.mok.ddd.application.dto.TenantSaveDTO;
-import com.mok.ddd.domain.entity.Tenant;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
+
+import com.mok.ddd.application.dto.tenant.TenantCreateResultDTO;
+import com.mok.ddd.application.dto.tenant.TenantDTO;
+import com.mok.ddd.application.dto.tenant.TenantSaveDTO;
+import com.mok.ddd.domain.entity.Tenant;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface TenantMapper {

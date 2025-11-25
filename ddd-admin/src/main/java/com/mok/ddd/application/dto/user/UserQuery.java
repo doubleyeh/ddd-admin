@@ -1,15 +1,17 @@
-package com.mok.ddd.application.dto;
-
-import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.types.Predicate;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+package com.mok.ddd.application.dto.user;
 
 import static com.mok.ddd.domain.entity.QUser.user;
 
+import com.mok.ddd.application.dto.BaseQuery;
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Predicate;
+
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class UserQuery extends BaseQuery{
+public class UserQuery extends BaseQuery {
     private String username;
     private String nickname;
     private Integer state;

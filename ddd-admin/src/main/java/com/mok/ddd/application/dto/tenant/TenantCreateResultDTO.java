@@ -1,4 +1,4 @@
-package com.mok.ddd.application.dto;
+package com.mok.ddd.application.dto.tenant;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

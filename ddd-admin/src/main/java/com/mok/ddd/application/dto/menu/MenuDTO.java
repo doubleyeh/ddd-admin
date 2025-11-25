@@ -1,8 +1,8 @@
-package com.mok.ddd.application.dto;
-
-import lombok.Data;
+package com.mok.ddd.application.dto.menu;
 
 import java.util.List;
+
+import lombok.Data;
 
 @Data
 public class MenuDTO {

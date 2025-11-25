@@ -1,9 +1,8 @@
 package com.mok.ddd.application.mapper;
 
-import com.mok.ddd.application.dto.UserDTO;
-import com.mok.ddd.application.dto.UserPostDTO;
-import com.mok.ddd.application.dto.UserPutDTO;
-import com.mok.ddd.domain.entity.User;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -12,12 +11,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import com.mok.ddd.application.dto.user.UserDTO;
+import com.mok.ddd.application.dto.user.UserPostDTO;
+import com.mok.ddd.application.dto.user.UserPutDTO;
+import com.mok.ddd.domain.entity.User;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UserMapper {
-    //继承字段必须明确指出
+    // 继承字段必须明确指出
     @Mapping(target = "createTime", source = "createTime")
     UserDTO toDto(User entity);
 

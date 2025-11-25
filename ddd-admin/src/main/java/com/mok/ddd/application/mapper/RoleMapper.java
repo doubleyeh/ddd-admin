@@ -1,14 +1,16 @@
 package com.mok.ddd.application.mapper;
 
-import com.mok.ddd.application.dto.RoleDTO;
-import com.mok.ddd.application.dto.RoleSaveDTO;
-import com.mok.ddd.domain.entity.Role;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = {PermissionMapper.class, MenuMapper.class})
+import com.mok.ddd.application.dto.role.RoleDTO;
+import com.mok.ddd.application.dto.role.RoleSaveDTO;
+import com.mok.ddd.domain.entity.Role;
+
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = { PermissionMapper.class,
+        MenuMapper.class })
 public interface RoleMapper {
 
     RoleDTO toDto(Role entity);

@@ -1,20 +1,26 @@
 package com.mok.ddd.web.rest;
 
-import com.mok.ddd.application.dto.AccountInfoDTO;
-import com.mok.ddd.application.dto.SelfPasswordUpdateDTO;
-import com.mok.ddd.application.dto.UserDTO;
-import com.mok.ddd.application.dto.UserPasswordDTO;
+import java.io.Serializable;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.mok.ddd.application.dto.auth.AccountInfoDTO;
+import com.mok.ddd.application.dto.auth.SelfPasswordUpdateDTO;
+import com.mok.ddd.application.dto.user.UserDTO;
+import com.mok.ddd.application.dto.user.UserPasswordDTO;
 import com.mok.ddd.application.service.UserService;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
+
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
-
-import java.io.Serializable;
 
 @RestController
 @RequestMapping("/api/account")

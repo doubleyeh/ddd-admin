@@ -1,19 +1,32 @@
 package com.mok.ddd.web.rest;
 
-import com.mok.ddd.application.dto.*;
-import com.mok.ddd.application.service.UserService;
-import com.mok.ddd.common.Const;
-import com.mok.ddd.common.PasswordGenerator;
-import io.swagger.v3.oas.annotations.Operation;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import java.util.Objects;
+
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Objects;
+import com.mok.ddd.application.dto.user.UserDTO;
+import com.mok.ddd.application.dto.user.UserPasswordDTO;
+import com.mok.ddd.application.dto.user.UserPostDTO;
+import com.mok.ddd.application.dto.user.UserPutDTO;
+import com.mok.ddd.application.dto.user.UserQuery;
+import com.mok.ddd.application.service.UserService;
+import com.mok.ddd.common.Const;
+import com.mok.ddd.common.PasswordGenerator;
+
+import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/users")
@@ -35,7 +48,7 @@ public class UserController {
     @PreAuthorize("hasAuthority('user:list')")
     public RestResponse<UserDTO> getById(@PathVariable Long id) {
         UserDTO userDTO = userService.getById(id);
-        if(Objects.isNull(userDTO)){
+        if (Objects.isNull(userDTO)) {
             return RestResponse.failure(404, Const.NOT_FOUND_MESSAGE);
         }
         return RestResponse.success(userDTO);

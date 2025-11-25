@@ -1,9 +1,16 @@
 package com.mok.ddd.application.service;
 
-import com.mok.ddd.application.dto.MenuDTO;
-import com.mok.ddd.application.dto.PermissionDTO;
-import com.mok.ddd.application.dto.RoleDTO;
-import com.mok.ddd.application.dto.RoleSaveDTO;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.mok.ddd.application.dto.menu.MenuDTO;
+import com.mok.ddd.application.dto.permission.PermissionDTO;
+import com.mok.ddd.application.dto.role.RoleDTO;
+import com.mok.ddd.application.dto.role.RoleSaveDTO;
 import com.mok.ddd.application.exception.NotFoundException;
 import com.mok.ddd.application.mapper.MenuMapper;
 import com.mok.ddd.application.mapper.PermissionMapper;
@@ -15,13 +22,8 @@ import com.mok.ddd.domain.repository.MenuRepository;
 import com.mok.ddd.domain.repository.PermissionRepository;
 import com.mok.ddd.domain.repository.RoleRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -48,7 +50,6 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
     protected RoleDTO toDto(Role entity) {
         return roleMapper.toDto(entity);
     }
-
 
     @Transactional
     public RoleDTO createRole(RoleSaveDTO dto) {

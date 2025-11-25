@@ -1,9 +1,12 @@
 package com.mok.ddd.application.service;
 
-import com.mok.ddd.application.dto.TenantCreateResultDTO;
-import com.mok.ddd.application.dto.TenantDTO;
-import com.mok.ddd.application.dto.TenantSaveDTO;
-import com.mok.ddd.application.dto.UserPostDTO;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.mok.ddd.application.dto.tenant.TenantCreateResultDTO;
+import com.mok.ddd.application.dto.tenant.TenantDTO;
+import com.mok.ddd.application.dto.tenant.TenantSaveDTO;
+import com.mok.ddd.application.dto.user.UserPostDTO;
 import com.mok.ddd.application.exception.BizException;
 import com.mok.ddd.application.mapper.TenantMapper;
 import com.mok.ddd.common.Const;
@@ -11,9 +14,8 @@ import com.mok.ddd.common.PasswordGenerator;
 import com.mok.ddd.domain.entity.Tenant;
 import com.mok.ddd.domain.repository.TenantRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor

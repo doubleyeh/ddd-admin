@@ -1,17 +1,19 @@
-package com.mok.ddd.application.dto;
-
-import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.types.Predicate;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import org.springframework.util.StringUtils;
+package com.mok.ddd.application.dto.role;
 
 import static com.mok.ddd.domain.entity.QRole.role;
 
+import org.springframework.util.StringUtils;
+
+import com.mok.ddd.application.dto.BaseQuery;
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Predicate;
+
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class RoleQuery extends BaseQuery{
+public class RoleQuery extends BaseQuery {
 
     private String name;
     private String code;

@@ -1,7 +1,7 @@
-package com.mok.ddd.application.dto;
+package com.mok.ddd.application.dto.auth;
 
-import lombok.Data;
 import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
 
 @Data
 public class LoginRequest {

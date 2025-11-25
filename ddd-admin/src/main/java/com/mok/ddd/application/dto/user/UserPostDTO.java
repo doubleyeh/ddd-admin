@@ -1,4 +1,4 @@
-package com.mok.ddd.application.dto;
+package com.mok.ddd.application.dto.user;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

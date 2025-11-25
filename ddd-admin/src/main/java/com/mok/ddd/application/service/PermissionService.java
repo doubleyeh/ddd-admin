@@ -1,20 +1,22 @@
 package com.mok.ddd.application.service;
 
-import com.mok.ddd.application.dto.PermissionDTO;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.mok.ddd.application.dto.permission.PermissionDTO;
 import com.mok.ddd.application.mapper.PermissionMapper;
 import com.mok.ddd.domain.entity.Permission;
 import com.mok.ddd.domain.repository.PermissionRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Set;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class PermissionService extends BaseServiceImpl<Permission, Long, PermissionDTO>{
+public class PermissionService extends BaseServiceImpl<Permission, Long, PermissionDTO> {
     private final PermissionRepository permissionRepository;
     private final PermissionMapper permissionMapper;
 

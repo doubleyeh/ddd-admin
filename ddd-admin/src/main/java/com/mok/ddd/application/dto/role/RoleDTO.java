@@ -1,8 +1,11 @@
-package com.mok.ddd.application.dto;
-
-import lombok.Data;
+package com.mok.ddd.application.dto.role;
 
 import java.util.Set;
+
+import com.mok.ddd.application.dto.menu.MenuDTO;
+import com.mok.ddd.application.dto.permission.PermissionDTO;
+
+import lombok.Data;
 
 @Data
 public class RoleDTO {

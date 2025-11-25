@@ -1,6 +1,22 @@
 package com.mok.ddd.application.service;
 
-import com.mok.ddd.application.dto.*;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.mok.ddd.application.dto.auth.AccountInfoDTO;
+import com.mok.ddd.application.dto.menu.MenuDTO;
+import com.mok.ddd.application.dto.user.UserDTO;
+import com.mok.ddd.application.dto.user.UserPasswordDTO;
+import com.mok.ddd.application.dto.user.UserPostDTO;
+import com.mok.ddd.application.dto.user.UserPutDTO;
 import com.mok.ddd.application.exception.BizException;
 import com.mok.ddd.application.exception.NotFoundException;
 import com.mok.ddd.application.mapper.MenuMapper;
@@ -13,13 +29,8 @@ import com.mok.ddd.domain.entity.User;
 import com.mok.ddd.domain.repository.UserRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
 import com.mok.ddd.infrastructure.tenant.SkipTenantFilter;
-import lombok.AllArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
 
 @Service
 @AllArgsConstructor
@@ -77,7 +88,7 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
     public void deleteById(Long id) {
         Optional<User> userToDelete = userRepository.findById(id);
 
-        if(userToDelete.isEmpty()){
+        if (userToDelete.isEmpty()) {
             throw new NotFoundException();
         }
         if (SysUtil.isSuperAdmin(userToDelete.get().getTenantId(), userToDelete.get().getUsername())) {
@@ -101,10 +112,10 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
         List<MenuDTO> flatMenus;
         Set<String> distinctPermissions;
 
-        if(SysUtil.isSuperAdmin(user.getTenantId(), username)){
+        if (SysUtil.isSuperAdmin(user.getTenantId(), username)) {
             flatMenus = menuService.findAll();
             distinctPermissions = new HashSet<>(permissionService.getAllPermissionCodes());
-        }else{
+        } else {
             Set<Menu> distinctMenuEntities = user.getRoles().stream()
                     .flatMap(role -> role.getMenus().stream())
                     .collect(Collectors.toSet());
@@ -112,7 +123,7 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
             flatMenus = menuMapper.toDtoList(distinctMenuEntities);
 
             distinctPermissions = user.getRoles().stream()
-                    .flatMap(r->r.getPermissions().stream())
+                    .flatMap(r -> r.getPermissions().stream())
                     .map(Permission::getCode)
                     .collect(Collectors.toSet());
         }

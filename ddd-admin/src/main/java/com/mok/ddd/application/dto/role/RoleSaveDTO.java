@@ -1,9 +1,9 @@
-package com.mok.ddd.application.dto;
+package com.mok.ddd.application.dto.role;
+
+import java.util.Set;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
-
-import java.util.Set;
 
 @Data
 public class RoleSaveDTO {
