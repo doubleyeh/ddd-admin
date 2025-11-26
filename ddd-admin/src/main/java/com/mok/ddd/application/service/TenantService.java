@@ -1,8 +1,5 @@
 package com.mok.ddd.application.service;
 
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.mok.ddd.application.dto.tenant.TenantCreateResultDTO;
 import com.mok.ddd.application.dto.tenant.TenantDTO;
 import com.mok.ddd.application.dto.tenant.TenantSaveDTO;
@@ -14,8 +11,10 @@ import com.mok.ddd.common.PasswordGenerator;
 import com.mok.ddd.domain.entity.Tenant;
 import com.mok.ddd.domain.repository.TenantRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
-
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -26,22 +25,23 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
     private final UserService userService;
 
     @Override
+    @NonNull
     protected CustomRepository<Tenant, Long> getRepository() {
         return tenantRepository;
     }
 
     @Override
-    protected Tenant toEntity(TenantDTO dto) {
+    protected Tenant toEntity(@NonNull TenantDTO dto) {
         return tenantMapper.toEntity(dto);
     }
 
     @Override
-    protected TenantDTO toDto(Tenant entity) {
+    protected TenantDTO toDto(@NonNull Tenant entity) {
         return tenantMapper.toDto(entity);
     }
 
     @Transactional
-    public TenantCreateResultDTO createTenant(TenantSaveDTO dto) {
+    public TenantCreateResultDTO createTenant(@NonNull TenantSaveDTO dto) {
         if (tenantRepository.findByTenantId(dto.getTenantId()).isPresent()) {
             throw new BizException("租户ID已存在");
         }
@@ -71,7 +71,7 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
     }
 
     @Transactional
-    public TenantDTO updateTenant(Long id, TenantSaveDTO dto) {
+    public TenantDTO updateTenant(@NonNull Long id,@NonNull TenantSaveDTO dto) {
         Tenant existingTenant = tenantRepository.findById(id).orElseThrow(() -> new BizException("租户不存在"));
 
         if (!existingTenant.getTenantId().equals(dto.getTenantId())) {

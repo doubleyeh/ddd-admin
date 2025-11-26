@@ -1,19 +1,18 @@
 package com.mok.ddd.application.service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
-
 import com.mok.ddd.application.dto.menu.MenuDTO;
 import com.mok.ddd.application.mapper.MenuMapper;
 import com.mok.ddd.domain.entity.Menu;
 import com.mok.ddd.domain.repository.MenuRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
-
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +21,7 @@ public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
     private final MenuRepository menuRepository;
     private final MenuMapper menuMapper;
 
-    public List<MenuDTO> buildMenuTree(List<MenuDTO> flatList) {
+    public List<MenuDTO> buildMenuTree(@NonNull List<MenuDTO> flatList) {
         Map<Long, MenuDTO> dtoMap = flatList.stream()
                 .collect(Collectors.toMap(MenuDTO::getId, dto -> dto));
 
@@ -49,7 +48,7 @@ public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
         return filterEmptyParentMenus(rootMenus);
     }
 
-    private List<MenuDTO> filterEmptyParentMenus(List<MenuDTO> menus) {
+    private List<MenuDTO> filterEmptyParentMenus(@NonNull List<MenuDTO> menus) {
         List<MenuDTO> filtered = new ArrayList<>();
         for (MenuDTO menu : menus) {
             if (menu.getChildren() != null && !menu.getChildren().isEmpty()) {
@@ -73,12 +72,12 @@ public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
     }
 
     @Override
-    protected Menu toEntity(MenuDTO menuDTO) {
+    protected Menu toEntity(@NonNull MenuDTO menuDTO) {
         return menuMapper.toEntity(menuDTO);
     }
 
     @Override
-    protected MenuDTO toDto(Menu entity) {
+    protected MenuDTO toDto(@NonNull Menu entity) {
         return menuMapper.toDto(entity);
     }
 }

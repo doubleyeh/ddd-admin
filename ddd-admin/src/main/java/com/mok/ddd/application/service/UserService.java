@@ -1,16 +1,5 @@
 package com.mok.ddd.application.service;
 
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.mok.ddd.application.dto.auth.AccountInfoDTO;
 import com.mok.ddd.application.dto.menu.MenuDTO;
 import com.mok.ddd.application.dto.user.UserDTO;
@@ -29,8 +18,14 @@ import com.mok.ddd.domain.entity.User;
 import com.mok.ddd.domain.repository.UserRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
 import com.mok.ddd.infrastructure.tenant.SkipTenantFilter;
-
 import lombok.AllArgsConstructor;
+import org.jspecify.annotations.NonNull;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -44,7 +39,7 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
     private final PermissionService permissionService;
 
     @Transactional
-    public UserDTO create(UserPostDTO dto) {
+    public UserDTO create(@NonNull UserPostDTO dto) {
         if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
             throw new BizException("用户名已存在");
         }
@@ -55,7 +50,7 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
 
     @Transactional
     @SkipTenantFilter
-    public UserDTO createForTenant(UserPostDTO dto, String tenantId) {
+    public UserDTO createForTenant(@NonNull UserPostDTO dto, String tenantId) {
         if (userRepository.findByTenantIdAndUsername(tenantId, dto.getUsername()).isPresent()) {
             throw new BizException("用户名已存在");
         }
@@ -67,7 +62,7 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
     }
 
     @Transactional
-    public UserDTO updateUser(UserPutDTO dto) {
+    public UserDTO updateUser(@NonNull UserPutDTO dto) {
         User entity = userRepository.findById(dto.getId())
                 .orElseThrow(() -> new NotFoundException(Const.NOT_FOUND_MESSAGE));
 
@@ -76,7 +71,7 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
     }
 
     @Transactional
-    public void updatePassword(UserPasswordDTO dto) {
+    public void updatePassword(@NonNull UserPasswordDTO dto) {
         User user = userRepository.findById(dto.getId())
                 .orElseThrow(() -> new NotFoundException(Const.NOT_FOUND_MESSAGE));
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
@@ -85,7 +80,7 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
 
     @Override
     @Transactional
-    public void deleteById(Long id) {
+    public void deleteById(@NonNull Long id) {
         Optional<User> userToDelete = userRepository.findById(id);
 
         if (userToDelete.isEmpty()) {

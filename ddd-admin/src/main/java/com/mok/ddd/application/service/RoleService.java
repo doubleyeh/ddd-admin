@@ -1,12 +1,5 @@
 package com.mok.ddd.application.service;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.mok.ddd.application.dto.menu.MenuDTO;
 import com.mok.ddd.application.dto.permission.PermissionDTO;
 import com.mok.ddd.application.dto.role.RoleDTO;
@@ -22,8 +15,14 @@ import com.mok.ddd.domain.repository.MenuRepository;
 import com.mok.ddd.domain.repository.PermissionRepository;
 import com.mok.ddd.domain.repository.RoleRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
-
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -42,17 +41,17 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
     }
 
     @Override
-    protected Role toEntity(RoleDTO dto) {
+    protected Role toEntity(@NonNull RoleDTO dto) {
         return roleMapper.toEntity(dto);
     }
 
     @Override
-    protected RoleDTO toDto(Role entity) {
+    protected RoleDTO toDto(@NonNull Role entity) {
         return roleMapper.toDto(entity);
     }
 
     @Transactional
-    public RoleDTO createRole(RoleSaveDTO dto) {
+    public RoleDTO createRole(@NonNull RoleSaveDTO dto) {
         Role entity = roleMapper.toEntity(dto);
 
         Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(dto.getPermissionIds()));
@@ -65,7 +64,7 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
     }
 
     @Transactional
-    public RoleDTO updateRole(RoleSaveDTO dto) {
+    public RoleDTO updateRole(@NonNull RoleSaveDTO dto) {
         Role existingRole = roleRepository.findById(dto.getId()).orElseThrow(NotFoundException::new);
 
         roleMapper.updateEntityFromDto(dto, existingRole);
