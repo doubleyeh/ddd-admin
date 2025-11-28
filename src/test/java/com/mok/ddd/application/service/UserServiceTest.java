@@ -28,12 +28,13 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -63,6 +64,7 @@ class UserServiceTest {
     private PermissionService permissionService;
 
     private final String ENCODED_PASSWORD = "encodedPassword123";
+    private final String MOCK_SUPER_ADMIN_TENANT_ID = "SUPER_ADMIN_TENANT";
 
     @Nested
     @DisplayName("用户创建测试")
@@ -92,7 +94,7 @@ class UserServiceTest {
             User newUser = mock(User.class);
 
             when(userRepository.findByUsername(dto.getUsername())).thenReturn(Optional.empty());
-            when(Objects.requireNonNull(passwordEncoder.encode(anyString()))).thenReturn(ENCODED_PASSWORD);
+            when(passwordEncoder.encode(any())).thenReturn(ENCODED_PASSWORD);
             when(userMapper.postToEntity(dto)).thenReturn(newUser);
             when(userRepository.save(newUser)).thenReturn(savedUser);
             doReturn(userDTO).when(userService).toDto(savedUser);
@@ -123,7 +125,7 @@ class UserServiceTest {
             String tenantId = "tenantA";
 
             when(userRepository.findByTenantIdAndUsername(tenantId, dto.getUsername())).thenReturn(Optional.empty());
-            when(Objects.requireNonNull(passwordEncoder.encode(anyString()))).thenReturn(ENCODED_PASSWORD);
+            when(passwordEncoder.encode(any())).thenReturn(ENCODED_PASSWORD);
             when(userMapper.postToEntity(dto)).thenReturn(newUser);
             when(userRepository.save(newUser)).thenReturn(savedUser);
             doReturn(userDTO).when(userService).toDto(savedUser);
@@ -196,7 +198,7 @@ class UserServiceTest {
             passwordDTO.setPassword("newRawPassword");
 
             when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-            when(Objects.requireNonNull(passwordEncoder.encode(anyString()))).thenReturn("newEncodedPassword");
+            when(passwordEncoder.encode(any())).thenReturn("newEncodedPassword");
 
             userService.updatePassword(passwordDTO);
 
@@ -314,7 +316,6 @@ class UserServiceTest {
         @BeforeEach
         void setup() {
             user = new User();
-            String MOCK_SUPER_ADMIN_TENANT_ID = "SUPER_ADMIN_TENANT";
             user.setTenantId(MOCK_SUPER_ADMIN_TENANT_ID);
             user.setUsername(username);
             userDTO = new UserDTO();
