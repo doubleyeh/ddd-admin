@@ -16,6 +16,12 @@
     <name>ddd-admin</name>
 
     <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <mapstruct.defaultComponentModel>spring</mapstruct.defaultComponentModel>
         <java.version>21</java.version>
         <mysql.version>9.4.0</mysql.version>
         <openfeign.querydsl.version>7.1</openfeign.querydsl.version>
@@ -142,9 +148,9 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
-                    <compilerArgs>
-                        <arg>-Amapstruct.defaultComponentModel=spring</arg>
-                    </compilerArgs>
+<!--                    <compilerArgs>-->
+<!--                        <arg>-Amapstruct.defaultComponentModel=spring</arg>-->
+<!--                    </compilerArgs>-->
 
                     <annotationProcessorPaths>
                         <path>
