@@ -2,7 +2,7 @@ DELETE FROM sys_role_permission;
 DELETE FROM sys_menu;
 DELETE FROM sys_permission;
 
-INSERT IGNORE INTO sys_permission (id, name, code, url, method, description, created_at, updated_at)
+INSERT IGNORE INTO sys_permission (id, name, code, url, method, description, create_time, update_time)
 VALUES
 (1, '用户查询', 'user:list', NULL, NULL, '获取用户分页列表、详情', NOW(), NOW()),
 (2, '用户创建', 'user:create', NULL, NULL, '新增用户', NOW(), NOW()),
@@ -17,7 +17,7 @@ VALUES
 (11, '租户修改', 'tenant:update', NULL, NULL, '修改租户信息', NOW(), NOW()),
 (12, '租户删除', 'tenant:delete', NULL, NULL, '删除租户', NOW(), NOW());
 
-INSERT IGNORE INTO sys_menu (id, parent_id, name, path, component, icon, sort, is_hidden, created_at, updated_at)
+INSERT IGNORE INTO sys_menu (id, parent_id, name, path, component, icon, sort, is_hidden, create_time, update_time)
 VALUES
 (100, NULL, '系统管理', '/system', 'Layout', 'SettingsSharp', 10, FALSE, NOW(), NOW()),
 (1001, 100, '租户管理', '/system/tenant', 'system/tenant', 'PeopleOutline', 11, FALSE, NOW(), NOW()),
@@ -39,3 +39,6 @@ VALUES
 (10011, 1003, '新增角色', NULL, NULL, NULL, 2, FALSE, NOW(), NOW()),
 (10012, 1003, '修改角色', NULL, NULL, NULL, 3, FALSE, NOW(), NOW()),
 (10013, 1003, '删除角色', NULL, NULL, NULL, 4, FALSE, NOW(), NOW());
+
+
+INSERT INTO `sys_tenant` (`id`, `create_by`, `create_time`, `update_by`, `update_time`, `contact_person`, `contact_phone`, `enabled`, `name`, `tenant_id`) VALUES (1, 'root', '2025-11-29 16:45:25.000000', 'root', '2025-11-29 16:45:30.000000', 'root', '1', b'1', 'root', '000000');

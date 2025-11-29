@@ -32,23 +32,17 @@ public abstract class BaseEntity implements Serializable {
     @LastModifiedBy
     private String updateBy;
 
-    @CreatedDate
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
-
     @PrePersist
     public void prePersist() {
         if (this.id == null) {
             this.id = SnowFlakeIdGenerator.nextId();
         }
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createTime = LocalDateTime.now();
+        this.updateTime = LocalDateTime.now();
     }
 
     public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updateTime = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -89,21 +83,5 @@ public abstract class BaseEntity implements Serializable {
 
     public void setUpdateBy(String updateBy) {
         this.updateBy = updateBy;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
     }
 }
