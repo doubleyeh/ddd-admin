@@ -4,12 +4,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 
 @Configuration
+@AutoConfiguration(before = JacksonAutoConfiguration.class)
 public class JacksonConfig {
 
     @Bean
@@ -22,6 +26,7 @@ public class JacksonConfig {
         longModule.addSerializer(Long.class, ToStringSerializer.instance);
         longModule.addSerializer(Long.TYPE, ToStringSerializer.instance);
         longModule.addSerializer(BigInteger.class, ToStringSerializer.instance);
+        longModule.addSerializer(BigDecimal.class, ToStringSerializer.instance);
         mapper.registerModule(longModule);
         return mapper;
     }

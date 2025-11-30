@@ -67,7 +67,7 @@ public class TenantController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('tenant:delete')")
     public RestResponse<Void> deleteById(@PathVariable Long id) {
-        tenantService.deleteById(id);
+        tenantService.deleteByVerify(id);
         return RestResponse.success();
     }
 }

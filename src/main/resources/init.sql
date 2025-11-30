@@ -42,3 +42,6 @@ VALUES
 
 
 INSERT INTO `sys_tenant` (`id`, `create_by`, `create_time`, `update_by`, `update_time`, `contact_person`, `contact_phone`, `enabled`, `name`, `tenant_id`) VALUES (1, 'root', '2025-11-29 16:45:25.000000', 'root', '2025-11-29 16:45:30.000000', 'root', '1', b'1', 'root', '000000');
+
+INSERT INTO `sys_user` (`id`, `create_by`, `create_time`, `update_by`, `update_time`, `tenant_id`, `nickname`, `password`, `state`, `username`) VALUES (1, 'root', '2025-11-30 07:52:38.000000', 'root', '2025-11-30 07:52:44.000000', '000000', 'Root', '$2a$10$3UzFSpn1EaTqUhU5tN/n/e3lZQUkXf0zCIAbefLrbuzNIEXKmECUG', 1, 'root');
+

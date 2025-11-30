@@ -8,13 +8,17 @@ import com.mok.ddd.application.exception.BizException;
 import com.mok.ddd.application.mapper.TenantMapper;
 import com.mok.ddd.common.Const;
 import com.mok.ddd.common.PasswordGenerator;
+import com.mok.ddd.common.SysUtil;
 import com.mok.ddd.domain.entity.Tenant;
 import com.mok.ddd.domain.repository.TenantRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -42,11 +46,28 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
 
     @Transactional
     public TenantCreateResultDTO createTenant(@NonNull TenantSaveDTO dto) {
-        if (tenantRepository.findByTenantId(dto.getTenantId()).isPresent()) {
-            throw new BizException("租户ID已存在");
-        }
-
         Tenant tenant = tenantMapper.toEntity(dto);
+
+        int maxRetry = 5;
+        int attempt = 0;
+        String tenantId;
+        final String ALPHANUMERIC_UPPER = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        java.util.concurrent.ThreadLocalRandom random = java.util.concurrent.ThreadLocalRandom.current();
+
+        do {
+            if (attempt++ >= maxRetry) {
+                throw new BizException("生成唯一租户编码失败，请重试");
+            }
+
+            StringBuilder sb = new StringBuilder(6);
+            for (int i = 0; i < 6; i++) {
+                sb.append(ALPHANUMERIC_UPPER.charAt(random.nextInt(ALPHANUMERIC_UPPER.length())));
+            }
+            tenantId = sb.toString();
+
+        } while (tenantRepository.findByTenantId(tenantId).isPresent());
+
+        tenant.setTenantId(tenantId);
         tenant = tenantRepository.save(tenant);
 
         String rawPassword = PasswordGenerator.generateRandomPassword();
@@ -55,6 +76,7 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
         userPostDTO.setUsername(Const.DEFAULT_ADMIN_USERNAME);
         userPostDTO.setNickname(tenant.getName() + "管理员");
         userPostDTO.setPassword(rawPassword);
+        userPostDTO.setState(1);
 
         userService.createForTenant(userPostDTO, tenant.getTenantId());
 
@@ -75,10 +97,25 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
         Tenant existingTenant = tenantRepository.findById(id).orElseThrow(() -> new BizException("租户不存在"));
 
         if (!existingTenant.getTenantId().equals(dto.getTenantId())) {
-            throw new BizException("租户ID不可修改");
+            throw new BizException("租户编码不可修改");
         }
 
         tenantMapper.updateEntityFromDto(dto, existingTenant);
         return tenantMapper.toDto(tenantRepository.save(existingTenant));
+    }
+
+    @Transactional
+    public boolean deleteByVerify(@NonNull Long id){
+        TenantDTO old = getById(id);
+        if(Objects.isNull(old)){
+            throw new BizException("租户不存在");
+        }
+        if (SysUtil.isSuperTenant(old.getTenantId())) {
+            throw new BizException("该租户不可删除");
+        }
+
+        // TODO其他业务数据判断
+        deleteById(id);
+        return true;
     }
 }
