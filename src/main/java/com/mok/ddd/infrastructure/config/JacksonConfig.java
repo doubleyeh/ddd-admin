@@ -1,33 +1,30 @@
 package com.mok.ddd.infrastructure.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.ser.std.ToStringSerializer;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
 @Configuration
-@AutoConfiguration(before = JacksonAutoConfiguration.class)
 public class JacksonConfig {
 
     @Bean
-    public ObjectMapper objectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        // 禁止将日期序列化为 timestamp
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
+    public JsonMapper jsonMapper() {
         SimpleModule longModule = new SimpleModule();
         longModule.addSerializer(Long.class, ToStringSerializer.instance);
         longModule.addSerializer(Long.TYPE, ToStringSerializer.instance);
         longModule.addSerializer(BigInteger.class, ToStringSerializer.instance);
         longModule.addSerializer(BigDecimal.class, ToStringSerializer.instance);
-        mapper.registerModule(longModule);
-        return mapper;
+        return JsonMapper.builder()
+                .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .addModule(longModule)
+                .build();
     }
 }
