@@ -15,7 +15,7 @@ import com.mok.ddd.application.dto.user.UserPasswordDTO;
 import com.mok.ddd.application.service.UserService;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 
-import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -29,7 +29,6 @@ public class AccountController {
 
     private final UserService userService;
 
-    @Operation(summary = "用户更新密码")
     @PutMapping("/password")
     public RestResponse<Boolean> changeMyPassword(@RequestBody @Valid SelfPasswordUpdateDTO dto) {
         UserDTO user = userService.findByUsername(TenantContextHolder.getUsername());
@@ -41,14 +40,12 @@ public class AccountController {
         return RestResponse.success(true);
     }
 
-    @Operation(summary = "用户信息")
     @GetMapping("/info")
     public RestResponse<AccountInfoDTO> getMyInfo() {
         AccountInfoDTO user = userService.findAccountInfoByUsername(TenantContextHolder.getUsername());
         return RestResponse.success(user);
     }
 
-    @Operation(summary = "更新用户昵称")
     @PutMapping("/nickname")
     public RestResponse<Boolean> updateNickname(@RequestBody @Valid NicknameUpdateDTO dto) {
         String username = TenantContextHolder.getUsername();

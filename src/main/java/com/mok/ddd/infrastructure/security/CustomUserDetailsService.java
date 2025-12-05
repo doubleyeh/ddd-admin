@@ -7,13 +7,14 @@ import com.mok.ddd.domain.repository.UserRepository;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.Objects;
 import java.util.Set;
@@ -28,10 +29,10 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final PermissionService permissionService;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(@NonNull String username) throws UsernameNotFoundException {
         String tenantId = TenantContextHolder.getTenantId();
 
-        if (StringUtils.isBlank(tenantId)) {
+        if (!StringUtils.hasLength(tenantId)) {
             throw new UsernameNotFoundException("Tenant context is missing");
         }
 
