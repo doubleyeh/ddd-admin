@@ -5,10 +5,11 @@ import com.mok.ddd.application.service.UserService;
 import com.mok.ddd.infrastructure.security.CustomUserDetailsService;
 import com.mok.ddd.infrastructure.security.JwtAuthenticationFilter;
 import com.mok.ddd.infrastructure.security.JwtTokenProvider;
-import com.mok.ddd.infrastructure.security.SecurityConfig;
 import jakarta.persistence.EntityManagerFactory;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,7 +28,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest
-@Import(value = {UserController.class, GlobalExceptionHandler.class, UserService.class, SecurityConfig.class})
+@Import(value = {UserController.class, GlobalExceptionHandler.class})
+@AutoConfigureMockMvc(addFilters = false)
 class UserControllerTest {
 
     @Configuration
@@ -61,7 +63,8 @@ class UserControllerTest {
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Test
-    @WithMockUser(username = "root", password = "password", authorities = "user:list")
+    @Order(1)
+    @WithMockUser(username = "root", password = "root", authorities = "user:list")
     void getById_ReturnUserDTO_WhenFound() throws Exception {
         UserDTO user = new UserDTO();
         user.setId(1L);
@@ -75,5 +78,22 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").value(1L))
                 .andExpect(jsonPath("$.data.username").value("root"));
+    }
+
+    @Test
+    @Order(2)
+    @WithMockUser(username = "root", password = "root", authorities = "user:list")
+    void getById_ReturnUserDTO_WhenNotFound() throws Exception {
+        UserDTO user = new UserDTO();
+        user.setId(1L);
+        user.setUsername("root");
+        given(userService.getById(1L)).willReturn(user);
+
+        mockMvc.perform(get("/api/users/2")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("404"));
     }
 }
