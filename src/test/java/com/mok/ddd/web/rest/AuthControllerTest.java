@@ -34,7 +34,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest
 @Import(value = {
-        AuthController.class
+        AuthController.class,
+        GlobalExceptionHandler.class
 })
 class AuthControllerTest {
 

@@ -2,10 +2,10 @@ package com.mok.ddd.web.rest;
 
 import com.mok.ddd.application.dto.user.UserDTO;
 import com.mok.ddd.application.service.UserService;
-import com.mok.ddd.infrastructure.config.JacksonConfig;
 import com.mok.ddd.infrastructure.security.CustomUserDetailsService;
 import com.mok.ddd.infrastructure.security.JwtAuthenticationFilter;
 import com.mok.ddd.infrastructure.security.JwtTokenProvider;
+import com.mok.ddd.infrastructure.security.SecurityConfig;
 import jakarta.persistence.EntityManagerFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,17 +15,19 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import tools.jackson.databind.json.JsonMapper;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = UserController.class)
-@Import(value = {UserControllerTest.TestConfig.class, UserController.class, JacksonConfig.class})
+@WebMvcTest
+@Import(value = {UserController.class, GlobalExceptionHandler.class, UserService.class, SecurityConfig.class})
 class UserControllerTest {
 
     @Configuration
@@ -41,9 +43,6 @@ class UserControllerTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private MockMvcTester mvc;
-
-    @MockitoBean
     private JsonMapper jsonMapper;
 
     @MockitoBean
@@ -62,15 +61,19 @@ class UserControllerTest {
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Test
+    @WithMockUser(username = "root", password = "password", authorities = "user:list")
     void getById_ReturnUserDTO_WhenFound() throws Exception {
         UserDTO user = new UserDTO();
         user.setId(1L);
         user.setUsername("root");
         given(userService.getById(1L)).willReturn(user);
 
-
-        assertThat(this.mvc.get().uri("/api/users/1").accept(MediaType.APPLICATION_JSON))
-                .hasStatusOk()
-                .hasBodyTextEqualTo(jsonMapper.writeValueAsString(user));
+        mockMvc.perform(get("/api/users/1")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(1L))
+                .andExpect(jsonPath("$.data.username").value("root"));
     }
 }
