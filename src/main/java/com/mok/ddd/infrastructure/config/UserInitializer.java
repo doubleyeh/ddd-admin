@@ -39,20 +39,19 @@ public class UserInitializer {
             String rootUsername = "root";
             String rawPassword = "123456";
 
-            TenantContextHolder.setTenantId(defaultTenantId);
+            ScopedValue.where(TenantContextHolder.TENANT_ID, defaultTenantId)
+                    .run(() -> {
+                        if (userRepository.findByUsername(rootUsername).isEmpty()) {
+                            User rootUser = new User();
+                            rootUser.setUsername(rootUsername);
+                            rootUser.setPassword(passwordEncoder.encode(rawPassword));
+                            rootUser.setTenantId(defaultTenantId);
+                            rootUser.setNickname(rootUsername);
+                            rootUser.setState(1);
 
-            if (userRepository.findByUsername(rootUsername).isEmpty()) {
-                User rootUser = new User();
-                rootUser.setUsername(rootUsername);
-                rootUser.setPassword(passwordEncoder.encode(rawPassword));
-                rootUser.setTenantId(defaultTenantId);
-                rootUser.setNickname(rootUsername);
-                rootUser.setState(1);
-
-                userRepository.save(rootUser);
-            }
-
-            TenantContextHolder.clear();
+                            userRepository.save(rootUser);
+                        }
+                    });
         };
     }
 

@@ -5,28 +5,18 @@ import com.mok.ddd.common.SysUtil;
 public class TenantContextHolder {
 
 
-    private static final ThreadLocal<String> TENANT_ID = new ThreadLocal<>();
-    private static final ThreadLocal<String> USERNAME = new ThreadLocal<>();
-
-    public static void setTenantId(String tenantId) {
-        TENANT_ID.set(tenantId);
-    }
+    public static final ScopedValue<String> TENANT_ID = ScopedValue.newInstance();
+    public static final ScopedValue<String> USERNAME = ScopedValue.newInstance();
 
     public static String getTenantId() {
-        return TENANT_ID.get();
-    }
-
-    public static void setUsername(String username) {
-        USERNAME.set(username);
+        return TENANT_ID.isBound() ? TENANT_ID.get() : "";
     }
 
     public static String getUsername() {
-        return USERNAME.get();
+        return USERNAME.isBound() ? USERNAME.get() : "";
     }
 
     public static void clear() {
-        TENANT_ID.remove();
-        USERNAME.remove();
     }
 
     public static boolean isSuperAdmin() {

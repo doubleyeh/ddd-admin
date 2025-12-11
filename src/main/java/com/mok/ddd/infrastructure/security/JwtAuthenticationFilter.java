@@ -31,6 +31,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(@Nonnull HttpServletRequest request,@Nonnull HttpServletResponse response,@Nonnull FilterChain filterChain)
             throws ServletException, IOException {
+        String currentTenantId = null;
+        String currentUsername = null;
+
         try {
             String jwt = getJwtFromRequest(request);
 
@@ -38,13 +41,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Claims claims = tokenProvider.validateAndGetClaims(jwt);
 
                 if (claims != null) {
-                    String username = claims.getSubject();
-                    String tenantId = tokenProvider.getTenantIdFromClaims(claims);
+                    currentUsername = claims.getSubject();
+                    currentTenantId = tokenProvider.getTenantIdFromClaims(claims);
 
-                    TenantContextHolder.setTenantId(tenantId);
-                    TenantContextHolder.setUsername(username);
-
-                    UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
+                    UserDetails userDetails = customUserDetailsService.loadUserByUsername(currentUsername);
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
@@ -54,10 +54,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (Exception ignored) {
         }
 
-        try {
+        if (currentTenantId != null && currentUsername != null) {
+            ScopedValue.where(TenantContextHolder.TENANT_ID, currentTenantId)
+                    .where(TenantContextHolder.USERNAME, currentUsername)
+                    .run(() -> {
+                        try {
+                            filterChain.doFilter(request, response);
+                        } catch (IOException | ServletException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+        } else {
             filterChain.doFilter(request, response);
-        }finally {
-            TenantContextHolder.clear();
         }
     }
 
