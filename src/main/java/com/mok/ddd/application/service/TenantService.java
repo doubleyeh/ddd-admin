@@ -104,6 +104,13 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
     }
 
     @Transactional
+    public TenantDTO updateTenantState(@NonNull Long id, @NonNull Boolean state) {
+        Tenant existingTenant = tenantRepository.findById(id).orElseThrow(() -> new BizException("租户不存在"));
+        existingTenant.setEnabled(state);
+        return tenantMapper.toDto(tenantRepository.save(existingTenant));
+    }
+
+    @Transactional
     public boolean deleteByVerify(@NonNull Long id){
         TenantDTO old = getById(id);
         if(Objects.isNull(old)){

@@ -1,27 +1,18 @@
 package com.mok.ddd.web.rest;
 
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.mok.ddd.application.dto.tenant.TenantCreateResultDTO;
 import com.mok.ddd.application.dto.tenant.TenantDTO;
 import com.mok.ddd.application.dto.tenant.TenantQuery;
 import com.mok.ddd.application.dto.tenant.TenantSaveDTO;
 import com.mok.ddd.application.service.TenantService;
-
-
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/tenants")
@@ -56,6 +47,13 @@ public class TenantController {
     public RestResponse<TenantDTO> update(@PathVariable Long id, @RequestBody @Valid TenantSaveDTO tenantSaveDTO) {
         tenantSaveDTO.setId(id);
         TenantDTO updatedTenant = tenantService.updateTenant(id, tenantSaveDTO);
+        return RestResponse.success(updatedTenant);
+    }
+
+    @PutMapping("/{id}/state")
+    @PreAuthorize("hasAuthority('tenant:update')")
+    public RestResponse<TenantDTO> updateState(@PathVariable Long id,@Valid @NotNull @RequestParam Boolean state) {
+        TenantDTO updatedTenant = tenantService.updateTenantState(id, state);
         return RestResponse.success(updatedTenant);
     }
 
