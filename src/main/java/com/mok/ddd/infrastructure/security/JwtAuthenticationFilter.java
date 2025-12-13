@@ -33,6 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String currentTenantId = null;
         String currentUsername = null;
+        UsernamePasswordAuthenticationToken authentication = null;
 
         try {
             String jwt = getJwtFromRequest(request);
@@ -44,21 +45,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     currentUsername = claims.getSubject();
                     currentTenantId = tokenProvider.getTenantIdFromClaims(claims);
 
-                    UserDetails userDetails = customUserDetailsService.loadUserByUsername(currentUsername);
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    if (currentTenantId != null) {
+                        String finalCurrentUsername = currentUsername;
+                        UserDetails userDetails = ScopedValue.where(TenantContextHolder.TENANT_ID, currentTenantId)
+                                .where(TenantContextHolder.USERNAME, currentUsername)
+                                .call(() -> customUserDetailsService.loadUserByUsername(finalCurrentUsername));
 
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                        authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    }
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        if (currentTenantId != null && currentUsername != null) {
+        if (currentTenantId != null && currentUsername != null && authentication != null) {
+            UsernamePasswordAuthenticationToken finalAuthentication = authentication;
             ScopedValue.where(TenantContextHolder.TENANT_ID, currentTenantId)
                     .where(TenantContextHolder.USERNAME, currentUsername)
                     .run(() -> {
                         try {
+                            SecurityContextHolder.getContext().setAuthentication(finalAuthentication);
                             filterChain.doFilter(request, response);
                         } catch (IOException | ServletException e) {
                             throw new RuntimeException(e);
