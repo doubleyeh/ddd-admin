@@ -17,7 +17,7 @@ import com.mok.ddd.domain.entity.Permission;
 import com.mok.ddd.domain.entity.User;
 import com.mok.ddd.domain.repository.UserRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
-import com.mok.ddd.infrastructure.tenant.SkipTenantFilter;
+import com.mok.ddd.infrastructure.tenant.TenantFilter;
 import lombok.AllArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -49,7 +49,7 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
     }
 
     @Transactional
-    @SkipTenantFilter
+    @TenantFilter(TenantFilter.TenantFilterPolicy.SKIP)
     public UserDTO createForTenant(@NonNull UserPostDTO dto, String tenantId) {
         if (userRepository.findByTenantIdAndUsername(tenantId, dto.getUsername()).isPresent()) {
             throw new BizException("用户名已存在");
@@ -137,12 +137,12 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
     }
 
     @Override
-    protected User toEntity(UserDTO dto) {
+    protected User toEntity(@NonNull UserDTO dto) {
         return userMapper.toEntity(dto);
     }
 
     @Override
-    protected UserDTO toDto(User entity) {
+    protected UserDTO toDto(@NonNull User entity) {
         return userMapper.toDto(entity);
     }
 }

@@ -3,6 +3,7 @@ package com.mok.ddd.web.rest;
 import java.util.Objects;
 
 
+import lombok.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -37,8 +38,8 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('user:list')")
-    public RestResponse<Page<UserDTO>> findPage(UserQuery query, Pageable pageable) {
-        Page<UserDTO> page = userService.findPage(query.toPredicate(), pageable);
+    public RestResponse<Page<@NonNull UserDTO>> findPage(UserQuery query, Pageable pageable) {
+        Page<@NonNull UserDTO> page = userService.findPage(query.toPredicate(), pageable);
         return RestResponse.success(page);
     }
 

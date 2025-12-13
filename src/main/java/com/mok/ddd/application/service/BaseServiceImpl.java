@@ -46,8 +46,8 @@ public abstract class BaseServiceImpl<E extends BaseEntity, ID, DTO> implements 
 
     @Override
     @Transactional(readOnly = true)
-    public Page<DTO> findPage(Predicate predicate, Pageable pageable) {
-        Page<E> entityPage = getRepository().findAll(predicate, pageable);
+    public Page<@NonNull DTO> findPage(Predicate predicate, Pageable pageable) {
+        Page<@NonNull E> entityPage = getRepository().findAll(predicate, pageable);
 
         List<DTO> dtoList = entityPage.getContent().stream()
                 .map(this::toDto)

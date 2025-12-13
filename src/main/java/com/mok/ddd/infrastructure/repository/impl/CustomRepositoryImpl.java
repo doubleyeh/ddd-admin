@@ -1,5 +1,6 @@
 package com.mok.ddd.infrastructure.repository.impl;
 
+import com.mok.ddd.common.Const;
 import com.mok.ddd.domain.entity.BaseEntity;
 import com.mok.ddd.domain.entity.TenantBaseEntity;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
@@ -9,6 +10,7 @@ import com.querydsl.core.types.*;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.PathBuilder;
+import com.querydsl.core.types.dsl.StringPath;
 import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -22,6 +24,7 @@ import org.springframework.data.jpa.repository.support.Querydsl;
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.data.repository.query.FluentQuery;
 import org.springframework.data.support.PageableExecutionUtils;
+import org.springframework.util.StringUtils;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -51,23 +54,23 @@ public class CustomRepositoryImpl<T extends BaseEntity, ID extends Serializable>
 
         if (TenantBaseEntity.class.isAssignableFrom(getDomainClass())) {
             try {
-                Field field = entityPath.getClass().getField(TENANT_VARIABLE);
-                Object tenantPathObject = field.get(entityPath);
+                StringPath tenantPath = pathBuilder.getString(TENANT_VARIABLE);
+                String currentTenantId = TenantContextHolder.getTenantId();
+                BooleanExpression tenantFilter;
 
-                if (tenantPathObject instanceof CustomStringPath customTenantPath) {
-                    String currentTenantId = TenantContextHolder.getTenantId();
-                    BooleanExpression tenantFilter;
+                if (currentTenantId == null
+                        || currentTenantId.isEmpty()
+                        || Const.DEFAULT_TENANT_ID.equals(currentTenantId.trim())
+                        || TenantContextHolder.isSuperAdmin()) {
 
-                    if (TenantContextHolder.isSuperAdmin() || currentTenantId == null) {
-                        tenantFilter = Expressions.asBoolean(true).isTrue();
-                    } else {
-                        tenantFilter = customTenantPath.eq(currentTenantId);
-                    }
-
-                    query.where(tenantFilter);
+                    tenantFilter = Expressions.TRUE.isTrue();
+                } else {
+                    tenantFilter = tenantPath.eq(currentTenantId);
                 }
+
+                query.where(tenantFilter);
             } catch (Exception e) {
-                log.error("CustomRepositoryImpl", e);
+                log.error("Error applying tenant filter using QueryDSL Path API", e);
             }
         }
 

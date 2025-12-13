@@ -57,7 +57,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e);
         }
 
         if (currentTenantId != null && currentUsername != null && authentication != null) {

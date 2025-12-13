@@ -24,7 +24,7 @@ public class CustomJpaTransactionManager extends JpaTransactionManager {
         EntityManager em = super.createEntityManagerForTransaction();
 
         String tenantId = TenantContextHolder.getTenantId();
-        log.debug("注入tenantIdc查询条件 {}", tenantId);
+        log.debug("注入tenantId查询条件 {}", tenantId);
         em.unwrap(Session.class).enableFilter("tenantFilter")
                 .setParameter("tenantId", tenantId);
         return em;
