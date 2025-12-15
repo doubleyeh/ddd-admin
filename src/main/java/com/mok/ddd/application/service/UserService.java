@@ -18,6 +18,7 @@ import com.mok.ddd.domain.entity.User;
 import com.mok.ddd.domain.repository.UserRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
 import com.mok.ddd.infrastructure.tenant.TenantFilter;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -67,6 +68,13 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
                 .orElseThrow(() -> new NotFoundException(Const.NOT_FOUND_MESSAGE));
 
         userMapper.putToEntity(dto, entity);
+        return this.toDto(userRepository.save(entity));
+    }
+
+    @Transactional
+    public UserDTO updateUserState(@NonNull Long id, @NonNull Integer state){
+        User entity = userRepository.findById(id).orElseThrow(() -> new NotFoundException(Const.NOT_FOUND_MESSAGE));
+        entity.setState(state);
         return this.toDto(userRepository.save(entity));
     }
 

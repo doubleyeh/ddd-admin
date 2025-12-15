@@ -8,9 +8,11 @@ import lombok.Data;
 public class UserPutDTO {
     private Long id;
 
+    @NotNull(message = "用户名不允许为空")
     @Size(min = 4, max = 50, message = "用户名长度需在4到50个字符之间")
     private String username;
 
+    @NotNull(message = "昵称不允许为空")
     @Size(max = 50, message = "昵称长度不能超过50个字符")
     private String nickname;
 
