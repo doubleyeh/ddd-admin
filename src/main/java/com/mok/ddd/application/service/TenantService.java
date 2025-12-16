@@ -2,6 +2,7 @@ package com.mok.ddd.application.service;
 
 import com.mok.ddd.application.dto.tenant.TenantCreateResultDTO;
 import com.mok.ddd.application.dto.tenant.TenantDTO;
+import com.mok.ddd.application.dto.tenant.TenantOptionsDTO;
 import com.mok.ddd.application.dto.tenant.TenantSaveDTO;
 import com.mok.ddd.application.dto.user.UserPostDTO;
 import com.mok.ddd.application.exception.BizException;
@@ -12,12 +13,17 @@ import com.mok.ddd.common.SysUtil;
 import com.mok.ddd.domain.entity.Tenant;
 import com.mok.ddd.domain.repository.TenantRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
+import com.querydsl.core.BooleanBuilder;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.util.List;
 import java.util.Objects;
+
+import static com.mok.ddd.domain.entity.QTenant.tenant;
 
 @Service
 @RequiredArgsConstructor
@@ -123,5 +129,15 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
         // TODO其他业务数据判断
         deleteById(id);
         return true;
+    }
+
+    @Transactional(readOnly = true)
+    public List<TenantOptionsDTO> findOptions(String name){
+        BooleanBuilder builder = new BooleanBuilder();
+        if (StringUtils.hasText(name)) {
+            builder.and(tenant.name.containsIgnoreCase(name));
+        }
+        List<TenantDTO> list = findAll(builder);
+        return tenantMapper.dtoToOptionsDto(list);
     }
 }

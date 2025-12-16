@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -23,6 +24,13 @@ public class GlobalExceptionHandler {
     public RestResponse<?> handleAuthenticationException(RuntimeException e) {
         log.warn("Authentication failed: {}", e.getMessage());
         return RestResponse.failure(401, "用户名或密码错误");
+    }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public RestResponse<?> handleAuthorizationDeniedException(AuthorizationDeniedException e) {
+        log.warn("AuthorizationDeniedException failed: {}", e.getMessage());
+        return RestResponse.failure(401, e.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

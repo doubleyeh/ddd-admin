@@ -1,10 +1,7 @@
 package com.mok.ddd.web.rest;
 
 
-import com.mok.ddd.application.dto.tenant.TenantCreateResultDTO;
-import com.mok.ddd.application.dto.tenant.TenantDTO;
-import com.mok.ddd.application.dto.tenant.TenantQuery;
-import com.mok.ddd.application.dto.tenant.TenantSaveDTO;
+import com.mok.ddd.application.dto.tenant.*;
 import com.mok.ddd.application.service.TenantService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -13,6 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/tenants")
@@ -62,5 +61,10 @@ public class TenantController {
     public RestResponse<Void> deleteById(@PathVariable Long id) {
         tenantService.deleteByVerify(id);
         return RestResponse.success();
+    }
+
+    @GetMapping("/options")
+    public RestResponse<List<TenantOptionsDTO>> getOptions(@RequestParam(required = false) String name) {
+        return RestResponse.success(tenantService.findOptions(name));
     }
 }

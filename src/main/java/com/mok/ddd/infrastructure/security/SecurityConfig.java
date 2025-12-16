@@ -1,8 +1,10 @@
 package com.mok.ddd.infrastructure.security;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -60,7 +62,12 @@ public class SecurityConfig {
                 .authenticationManager(authenticationManager(http))
                 .exceptionHandling(eh ->
                         eh.authenticationEntryPoint((request, response, authException) -> {
-                            throw authException;
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding("UTF-8");
+
+                            String errorMessage = "{\"status\": 401, \"message\": \"登录已超时或认证失败\"}";
+                            response.getWriter().write(errorMessage);
                         })
                 );
 

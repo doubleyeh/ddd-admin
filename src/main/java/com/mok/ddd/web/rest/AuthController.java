@@ -2,6 +2,7 @@ package com.mok.ddd.web.rest;
 
 import com.mok.ddd.application.dto.auth.LoginRequest;
 import com.mok.ddd.application.dto.auth.LoginResDTO;
+import com.mok.ddd.common.SysUtil;
 import com.mok.ddd.infrastructure.security.JwtTokenProvider;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import jakarta.validation.Valid;
@@ -50,7 +51,7 @@ public class AuthController {
                     return RestResponse.success(new LoginResDTO(
                             jwt,
                             username,
-                            tenantId));
+                            tenantId, SysUtil.isSuperTenant(tenantId)));
                 });
     }
 }

@@ -9,4 +9,5 @@ public class LoginResDTO {
     private String token;
     private String username;
     private String tenantId;
+    private boolean isSuperTenant;
 }

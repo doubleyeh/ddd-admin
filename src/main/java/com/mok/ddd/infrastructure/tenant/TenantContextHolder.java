@@ -24,4 +24,9 @@ public class TenantContextHolder {
         String username = getUsername();
         return SysUtil.isSuperAdmin(tenantId, username);
     }
+
+    public static boolean isSuperTenant() {
+        String tenantId = getTenantId();
+        return SysUtil.isSuperTenant(tenantId);
+    }
 }
