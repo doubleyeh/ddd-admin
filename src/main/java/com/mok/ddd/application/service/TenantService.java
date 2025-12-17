@@ -56,7 +56,7 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
         int maxRetry = 5;
         int attempt = 0;
         String tenantId;
-        final String ALPHANUMERIC_UPPER = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        final String ALPHANUMERIC_UPPER = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ";
         java.util.concurrent.ThreadLocalRandom random = java.util.concurrent.ThreadLocalRandom.current();
 
         do {

@@ -64,6 +64,7 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
                 .leftJoin(tenant).on(user.tenantId.eq(tenant.tenantId))
                 .where(predicate);
 
+        userRepository.applyTenantFilter(query, user);
         JPQLQuery<UserDTO> paginatedQuery = userRepository.getQuerydsl().applyPagination(pageable, query);
 
         return PageableExecutionUtils.getPage(paginatedQuery.fetch(), pageable, () -> {

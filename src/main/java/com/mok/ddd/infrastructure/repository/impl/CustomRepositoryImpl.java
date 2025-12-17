@@ -78,6 +78,26 @@ public class CustomRepositoryImpl<T extends BaseEntity, ID extends Serializable>
     }
 
     @Override
+    public <U> JPAQuery<U> applyTenantFilter(JPAQuery<U> query, EntityPath<?>... paths) {
+        if (TenantContextHolder.isSuperAdmin()) {
+            return query;
+        }
+
+        String currentTenantId = TenantContextHolder.getTenantId();
+        if (currentTenantId == null || currentTenantId.isEmpty()) {
+            return query;
+        }
+
+        for (EntityPath<?> path : paths) {
+            if (TenantBaseEntity.class.isAssignableFrom(path.getType())) {
+                StringPath tp = Expressions.stringPath(path, "tenantId");
+                query.where(tp.eq(currentTenantId));
+            }
+        }
+        return query;
+    }
+
+    @Override
     public JPAQueryFactory getJPAQueryFactory() {
         return dslQueryFactory;
     }
