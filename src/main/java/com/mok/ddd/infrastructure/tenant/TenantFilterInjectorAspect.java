@@ -13,9 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.Method;
 
-import static com.mok.ddd.infrastructure.tenant.TenantFilter.TenantFilterPolicy.FORCE;
-import static com.mok.ddd.infrastructure.tenant.TenantFilter.TenantFilterPolicy.SKIP;
-
 @Aspect
 @Component
 @Slf4j
@@ -36,7 +33,7 @@ public class TenantFilterInjectorAspect {
 
         boolean superAdmin = TenantContextHolder.isSuperAdmin();
         Session session = entityManager.unwrap(Session.class);
-        boolean enabled = false;
+        session.disableFilter("tenantFilter");
 
         try {
             boolean shouldEnable = switch (policy) {
@@ -50,20 +47,13 @@ public class TenantFilterInjectorAspect {
                 if (tenantId != null) {
                     session.enableFilter("tenantFilter")
                             .setParameter("tenantId", tenantId);
-                    enabled = true;
                 }
-            }else{
-                session.disableFilter("tenantFilter");
             }
 
             return joinPoint.proceed();
 
         } finally {
-            if (enabled) {
-                session.disableFilter("tenantFilter");
-            }else {
-                session.enableFilter("tenantFilter");
-            }
+            session.disableFilter("tenantFilter");
         }
     }
 

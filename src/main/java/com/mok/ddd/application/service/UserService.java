@@ -156,20 +156,21 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
         Set<String> distinctPermissions;
 
         if (SysUtil.isSuperAdmin(user.getTenantId(), username)) {
-            flatMenus = menuService.findAll();
+            flatMenus = new ArrayList<>(menuService.findAll());
             distinctPermissions = new HashSet<>(permissionService.getAllPermissionCodes());
         } else {
             Set<Menu> distinctMenuEntities = user.getRoles().stream()
                     .flatMap(role -> role.getMenus().stream())
                     .collect(Collectors.toSet());
 
-            flatMenus = menuMapper.toDtoList(distinctMenuEntities);
+            flatMenus = new ArrayList<>(menuMapper.toDtoList(distinctMenuEntities));
 
             distinctPermissions = user.getRoles().stream()
                     .flatMap(r -> r.getPermissions().stream())
                     .map(Permission::getCode)
                     .collect(Collectors.toSet());
         }
+
         flatMenus.sort(Comparator.comparing(MenuDTO::getSort, Comparator.nullsLast(Comparator.naturalOrder())));
         List<MenuDTO> menuTree = menuService.buildMenuTree(flatMenus);
 
