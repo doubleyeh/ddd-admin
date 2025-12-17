@@ -4,7 +4,6 @@ import com.mok.ddd.common.Const;
 import com.mok.ddd.domain.entity.BaseEntity;
 import com.mok.ddd.domain.entity.TenantBaseEntity;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
-import com.mok.ddd.infrastructure.repository.CustomStringPath;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import com.querydsl.core.types.*;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -24,10 +23,8 @@ import org.springframework.data.jpa.repository.support.Querydsl;
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.data.repository.query.FluentQuery;
 import org.springframework.data.support.PageableExecutionUtils;
-import org.springframework.util.StringUtils;
 
 import java.io.Serializable;
-import java.lang.reflect.Field;
 import java.util.Optional;
 import java.util.function.Function;
 

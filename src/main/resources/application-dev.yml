@@ -19,10 +19,23 @@ spring:
     hibernate:
       ddl-auto: update
     open-in-view: false
-    show-sql: false
+    show-sql: true
 jwt:
   secret: Y2FzdGxlZmVzdHdlYmNyYWRpbmdyZWV0b21pY2hhZWxkb3VzdGhpc3NlY3JldGtleW11c3RiZXF1aXRlbG9uZ2VybmdhbmR2ZXJ5c2VjdXJl
   expiration-ms: 3600000
+
+logging:
+  level:
+    org:
+      hibernate:
+        orm:
+          jdbc:
+            bind: TRACE
+        SQL: DEBUG
+        type:
+          descriptor:
+            sql:
+              BasicBinder: TRACE
 
 springdoc:
   swagger-ui:

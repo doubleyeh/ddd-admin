@@ -27,10 +27,10 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(AuthorizationDeniedException.class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
     public RestResponse<?> handleAuthorizationDeniedException(AuthorizationDeniedException e) {
         log.warn("AuthorizationDeniedException failed: {}", e.getMessage());
-        return RestResponse.failure(401, e.getMessage());
+        return RestResponse.failure(403, "您没有权限执行该操作");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -11,14 +11,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.NoRepositoryBean;
-import com.mok.ddd.domain.entity.TenantBaseEntity;
 import org.springframework.data.repository.query.FluentQuery;
 
 import java.util.Optional;
 import java.util.function.Function;
 
 @NoRepositoryBean
-public interface CustomRepository<T extends BaseEntity, ID> extends JpaRepository<@NonNull T, @NonNull ID>, JpaSpecificationExecutor<@NonNull T> {
+public interface CustomRepository<T extends BaseEntity, ID> extends JpaRepository<@NonNull T, @NonNull ID>, JpaSpecificationExecutor<@NonNull T>, QuerydslPredicateExecutor<@NonNull T> {
     Optional<T> findOne(Predicate predicate);
 
     Iterable<T> findAll(Predicate predicate);
