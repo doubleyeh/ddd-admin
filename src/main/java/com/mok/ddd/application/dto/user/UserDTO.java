@@ -1,8 +1,8 @@
 package com.mok.ddd.application.dto.user;
 
-import java.time.LocalDateTime;
-
 import lombok.Data;
+
+import java.time.LocalDateTime;
 
 @Data
 public class UserDTO {
@@ -11,4 +11,7 @@ public class UserDTO {
     private String nickname;
     private Integer state;
     private LocalDateTime createTime;
+
+    private String tenantId;
+    private String tenantName;
 }

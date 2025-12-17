@@ -1,8 +1,9 @@
 package com.mok.ddd.application.mapper;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
+import com.mok.ddd.application.dto.user.UserDTO;
+import com.mok.ddd.application.dto.user.UserPostDTO;
+import com.mok.ddd.application.dto.user.UserPutDTO;
+import com.mok.ddd.domain.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -11,10 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
-import com.mok.ddd.application.dto.user.UserDTO;
-import com.mok.ddd.application.dto.user.UserPostDTO;
-import com.mok.ddd.application.dto.user.UserPutDTO;
-import com.mok.ddd.domain.entity.User;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UserMapper {
@@ -28,6 +27,7 @@ public interface UserMapper {
     User postToEntity(UserPostDTO dto);
 
     @Mapping(target = "password", ignore = true)
+    @Mapping(target = "tenantId", ignore = true)
     void putToEntity(UserPutDTO dto, @MappingTarget User entity);
 
     default Page<UserDTO> toDtoPage(Page<User> entityPage) {

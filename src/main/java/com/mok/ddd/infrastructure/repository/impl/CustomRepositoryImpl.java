@@ -77,6 +77,16 @@ public class CustomRepositoryImpl<T extends BaseEntity, ID extends Serializable>
         return query;
     }
 
+    @Override
+    public JPAQueryFactory getJPAQueryFactory() {
+        return dslQueryFactory;
+    }
+
+    @Override
+    public Querydsl getQuerydsl(){
+        return querydsl;
+    }
+
     // --- 接口方法实现 ---
 
     @Override

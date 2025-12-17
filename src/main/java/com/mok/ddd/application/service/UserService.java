@@ -12,15 +12,20 @@ import com.mok.ddd.application.mapper.MenuMapper;
 import com.mok.ddd.application.mapper.UserMapper;
 import com.mok.ddd.common.Const;
 import com.mok.ddd.common.SysUtil;
-import com.mok.ddd.domain.entity.Menu;
-import com.mok.ddd.domain.entity.Permission;
-import com.mok.ddd.domain.entity.User;
+import com.mok.ddd.domain.entity.*;
 import com.mok.ddd.domain.repository.UserRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
+import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import com.mok.ddd.infrastructure.tenant.TenantFilter;
-import jakarta.validation.constraints.NotNull;
+import com.querydsl.core.types.Predicate;
+import com.querydsl.core.types.Projections;
+import com.querydsl.jpa.JPQLQuery;
+import com.querydsl.jpa.impl.JPAQuery;
 import lombok.AllArgsConstructor;
 import org.jspecify.annotations.NonNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,9 +44,44 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
     private final MenuMapper menuMapper;
     private final PermissionService permissionService;
 
+    @Transactional(readOnly = true)
+    @Override
+    public Page<UserDTO> findPage(Predicate predicate, Pageable pageable){
+        QUser user = QUser.user;
+        QTenant tenant = QTenant.tenant;
+
+        JPAQuery<UserDTO> query = userRepository.getJPAQueryFactory()
+                .select(Projections.bean(UserDTO.class,
+                        user.id,
+                        user.username,
+                        user.nickname,
+                        user.state,
+                        user.createTime,
+                        user.tenantId,
+                        tenant.name.as("tenantName")
+                ))
+                .from(user)
+                .leftJoin(tenant).on(user.tenantId.eq(tenant.tenantId))
+                .where(predicate);
+
+        JPQLQuery<UserDTO> paginatedQuery = userRepository.getQuerydsl().applyPagination(pageable, query);
+
+        return PageableExecutionUtils.getPage(paginatedQuery.fetch(), pageable, () -> {
+            JPAQuery<Long> countQuery = userRepository.getJPAQueryFactory()
+                    .select(user.count())
+                    .from(user)
+                    .leftJoin(tenant).on(user.tenantId.eq(tenant.tenantId))
+                    .where(predicate);
+            return Optional.ofNullable(countQuery.fetchOne()).orElse(0L);
+        });
+    }
+
     @Transactional
     public UserDTO create(@NonNull UserPostDTO dto) {
-        if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
+        if(!SysUtil.isSuperTenant(TenantContextHolder.getTenantId()) && !Objects.equals(dto.getTenantId(), TenantContextHolder.getTenantId())){
+            throw new BizException("无权限管理其他用户");
+        }
+        if (userRepository.findByTenantIdAndUsername(dto.getTenantId(), dto.getUsername()).isPresent()) {
             throw new BizException("用户名已存在");
         }
         User entity = userMapper.postToEntity(dto);

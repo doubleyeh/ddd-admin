@@ -20,4 +20,6 @@ public class UserPostDTO {
     @NotBlank(message = "密码不能为空")
     @Size(min = 6, message = "密码长度不能少于6个字符")
     private String password;
+
+    private String tenantId;
 }
