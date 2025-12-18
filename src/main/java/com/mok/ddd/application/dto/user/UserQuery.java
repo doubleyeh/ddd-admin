@@ -16,6 +16,8 @@ public class UserQuery extends BaseQuery {
     private Integer state;
     private String tenantId;
 
+    private Long roleId;
+
     @Override
     public Predicate toPredicate() {
         UserQuery query = this;
@@ -33,6 +35,10 @@ public class UserQuery extends BaseQuery {
 
         if (query.getState() != null) {
             builder.and(user.state.eq(query.getState()));
+        }
+
+        if (query.getRoleId() != null) {
+            builder.and(user.roles.any().id.eq(query.getRoleId()));
         }
 
         return builder;
