@@ -1,5 +1,6 @@
 package com.mok.ddd.infrastructure.security;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,6 +15,7 @@ public class CustomUserDetail implements UserDetails {
     private final String password;
     private final String tenantId;
     private final Collection<? extends GrantedAuthority> authorities;
+    @JsonProperty("superAdmin")
     private final boolean isSuperAdmin;
 
     public CustomUserDetail(Long userId, String username, String password, String tenantId, Collection<? extends GrantedAuthority> authorities, boolean isSuperAdmin) {

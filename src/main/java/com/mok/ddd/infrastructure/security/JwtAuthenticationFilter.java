@@ -1,7 +1,6 @@
 package com.mok.ddd.infrastructure.security;
 
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
-import io.jsonwebtoken.Claims;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -9,7 +8,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -21,60 +19,46 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
-    private final CustomUserDetailsService customUserDetailsService;
 
-    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, CustomUserDetailsService customUserDetailsService) {
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider) {
         this.tokenProvider = tokenProvider;
-        this.customUserDetailsService = customUserDetailsService;
     }
 
     @Override
-    protected void doFilterInternal(@Nonnull HttpServletRequest request,@Nonnull HttpServletResponse response,@Nonnull FilterChain filterChain)
+    protected void doFilterInternal(@Nonnull HttpServletRequest request, @Nonnull HttpServletResponse response, @Nonnull FilterChain filterChain)
             throws ServletException, IOException {
-        String currentTenantId = null;
-        String currentUsername = null;
-        UsernamePasswordAuthenticationToken authentication = null;
 
-        try {
-            String jwt = getJwtFromRequest(request);
+        String jwt = getJwtFromRequest(request);
 
-            if (StringUtils.hasText(jwt)) {
-                Claims claims = tokenProvider.validateAndGetClaims(jwt);
+        if (StringUtils.hasText(jwt)) {
+            TokenSessionDTO session = tokenProvider.getSession(jwt);
 
-                if (claims != null) {
-                    currentUsername = claims.getSubject();
-                    currentTenantId = tokenProvider.getTenantIdFromClaims(claims);
+            if (session != null) {
+                String tenantId = session.getTenantId();
+                String username = session.getUsername();
+                CustomUserDetail principal = session.getPrincipal();
 
-                    if (currentTenantId != null) {
-                        String finalCurrentUsername = currentUsername;
-                        UserDetails userDetails = ScopedValue.where(TenantContextHolder.TENANT_ID, currentTenantId)
-                                .where(TenantContextHolder.USERNAME, currentUsername)
-                                .call(() -> customUserDetailsService.loadUserByUsername(finalCurrentUsername));
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        principal, null, principal.getAuthorities());
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                        authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    }
-                }
+                ScopedValue.where(TenantContextHolder.TENANT_ID, tenantId)
+                        .where(TenantContextHolder.USERNAME, username)
+                        .run(() -> {
+                            try {
+                                SecurityContextHolder.getContext().setAuthentication(authentication);
+                                filterChain.doFilter(request, response);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            } finally {
+                                SecurityContextHolder.clearContext();
+                            }
+                        });
+                return;
             }
-        } catch (Exception e) {
-            logger.error(e);
         }
 
-        if (currentTenantId != null && currentUsername != null && authentication != null) {
-            UsernamePasswordAuthenticationToken finalAuthentication = authentication;
-            ScopedValue.where(TenantContextHolder.TENANT_ID, currentTenantId)
-                    .where(TenantContextHolder.USERNAME, currentUsername)
-                    .run(() -> {
-                        try {
-                            SecurityContextHolder.getContext().setAuthentication(finalAuthentication);
-                            filterChain.doFilter(request, response);
-                        } catch (IOException | ServletException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-        } else {
-            filterChain.doFilter(request, response);
-        }
+        filterChain.doFilter(request, response);
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {

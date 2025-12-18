@@ -1,6 +1,7 @@
 package com.mok.ddd.web.rest;
 
 import com.mok.ddd.application.dto.auth.LoginRequest;
+import com.mok.ddd.infrastructure.security.CustomUserDetail;
 import com.mok.ddd.infrastructure.security.CustomUserDetailsService;
 import com.mok.ddd.infrastructure.security.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,7 +60,7 @@ class AuthControllerTest2 {
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(auth);
 
-        when(jwtTokenProvider.createToken("john", "tenantA"))
+        when(jwtTokenProvider.createToken("john", "tenantA", (CustomUserDetail) auth.getPrincipal(), "127.0.0.1"))
                 .thenReturn("fake-jwt-token");
 
         mockMvc.perform(post("/api/auth/login")

@@ -21,9 +21,16 @@ public class JacksonConfig {
         longModule.addSerializer(Long.TYPE, ToStringSerializer.instance);
         longModule.addSerializer(BigInteger.class, ToStringSerializer.instance);
         longModule.addSerializer(BigDecimal.class, ToStringSerializer.instance);
+
+        longModule.addAbstractTypeMapping(
+                org.springframework.security.core.GrantedAuthority.class,
+                org.springframework.security.core.authority.SimpleGrantedAuthority.class
+        );
+
         return JsonMapper.builder()
                 .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
                 .addModule(longModule)
                 .build();
     }

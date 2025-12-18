@@ -1,6 +1,7 @@
 package com.mok.ddd.web.rest;
 
 import com.mok.ddd.application.dto.auth.LoginRequest;
+import com.mok.ddd.infrastructure.security.CustomUserDetail;
 import com.mok.ddd.infrastructure.security.CustomUserDetailsService;
 import com.mok.ddd.infrastructure.security.JwtAuthenticationFilter;
 import com.mok.ddd.infrastructure.security.JwtTokenProvider;
@@ -84,7 +85,7 @@ class AuthControllerTest {
         given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .willReturn(auth);
 
-        given(jwtTokenProvider.createToken("john", "tenantA"))
+        given(jwtTokenProvider.createToken("john", "tenantA", (CustomUserDetail) auth.getPrincipal(), "127.0.0.1"))
                 .willReturn("fake-jwt-token");
 
         mockMvc.perform(post("/api/auth/login")
@@ -118,6 +119,6 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.code").value(401))
                 .andExpect(jsonPath("$.message").value("用户名或密码错误"));
 
-        verify(jwtTokenProvider, never()).createToken(anyString(), anyString());
+        verify(jwtTokenProvider, never()).createToken(anyString(), anyString(), any(), anyString());
     }
 }
