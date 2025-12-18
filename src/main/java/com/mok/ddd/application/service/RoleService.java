@@ -3,7 +3,10 @@ package com.mok.ddd.application.service;
 import com.mok.ddd.application.dto.menu.MenuDTO;
 import com.mok.ddd.application.dto.permission.PermissionDTO;
 import com.mok.ddd.application.dto.role.RoleDTO;
+import com.mok.ddd.application.dto.role.RoleOptionsDTO;
+import com.mok.ddd.application.dto.role.RoleQuery;
 import com.mok.ddd.application.dto.role.RoleSaveDTO;
+import com.mok.ddd.application.exception.BizException;
 import com.mok.ddd.application.exception.NotFoundException;
 import com.mok.ddd.application.mapper.MenuMapper;
 import com.mok.ddd.application.mapper.PermissionMapper;
@@ -26,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -123,6 +127,33 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
         Role role = roleRepository.findById(id).orElseThrow(NotFoundException::new);
         role.setEnabled(enabled);
         return this.toDto(roleRepository.save(role));
+    }
+
+    @Transactional
+    public void deleteRoleBeforeValidation(Long id) {
+        if (roleRepository.existsUserAssociatedWithRole(id)) {
+            throw new BizException("该角色下存在用户，请先删除用户关联该角色");
+        }
+        roleRepository.deleteById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<RoleOptionsDTO> getRoleOptions(RoleQuery roleQuery) {
+        QRole role = QRole.role;
+        QTenant tenant = QTenant.tenant;
+
+        JPAQuery<RoleOptionsDTO> query = roleRepository.getJPAQueryFactory()
+                .select(Projections.bean(RoleOptionsDTO.class,
+                        role.id,
+                        role.name,
+                        tenant.name.as("tenantName")
+                ))
+                .from(role)
+                .leftJoin(tenant).on(role.tenantId.eq(tenant.tenantId))
+                .where(roleQuery.toPredicate());
+
+        roleRepository.applyTenantFilter(query, role);
+        return query.fetch();
     }
 
     @Transactional(readOnly = true)

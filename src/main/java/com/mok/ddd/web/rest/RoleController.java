@@ -3,6 +3,7 @@ package com.mok.ddd.web.rest;
 import com.mok.ddd.application.dto.menu.MenuDTO;
 import com.mok.ddd.application.dto.permission.PermissionDTO;
 import com.mok.ddd.application.dto.role.RoleDTO;
+import com.mok.ddd.application.dto.role.RoleOptionsDTO;
 import com.mok.ddd.application.dto.role.RoleQuery;
 import com.mok.ddd.application.dto.role.RoleSaveDTO;
 import com.mok.ddd.application.service.RoleService;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Set;
 
 @RestController
@@ -62,7 +64,7 @@ public class RoleController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('role:delete')")
     public RestResponse<Void> deleteById(@PathVariable Long id) {
-        roleService.deleteById(id);
+        roleService.deleteRoleBeforeValidation(id);
         return RestResponse.success();
     }
 
@@ -78,5 +80,11 @@ public class RoleController {
     public RestResponse<Set<PermissionDTO>> getPermissions(@PathVariable Long id) {
         Set<PermissionDTO> permissions = roleService.getPermissionsByRole(id);
         return RestResponse.success(permissions);
+    }
+
+    @GetMapping("/options")
+    public RestResponse<List<RoleOptionsDTO>> getRoleOptions(RoleQuery query) {
+        List<RoleOptionsDTO> options = roleService.getRoleOptions(query);
+        return RestResponse.success(options);
     }
 }

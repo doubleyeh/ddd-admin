@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class UserPutDTO {
     private Long id;
@@ -20,4 +22,6 @@ public class UserPutDTO {
     private Integer state;
 
     private String password;
+
+    private List<Long> roleIds;
 }

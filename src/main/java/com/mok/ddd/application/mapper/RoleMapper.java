@@ -1,19 +1,21 @@
 package com.mok.ddd.application.mapper;
 
+import com.mok.ddd.application.dto.role.RoleDTO;
+import com.mok.ddd.application.dto.role.RoleOptionsDTO;
+import com.mok.ddd.application.dto.role.RoleSaveDTO;
+import com.mok.ddd.domain.entity.Role;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
-
-import com.mok.ddd.application.dto.role.RoleDTO;
-import com.mok.ddd.application.dto.role.RoleSaveDTO;
-import com.mok.ddd.domain.entity.Role;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = { PermissionMapper.class,
         MenuMapper.class })
 public interface RoleMapper {
 
     RoleDTO toDto(Role entity);
+
+    RoleOptionsDTO toOptionsDto(Role entity);
 
     @Mapping(target = "permissions", ignore = true)
     @Mapping(target = "menus", ignore = true)

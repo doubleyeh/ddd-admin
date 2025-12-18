@@ -15,6 +15,7 @@ public class RoleQuery extends BaseQuery {
     private String name;
     private String code;
     private String tenantId;
+    private Boolean enabled;
 
     @Override
     public Predicate toPredicate() {
@@ -30,6 +31,10 @@ public class RoleQuery extends BaseQuery {
 
         if (StringUtils.hasText(this.getTenantId())) {
             builder.and(role.tenantId.eq(this.getTenantId()));
+        }
+
+        if (this.getEnabled() != null) {
+            builder.and(role.enabled.eq(this.getEnabled()));
         }
 
         return builder;

@@ -13,6 +13,7 @@ import com.mok.ddd.application.mapper.UserMapper;
 import com.mok.ddd.common.Const;
 import com.mok.ddd.common.SysUtil;
 import com.mok.ddd.domain.entity.*;
+import com.mok.ddd.domain.repository.RoleRepository;
 import com.mok.ddd.domain.repository.UserRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
@@ -38,6 +39,7 @@ import java.util.stream.Collectors;
 public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final MenuService menuService;
@@ -87,6 +89,12 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
         }
         User entity = userMapper.postToEntity(dto);
         entity.setPassword(passwordEncoder.encode(dto.getPassword()));
+
+        if (dto.getRoleIds() != null) {
+            List<Role> roles = roleRepository.findAllById(dto.getRoleIds());
+            entity.setRoles(new HashSet<>(roles));
+        }
+
         return this.toDto(userRepository.save(entity));
     }
 
@@ -100,6 +108,11 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
         entity.setPassword(passwordEncoder.encode(dto.getPassword()));
         entity.setTenantId(tenantId);
 
+        if (dto.getRoleIds() != null) {
+            List<Role> roles = roleRepository.findAllById(dto.getRoleIds());
+            entity.setRoles(new HashSet<>(roles));
+        }
+
         return this.toDto(userRepository.save(entity));
     }
 
@@ -109,6 +122,10 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
                 .orElseThrow(() -> new NotFoundException(Const.NOT_FOUND_MESSAGE));
 
         userMapper.putToEntity(dto, entity);
+        if (dto.getRoleIds() != null) {
+            List<Role> roles = roleRepository.findAllById(dto.getRoleIds());
+            entity.setRoles(new HashSet<>(roles));
+        }
         return this.toDto(userRepository.save(entity));
     }
 

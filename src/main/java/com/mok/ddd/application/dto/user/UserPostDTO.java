@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class UserPostDTO {
     @NotBlank(message = "用户名不能为空")
@@ -22,4 +24,6 @@ public class UserPostDTO {
     private String password;
 
     private String tenantId;
+
+    private List<Long> roleIds;
 }

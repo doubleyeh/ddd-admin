@@ -15,10 +15,11 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = { RoleMapper.class })
 public interface UserMapper {
     // 继承字段必须明确指出
     @Mapping(target = "createTime", source = "createTime")
+    @Mapping(target = "roles", source = "roles")
     UserDTO toDto(User entity);
 
     User toEntity(UserDTO dto);
