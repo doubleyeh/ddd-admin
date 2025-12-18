@@ -10,7 +10,7 @@ import java.util.Set;
 @Table(name = "sys_role")
 @Getter
 @Setter
-public class Role extends BaseEntity {
+public class Role extends TenantBaseEntity {
     private String name;
     private String code;
     private String description;

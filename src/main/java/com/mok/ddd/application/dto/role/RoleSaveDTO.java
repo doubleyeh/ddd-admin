@@ -1,13 +1,15 @@
 package com.mok.ddd.application.dto.role;
 
-import java.util.Set;
-
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+
+import java.util.Set;
 
 @Data
 public class RoleSaveDTO {
     private Long id;
+
+    private String tenantId;
 
     @NotBlank(message = "角色名称不能为空")
     private String name;

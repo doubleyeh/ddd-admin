@@ -1,30 +1,20 @@
 package com.mok.ddd.web.rest;
 
-import java.util.Set;
-
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.mok.ddd.application.dto.menu.MenuDTO;
 import com.mok.ddd.application.dto.permission.PermissionDTO;
 import com.mok.ddd.application.dto.role.RoleDTO;
 import com.mok.ddd.application.dto.role.RoleQuery;
 import com.mok.ddd.application.dto.role.RoleSaveDTO;
 import com.mok.ddd.application.service.RoleService;
-
-
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/roles")
@@ -60,6 +50,13 @@ public class RoleController {
         roleSaveDTO.setId(id);
         RoleDTO updatedRole = roleService.updateRole(roleSaveDTO);
         return RestResponse.success(updatedRole);
+    }
+
+    @PutMapping("/{id}/state")
+    @PreAuthorize("hasAuthority('role:update')")
+    public RestResponse<RoleDTO> updateState(@PathVariable Long id, @Valid @NotNull @RequestParam Boolean state) {
+        RoleDTO dto = roleService.updateState(id, state);
+        return RestResponse.success(dto);
     }
 
     @DeleteMapping("/{id}")
