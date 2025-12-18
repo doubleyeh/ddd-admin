@@ -85,7 +85,7 @@ class AuthControllerTest {
         given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .willReturn(auth);
 
-        given(jwtTokenProvider.createToken("john", "tenantA", (CustomUserDetail) auth.getPrincipal(), "127.0.0.1"))
+        given(jwtTokenProvider.createToken("john", "tenantA", (CustomUserDetail) auth.getPrincipal(), "127.0.0.1", "mock"))
                 .willReturn("fake-jwt-token");
 
         mockMvc.perform(post("/api/auth/login")
@@ -119,6 +119,6 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.code").value(401))
                 .andExpect(jsonPath("$.message").value("用户名或密码错误"));
 
-        verify(jwtTokenProvider, never()).createToken(anyString(), anyString(), any(), anyString());
+        verify(jwtTokenProvider, never()).createToken(anyString(), anyString(), any(), anyString(), anyString());
     }
 }

@@ -48,7 +48,7 @@ public class AuthController {
 
                     String jwt = tokenProvider.createToken(
                             username,
-                            tenantId, (CustomUserDetail)authentication.getPrincipal(), ipAddress);
+                            tenantId, (CustomUserDetail)authentication.getPrincipal(), ipAddress, SysUtil.getBrowser(request.getHeader("User-Agent")));
 
                     return RestResponse.success(new LoginResDTO(
                             jwt,

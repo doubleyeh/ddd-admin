@@ -60,7 +60,7 @@ class AuthControllerTest2 {
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(auth);
 
-        when(jwtTokenProvider.createToken("john", "tenantA", (CustomUserDetail) auth.getPrincipal(), "127.0.0.1"))
+        when(jwtTokenProvider.createToken("john", "tenantA", (CustomUserDetail) auth.getPrincipal(), "127.0.0.1", "Mozilla/5.0"))
                 .thenReturn("fake-jwt-token");
 
         mockMvc.perform(post("/api/auth/login")

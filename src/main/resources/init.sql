@@ -40,6 +40,17 @@ VALUES
 (10012, 1003, '修改角色', NULL, NULL, NULL, 3, FALSE, NOW(), NOW()),
 (10013, 1003, '删除角色', NULL, NULL, NULL, 4, FALSE, NOW(), NOW());
 
+INSERT IGNORE INTO sys_permission (id, name, code, url, method, description, create_time, update_time)
+VALUES
+(13, '在线用户查询', 'admin:online-user', NULL, NULL, '查看在线登录用户列表', NOW(), NOW()),
+(14, '在线用户强退', 'admin:online-user:kickout', NULL, NULL, '强制下线指定用户', NOW(), NOW());
+
+INSERT IGNORE INTO sys_menu (id, parent_id, name, path, component, icon, sort, is_hidden, create_time, update_time)
+VALUES
+(1004, 100, '在线用户', '/system/online-user', 'system/online-user', 'GlobeOutline', 41, FALSE, NOW(), NOW()),
+(10014, 1004, '查询', NULL, NULL, NULL, 1, FALSE, NOW(), NOW()),
+(10015, 1004, '强退', NULL, NULL, NULL, 2, FALSE, NOW(), NOW());
+
 
 INSERT INTO `sys_tenant` (`id`, `create_by`, `create_time`, `update_by`, `update_time`, `contact_person`, `contact_phone`, `enabled`, `name`, `tenant_id`) VALUES (1, 'root', '2025-11-29 16:45:25.000000', 'root', '2025-11-29 16:45:30.000000', 'root', '1', b'1', 'root', '000000');
 

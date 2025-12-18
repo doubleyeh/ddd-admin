@@ -34,8 +34,8 @@ spring:
       ddl-auto: update
     open-in-view: false
     show-sql: true
-jwt:
-  secret: Y2FzdGxlZmVzdHdlYmNyYWRpbmdyZWV0b21pY2hhZWxkb3VzdGhpc3NlY3JldGtleW11c3RiZXF1aXRlbG9uZ2VybmdhbmR2ZXJ5c2VjdXJl
+auth:
+  allow-multi-device: true
   expiration-ms: 3600000
 
 logging:
