@@ -8,7 +8,10 @@ import com.mok.ddd.application.exception.NotFoundException;
 import com.mok.ddd.application.mapper.MenuMapper;
 import com.mok.ddd.application.mapper.PermissionMapper;
 import com.mok.ddd.application.mapper.RoleMapper;
-import com.mok.ddd.domain.entity.*;
+import com.mok.ddd.common.Const;
+import com.mok.ddd.domain.entity.QRole;
+import com.mok.ddd.domain.entity.QTenant;
+import com.mok.ddd.domain.entity.Role;
 import com.mok.ddd.domain.repository.MenuRepository;
 import com.mok.ddd.domain.repository.PermissionRepository;
 import com.mok.ddd.domain.repository.RoleRepository;
@@ -21,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +45,7 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
     private final RoleMapper roleMapper;
     private final PermissionMapper permissionMapper;
     private final MenuMapper menuMapper;
+    private final StringRedisTemplate redisTemplate;
 
     @Override
     protected CustomRepository<Role, Long> getRepository() {
@@ -91,31 +96,32 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
         });
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public RoleDTO getById(Long id) {
+        Role role = roleRepository.findById(id).orElseThrow(NotFoundException::new);
+        RoleDTO dto = roleMapper.toDto(role);
+
+        dto.setMenus(role.getMenus().stream()
+                        .map(menuMapper::toDto)
+                .collect(Collectors.toSet()));
+
+        dto.setPermissions(role.getPermissions().stream()
+                        .map(permissionMapper::toDto)
+                .collect(Collectors.toSet()));
+        return dto;
+    }
+
     @Transactional
     public RoleDTO createRole(@NonNull RoleSaveDTO dto) {
         Role entity = roleMapper.toEntity(dto);
-
-        Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(dto.getPermissionIds()));
-        Set<Menu> menus = new HashSet<>(menuRepository.findAllById(dto.getMenuIds()));
-
-        entity.setPermissions(permissions);
-        entity.setMenus(menus);
-
         return roleMapper.toDto(roleRepository.save(entity));
     }
 
     @Transactional
     public RoleDTO updateRole(@NonNull RoleSaveDTO dto) {
         Role existingRole = roleRepository.findById(dto.getId()).orElseThrow(NotFoundException::new);
-
         roleMapper.updateEntityFromDto(dto, existingRole);
-
-        Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(dto.getPermissionIds()));
-        Set<Menu> menus = new HashSet<>(menuRepository.findAllById(dto.getMenuIds()));
-
-        existingRole.setPermissions(permissions);
-        existingRole.setMenus(menus);
-
         return roleMapper.toDto(roleRepository.save(existingRole));
     }
 
@@ -150,15 +156,18 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
         }
 
         roleRepository.save(role);
+
+        String cacheKey = Const.CacheKey.ROLE_PERMS + ":" + roleId;
+        redisTemplate.delete(cacheKey);
     }
 
     @Transactional(readOnly = true)
-    public List<RoleOptionsDTO> getRoleOptions(RoleQuery roleQuery) {
+    public List<RoleOptionDTO> getRoleOptions(RoleQuery roleQuery) {
         QRole role = QRole.role;
         QTenant tenant = QTenant.tenant;
 
-        JPAQuery<RoleOptionsDTO> query = roleRepository.getJPAQueryFactory()
-                .select(Projections.bean(RoleOptionsDTO.class,
+        JPAQuery<RoleOptionDTO> query = roleRepository.getJPAQueryFactory()
+                .select(Projections.bean(RoleOptionDTO.class,
                         role.id,
                         role.name,
                         tenant.name.as("tenantName")

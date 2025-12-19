@@ -65,7 +65,7 @@ public class RoleController {
         return RestResponse.success();
     }
 
-    @PutMapping("/{id}/grant")
+    @PostMapping("/{id}/grant")
     @PreAuthorize("hasAuthority('role:update')")
     public RestResponse<Void> grant(@PathVariable Long id, @RequestBody RoleGrantDTO grantDTO) {
         roleService.grant(id, grantDTO);
@@ -87,8 +87,8 @@ public class RoleController {
     }
 
     @GetMapping("/options")
-    public RestResponse<List<RoleOptionsDTO>> getRoleOptions(RoleQuery query) {
-        List<RoleOptionsDTO> options = roleService.getRoleOptions(query);
+    public RestResponse<List<RoleOptionDTO>> getRoleOptions(RoleQuery query) {
+        List<RoleOptionDTO> options = roleService.getRoleOptions(query);
         return RestResponse.success(options);
     }
 }

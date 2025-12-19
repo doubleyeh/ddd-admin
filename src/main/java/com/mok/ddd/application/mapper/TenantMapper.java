@@ -2,7 +2,7 @@ package com.mok.ddd.application.mapper;
 
 import com.mok.ddd.application.dto.tenant.TenantCreateResultDTO;
 import com.mok.ddd.application.dto.tenant.TenantDTO;
-import com.mok.ddd.application.dto.tenant.TenantOptionsDTO;
+import com.mok.ddd.application.dto.tenant.TenantOptionDTO;
 import com.mok.ddd.application.dto.tenant.TenantSaveDTO;
 import com.mok.ddd.domain.entity.Tenant;
 import org.mapstruct.*;
@@ -23,5 +23,5 @@ public interface TenantMapper {
 
     void updateEntityFromDto(Tenant entity, @MappingTarget TenantCreateResultDTO dto);
 
-    List<TenantOptionsDTO> dtoToOptionsDto(List<TenantDTO> dtoList);
+    List<TenantOptionDTO> dtoToOptionsDto(List<TenantDTO> dtoList);
 }

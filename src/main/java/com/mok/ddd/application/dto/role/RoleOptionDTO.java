@@ -3,7 +3,7 @@ package com.mok.ddd.application.dto.role;
 import lombok.Data;
 
 @Data
-public class RoleOptionsDTO {
+public class RoleOptionDTO {
     private Long id;
     private String name;
 }

@@ -1,6 +1,7 @@
 package com.mok.ddd.web.rest;
 
 import com.mok.ddd.application.dto.menu.MenuDTO;
+import com.mok.ddd.application.dto.menu.MenuOptionDTO;
 import com.mok.ddd.application.service.MenuService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -39,5 +40,10 @@ public class MenuController {
     public RestResponse<Void> delete(@PathVariable Long id) {
         menuService.deleteById(id);
         return RestResponse.success();
+    }
+
+    @GetMapping("/tree-options")
+    public RestResponse<List<MenuOptionDTO>> getMenuTreeOptions() {
+        return RestResponse.success(menuService.buildMenuAndPermissionTree());
     }
 }

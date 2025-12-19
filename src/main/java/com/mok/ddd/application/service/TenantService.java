@@ -2,7 +2,7 @@ package com.mok.ddd.application.service;
 
 import com.mok.ddd.application.dto.tenant.TenantCreateResultDTO;
 import com.mok.ddd.application.dto.tenant.TenantDTO;
-import com.mok.ddd.application.dto.tenant.TenantOptionsDTO;
+import com.mok.ddd.application.dto.tenant.TenantOptionDTO;
 import com.mok.ddd.application.dto.tenant.TenantSaveDTO;
 import com.mok.ddd.application.dto.user.UserPostDTO;
 import com.mok.ddd.application.exception.BizException;
@@ -132,7 +132,7 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
     }
 
     @Transactional(readOnly = true)
-    public List<TenantOptionsDTO> findOptions(String name){
+    public List<TenantOptionDTO> findOptions(String name){
         BooleanBuilder builder = new BooleanBuilder();
         if (StringUtils.hasText(name)) {
             builder.and(tenant.name.containsIgnoreCase(name));

@@ -2,7 +2,7 @@ package com.mok.ddd.web.rest;
 
 import com.mok.ddd.application.dto.tenant.TenantCreateResultDTO;
 import com.mok.ddd.application.dto.tenant.TenantDTO;
-import com.mok.ddd.application.dto.tenant.TenantOptionsDTO;
+import com.mok.ddd.application.dto.tenant.TenantOptionDTO;
 import com.mok.ddd.application.dto.tenant.TenantSaveDTO;
 import com.mok.ddd.application.service.TenantService;
 import com.mok.ddd.infrastructure.security.CustomUserDetailsService;
@@ -193,7 +193,7 @@ class TenantControllerTest {
     @Order(7)
     @WithMockUser
     void getOptions_ReturnList() throws Exception {
-        TenantOptionsDTO option = new TenantOptionsDTO();
+        TenantOptionDTO option = new TenantOptionDTO();
         option.setName("选项租户");
 
         given(tenantService.findOptions("test")).willReturn(List.of(option));

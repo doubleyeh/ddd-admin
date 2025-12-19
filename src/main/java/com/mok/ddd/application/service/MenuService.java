@@ -1,6 +1,8 @@
 package com.mok.ddd.application.service;
 
 import com.mok.ddd.application.dto.menu.MenuDTO;
+import com.mok.ddd.application.dto.menu.MenuOptionDTO;
+import com.mok.ddd.application.dto.permission.PermissionOptionDTO;
 import com.mok.ddd.application.mapper.MenuMapper;
 import com.mok.ddd.common.Const;
 import com.mok.ddd.domain.entity.Menu;
@@ -130,6 +132,85 @@ public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
                     && !menu.getPath().isEmpty()) {
                 filtered.add(menu);
             } else if (menu.getChildren() != null && !menu.getChildren().isEmpty()) {
+                filtered.add(menu);
+            }
+        }
+        return filtered;
+    }
+
+    @Transactional(readOnly = true)
+    public List<MenuOptionDTO> buildMenuAndPermissionTree() {
+        List<Menu> entities = menuRepository.findAll();
+
+        List<MenuOptionDTO> flatList = entities.stream()
+                .map(entity -> {
+                    MenuOptionDTO dto = new MenuOptionDTO();
+                    dto.setId(entity.getId());
+                    dto.setParentId(entity.getParent() != null ? entity.getParent().getId() : null);
+                    dto.setName(entity.getName());
+                    dto.setPath(entity.getPath());
+                    dto.setIsPermission(false);
+
+                    if (entity.getPermissions() != null) {
+                        List<PermissionOptionDTO> pDtos = entity.getPermissions().stream()
+                                .map(p -> {
+                                    PermissionOptionDTO pDto = new PermissionOptionDTO();
+                                    pDto.setId(p.getId());
+                                    pDto.setName(p.getName());
+                                    pDto.setIsPermission(true);
+                                    return pDto;
+                                }).toList();
+                        dto.setPermissions(pDtos);
+                    }
+                    return dto;
+                }).toList();
+
+        Map<Long, MenuOptionDTO> dtoMap = flatList.stream()
+                .collect(Collectors.toMap(MenuOptionDTO::getId, dto -> dto));
+
+        List<MenuOptionDTO> rootMenus = new ArrayList<>();
+
+        for (MenuOptionDTO dto : flatList) {
+            if (dto.getPermissions() != null && !dto.getPermissions().isEmpty()) {
+                if (dto.getChildren() == null) {
+                    dto.setChildren(new ArrayList<>());
+                }
+                for (PermissionOptionDTO perm : dto.getPermissions()) {
+                    MenuOptionDTO permNode = new MenuOptionDTO();
+                    permNode.setId(perm.getId());
+                    permNode.setName("[按钮] " + perm.getName());
+                    permNode.setIsPermission(true);
+                    dto.getChildren().add(permNode);
+                }
+            }
+
+            if (dto.getParentId() == null || dto.getParentId() == 0) {
+                rootMenus.add(dto);
+            } else {
+                MenuOptionDTO parent = dtoMap.get(dto.getParentId());
+                if (parent != null) {
+                    if (parent.getChildren() == null) {
+                        parent.setChildren(new ArrayList<>());
+                    }
+                    parent.getChildren().add(dto);
+                }
+            }
+        }
+        return filterEmptyParentMenuOptions(rootMenus);
+    }
+
+    private List<MenuOptionDTO> filterEmptyParentMenuOptions(@NonNull List<MenuOptionDTO> menus) {
+        List<MenuOptionDTO> filtered = new ArrayList<>();
+        for (MenuOptionDTO menu : menus) {
+            if (menu.getChildren() != null && !menu.getChildren().isEmpty()) {
+                menu.setChildren(filterEmptyParentMenuOptions(menu.getChildren()));
+            }
+
+            boolean hasChildren = menu.getChildren() != null && !menu.getChildren().isEmpty();
+            boolean hasPath = menu.getPath() != null && !menu.getPath().isEmpty();
+            boolean isButton = Boolean.TRUE.equals(menu.getIsPermission());
+
+            if (isButton || hasPath || hasChildren) {
                 filtered.add(menu);
             }
         }

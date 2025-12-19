@@ -1,7 +1,7 @@
 package com.mok.ddd.application.mapper;
 
 import com.mok.ddd.application.dto.role.RoleDTO;
-import com.mok.ddd.application.dto.role.RoleOptionsDTO;
+import com.mok.ddd.application.dto.role.RoleOptionDTO;
 import com.mok.ddd.application.dto.role.RoleSaveDTO;
 import com.mok.ddd.domain.entity.Role;
 import org.mapstruct.*;
@@ -12,7 +12,7 @@ public interface RoleMapper {
 
     RoleDTO toDto(Role entity);
 
-    RoleOptionsDTO toOptionsDto(Role entity);
+    RoleOptionDTO toOptionsDto(Role entity);
 
     @Mapping(target = "permissions", ignore = true)
     @Mapping(target = "menus", ignore = true)

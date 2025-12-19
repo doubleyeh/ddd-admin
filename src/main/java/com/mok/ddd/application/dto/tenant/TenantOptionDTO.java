@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class TenantOptionsDTO {
+public class TenantOptionDTO {
     private Long id;
     private String tenantId;
     private String name;

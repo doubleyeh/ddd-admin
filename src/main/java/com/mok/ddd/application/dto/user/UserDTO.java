@@ -1,6 +1,6 @@
 package com.mok.ddd.application.dto.user;
 
-import com.mok.ddd.application.dto.role.RoleOptionsDTO;
+import com.mok.ddd.application.dto.role.RoleOptionDTO;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -17,5 +17,5 @@ public class UserDTO {
     private String tenantId;
     private String tenantName;
 
-    private Set<RoleOptionsDTO> roles;
+    private Set<RoleOptionDTO> roles;
 }

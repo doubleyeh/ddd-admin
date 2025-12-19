@@ -1,6 +1,6 @@
 package com.mok.ddd.web.rest;
 
-import com.mok.ddd.application.dto.tenant.TenantOptionsDTO;
+import com.mok.ddd.application.dto.tenant.TenantOptionDTO;
 import com.mok.ddd.application.service.TenantService;
 import com.mok.ddd.infrastructure.security.JwtTokenProvider;
 import com.mok.ddd.infrastructure.security.OnlineUserDTO;
@@ -28,7 +28,7 @@ public class OnlineUserController {
     @PreAuthorize("hasAuthority('admin:online-user')")
     public RestResponse<List<OnlineUserDTO>> list() {
         Map<String, String> tenantMap = tenantService.findOptions(null).stream()
-                .collect(Collectors.toMap(TenantOptionsDTO::getTenantId, TenantOptionsDTO::getName, (a, b) -> a));
+                .collect(Collectors.toMap(TenantOptionDTO::getTenantId, TenantOptionDTO::getName, (a, b) -> a));
         String currentTenantId = TenantContextHolder.getTenantId();
         boolean isSuper = TenantContextHolder.isSuperTenant();
 

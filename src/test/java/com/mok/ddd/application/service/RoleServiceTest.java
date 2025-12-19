@@ -3,6 +3,7 @@ package com.mok.ddd.application.service;
 import com.mok.ddd.application.dto.menu.MenuDTO;
 import com.mok.ddd.application.dto.permission.PermissionDTO;
 import com.mok.ddd.application.dto.role.RoleDTO;
+import com.mok.ddd.application.dto.role.RoleOptionDTO;
 import com.mok.ddd.application.dto.role.RoleSaveDTO;
 import com.mok.ddd.application.exception.BizException;
 import com.mok.ddd.application.exception.NotFoundException;
@@ -341,7 +342,7 @@ class RoleServiceTest {
             com.mok.ddd.application.dto.role.RoleQuery roleQuery = mock(com.mok.ddd.application.dto.role.RoleQuery.class);
             com.querydsl.jpa.impl.JPAQueryFactory queryFactory = mock(com.querydsl.jpa.impl.JPAQueryFactory.class);
             com.querydsl.jpa.impl.JPAQuery jpaQuery = mock(com.querydsl.jpa.impl.JPAQuery.class);
-            List<com.mok.ddd.application.dto.role.RoleOptionsDTO> options = List.of(new com.mok.ddd.application.dto.role.RoleOptionsDTO());
+            List<RoleOptionDTO> options = List.of(new RoleOptionDTO());
 
             when(roleQuery.toPredicate()).thenReturn(mock(com.querydsl.core.types.Predicate.class));
             when(roleRepository.getJPAQueryFactory()).thenReturn(queryFactory);
@@ -355,7 +356,7 @@ class RoleServiceTest {
 
             when(jpaQuery.fetch()).thenReturn(options);
 
-            List<com.mok.ddd.application.dto.role.RoleOptionsDTO> result = roleService.getRoleOptions(roleQuery);
+            List<RoleOptionDTO> result = roleService.getRoleOptions(roleQuery);
 
             assertNotNull(result);
             assertEquals(options, result);

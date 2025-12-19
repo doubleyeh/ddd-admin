@@ -2,7 +2,7 @@ package com.mok.ddd.application.service;
 
 import com.mok.ddd.application.dto.tenant.TenantCreateResultDTO;
 import com.mok.ddd.application.dto.tenant.TenantDTO;
-import com.mok.ddd.application.dto.tenant.TenantOptionsDTO;
+import com.mok.ddd.application.dto.tenant.TenantOptionDTO;
 import com.mok.ddd.application.dto.tenant.TenantSaveDTO;
 import com.mok.ddd.application.dto.user.UserPostDTO;
 import com.mok.ddd.application.exception.BizException;
@@ -11,11 +11,7 @@ import com.mok.ddd.common.Const;
 import com.mok.ddd.common.PasswordGenerator;
 import com.mok.ddd.domain.entity.Tenant;
 import com.mok.ddd.domain.repository.TenantRepository;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -220,7 +216,7 @@ class TenantServiceTest {
             dto.setName("测试租户");
 
             List<TenantDTO> dtoList = List.of(dto);
-            TenantOptionsDTO option = new TenantOptionsDTO();
+            TenantOptionDTO option = new TenantOptionDTO();
             option.setName("测试租户");
 
             when(tenantRepository.findAll(any(com.querydsl.core.types.Predicate.class)))
@@ -228,7 +224,7 @@ class TenantServiceTest {
 
             when(tenantMapper.dtoToOptionsDto(any())).thenReturn(List.of(option));
 
-            List<TenantOptionsDTO> result = tenantService.findOptions(name);
+            List<TenantOptionDTO> result = tenantService.findOptions(name);
 
             assertNotNull(result);
             assertEquals(1, result.size());

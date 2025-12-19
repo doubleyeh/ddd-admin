@@ -64,7 +64,7 @@ public class TenantController {
     }
 
     @GetMapping("/options")
-    public RestResponse<List<TenantOptionsDTO>> getOptions(@RequestParam(required = false) String name) {
+    public RestResponse<List<TenantOptionDTO>> getOptions(@RequestParam(required = false) String name) {
         return RestResponse.success(tenantService.findOptions(name));
     }
 }
