@@ -3,13 +3,17 @@ package com.mok.ddd.application.service;
 import com.mok.ddd.application.dto.menu.MenuDTO;
 import com.mok.ddd.application.mapper.MenuMapper;
 import com.mok.ddd.domain.entity.Menu;
+import com.mok.ddd.domain.entity.Permission;
 import com.mok.ddd.domain.repository.MenuRepository;
+import com.mok.ddd.domain.repository.PermissionRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -19,7 +23,39 @@ import java.util.stream.Collectors;
 public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
 
     private final MenuRepository menuRepository;
+    private final PermissionRepository permissionRepository;
     private final MenuMapper menuMapper;
+
+    @Transactional
+    @Override
+    public MenuDTO save(@NonNull MenuDTO dto) {
+        Menu menu;
+        if (dto.getId() != null) {
+            menu = menuRepository.findById(dto.getId()).orElse(menuMapper.toEntity(dto));
+            menuMapper.updateEntityFromDto(dto, menu);
+        } else {
+            menu = menuMapper.toEntity(dto);
+        }
+
+        if (dto.getPermissionIds() != null) {
+            List<Permission> permissions = permissionRepository.findAllById(dto.getPermissionIds());
+
+            if (menu.getPermissions() != null) {
+                menu.getPermissions().forEach(p -> p.setMenu(null));
+                menu.getPermissions().clear();
+            } else {
+                menu.setPermissions(new HashSet<>());
+            }
+
+            permissions.forEach(p -> {
+                p.setMenu(menu);
+                menu.getPermissions().add(p);
+            });
+        }
+
+        Menu savedMenu = menuRepository.save(menu);
+        return menuMapper.toDto(savedMenu);
+    }
 
     public List<MenuDTO> buildMenuTree(@NonNull List<MenuDTO> flatList) {
         Map<Long, MenuDTO> dtoMap = flatList.stream()

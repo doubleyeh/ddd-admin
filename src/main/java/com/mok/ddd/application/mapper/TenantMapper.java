@@ -5,9 +5,7 @@ import com.mok.ddd.application.dto.tenant.TenantDTO;
 import com.mok.ddd.application.dto.tenant.TenantOptionsDTO;
 import com.mok.ddd.application.dto.tenant.TenantSaveDTO;
 import com.mok.ddd.domain.entity.Tenant;
-import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.ReportingPolicy;
+import org.mapstruct.*;
 
 import java.util.List;
 
@@ -20,6 +18,7 @@ public interface TenantMapper {
 
     Tenant toEntity(TenantSaveDTO dto);
 
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntityFromDto(TenantSaveDTO dto, @MappingTarget Tenant entity);
 
     void updateEntityFromDto(Tenant entity, @MappingTarget TenantCreateResultDTO dto);

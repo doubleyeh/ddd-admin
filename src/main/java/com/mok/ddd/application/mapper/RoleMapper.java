@@ -4,10 +4,7 @@ import com.mok.ddd.application.dto.role.RoleDTO;
 import com.mok.ddd.application.dto.role.RoleOptionsDTO;
 import com.mok.ddd.application.dto.role.RoleSaveDTO;
 import com.mok.ddd.domain.entity.Role;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.ReportingPolicy;
+import org.mapstruct.*;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = { PermissionMapper.class,
         MenuMapper.class })
@@ -25,6 +22,7 @@ public interface RoleMapper {
     @Mapping(target = "menus", ignore = true)
     Role toEntity(RoleSaveDTO dto);
 
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "permissions", ignore = true)
     @Mapping(target = "menus", ignore = true)

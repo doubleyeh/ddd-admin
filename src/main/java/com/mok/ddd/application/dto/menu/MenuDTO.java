@@ -1,8 +1,9 @@
 package com.mok.ddd.application.dto.menu;
 
-import java.util.List;
-
 import lombok.Data;
+
+import java.util.List;
+import java.util.Set;
 
 @Data
 public class MenuDTO {
@@ -15,4 +16,5 @@ public class MenuDTO {
     private Integer sort;
     private Boolean isHidden;
     private List<MenuDTO> children;
+    private Set<Long> permissionIds;
 }

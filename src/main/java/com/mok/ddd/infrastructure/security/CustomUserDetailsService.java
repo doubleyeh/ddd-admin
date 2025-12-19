@@ -17,6 +17,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -42,15 +43,17 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("用户未找到: " + username));
 
         boolean isSuperAdmin = SysUtil.isSuperAdmin(tenantId, user.getUsername());
-        Set<SimpleGrantedAuthority> authorities;
+        Set<SimpleGrantedAuthority> authorities = new HashSet<>();
         if(Objects.equals(0, user.getState())){
             throw new BadCredentialsException("用户已被禁用");
         }
         if (isSuperAdmin) {
+            authorities.add(new SimpleGrantedAuthority("SUPER_ADMIN"));
             Set<String> allCodes = permissionService.getAllPermissionCodes();
-            authorities = allCodes.stream()
+            Set<SimpleGrantedAuthority> authorities2 = allCodes.stream()
                     .map(SimpleGrantedAuthority::new)
                     .collect(Collectors.toSet());
+            authorities.addAll(authorities2);
         } else {
             authorities = user.getRoles().stream()
                     .flatMap(role -> role.getPermissions().stream())

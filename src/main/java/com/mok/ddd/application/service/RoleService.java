@@ -2,10 +2,7 @@ package com.mok.ddd.application.service;
 
 import com.mok.ddd.application.dto.menu.MenuDTO;
 import com.mok.ddd.application.dto.permission.PermissionDTO;
-import com.mok.ddd.application.dto.role.RoleDTO;
-import com.mok.ddd.application.dto.role.RoleOptionsDTO;
-import com.mok.ddd.application.dto.role.RoleQuery;
-import com.mok.ddd.application.dto.role.RoleSaveDTO;
+import com.mok.ddd.application.dto.role.*;
 import com.mok.ddd.application.exception.BizException;
 import com.mok.ddd.application.exception.NotFoundException;
 import com.mok.ddd.application.mapper.MenuMapper;
@@ -135,6 +132,24 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
             throw new BizException("该角色下存在用户，请先删除用户关联该角色");
         }
         roleRepository.deleteById(id);
+    }
+
+    /**
+     * 授权
+     */
+    @Transactional
+    public void grant(Long roleId, RoleGrantDTO dto) {
+        Role role = roleRepository.findById(roleId).orElseThrow(NotFoundException::new);
+
+        if (dto.getMenuIds() != null) {
+            role.setMenus(new HashSet<>(menuRepository.findAllById(dto.getMenuIds())));
+        }
+
+        if (dto.getPermissionIds() != null) {
+            role.setPermissions(new HashSet<>(permissionRepository.findAllById(dto.getPermissionIds())));
+        }
+
+        roleRepository.save(role);
     }
 
     @Transactional(readOnly = true)

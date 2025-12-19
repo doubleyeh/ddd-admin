@@ -2,10 +2,7 @@ package com.mok.ddd.web.rest;
 
 import com.mok.ddd.application.dto.menu.MenuDTO;
 import com.mok.ddd.application.dto.permission.PermissionDTO;
-import com.mok.ddd.application.dto.role.RoleDTO;
-import com.mok.ddd.application.dto.role.RoleOptionsDTO;
-import com.mok.ddd.application.dto.role.RoleQuery;
-import com.mok.ddd.application.dto.role.RoleSaveDTO;
+import com.mok.ddd.application.dto.role.*;
 import com.mok.ddd.application.service.RoleService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -65,6 +62,13 @@ public class RoleController {
     @PreAuthorize("hasAuthority('role:delete')")
     public RestResponse<Void> deleteById(@PathVariable Long id) {
         roleService.deleteRoleBeforeValidation(id);
+        return RestResponse.success();
+    }
+
+    @PutMapping("/{id}/grant")
+    @PreAuthorize("hasAuthority('role:update')")
+    public RestResponse<Void> grant(@PathVariable Long id, @RequestBody RoleGrantDTO grantDTO) {
+        roleService.grant(id, grantDTO);
         return RestResponse.success();
     }
 
