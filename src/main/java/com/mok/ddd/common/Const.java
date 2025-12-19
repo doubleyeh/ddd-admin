@@ -6,7 +6,7 @@ public interface Const {
 
     String NOT_FOUND_MESSAGE = "数据不存在";
 
-
-
     String DEFAULT_ADMIN_USERNAME = "admin";
+
+    String SUPER_ADMIN_ROLE_CODE = "SUPER_ADMIN";
 }

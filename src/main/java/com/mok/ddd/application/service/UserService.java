@@ -176,6 +176,7 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
         if (SysUtil.isSuperAdmin(user.getTenantId(), username)) {
             flatMenus = new ArrayList<>(menuService.findAll());
             distinctPermissions = new HashSet<>(permissionService.getAllPermissionCodes());
+            distinctPermissions.add(Const.SUPER_ADMIN_ROLE_CODE);
         } else {
             Set<Menu> distinctMenuEntities = user.getRoles().stream()
                     .flatMap(role -> role.getMenus().stream())

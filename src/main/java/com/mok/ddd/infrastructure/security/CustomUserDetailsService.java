@@ -1,6 +1,7 @@
 package com.mok.ddd.infrastructure.security;
 
 import com.mok.ddd.application.service.PermissionService;
+import com.mok.ddd.common.Const;
 import com.mok.ddd.common.SysUtil;
 import com.mok.ddd.domain.entity.User;
 import com.mok.ddd.domain.repository.UserRepository;
@@ -48,7 +49,7 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new BadCredentialsException("用户已被禁用");
         }
         if (isSuperAdmin) {
-            authorities.add(new SimpleGrantedAuthority("SUPER_ADMIN"));
+            authorities.add(new SimpleGrantedAuthority(Const.SUPER_ADMIN_ROLE_CODE));
             Set<String> allCodes = permissionService.getAllPermissionCodes();
             Set<SimpleGrantedAuthority> authorities2 = allCodes.stream()
                     .map(SimpleGrantedAuthority::new)
