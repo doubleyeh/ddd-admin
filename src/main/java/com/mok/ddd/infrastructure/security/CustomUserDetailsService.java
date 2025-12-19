@@ -1,8 +1,7 @@
 package com.mok.ddd.infrastructure.security;
 
-import com.mok.ddd.application.service.PermissionService;
-import com.mok.ddd.common.Const;
 import com.mok.ddd.common.SysUtil;
+import com.mok.ddd.domain.entity.BaseEntity;
 import com.mok.ddd.domain.entity.User;
 import com.mok.ddd.domain.repository.UserRepository;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
@@ -11,7 +10,6 @@ import lombok.AllArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.context.annotation.Primary;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -30,7 +28,6 @@ import java.util.stream.Collectors;
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
-    private final PermissionService permissionService;
 
     @Override
     public UserDetails loadUserByUsername(@NonNull String username) throws UsernameNotFoundException {
@@ -44,24 +41,16 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("用户未找到: " + username));
 
         boolean isSuperAdmin = SysUtil.isSuperAdmin(tenantId, user.getUsername());
-        Set<SimpleGrantedAuthority> authorities = new HashSet<>();
+        Set<Long> roleIds = new HashSet<>();
         if(Objects.equals(0, user.getState())){
             throw new BadCredentialsException("用户已被禁用");
         }
         if (isSuperAdmin) {
-            authorities.add(new SimpleGrantedAuthority(Const.SUPER_ADMIN_ROLE_CODE));
-            Set<String> allCodes = permissionService.getAllPermissionCodes();
-            Set<SimpleGrantedAuthority> authorities2 = allCodes.stream()
-                    .map(SimpleGrantedAuthority::new)
-                    .collect(Collectors.toSet());
-            authorities.addAll(authorities2);
+            roleIds.add(0L);
         } else {
-            authorities = user.getRoles().stream()
-                    .flatMap(role -> role.getPermissions().stream())
-                    .map(permission -> new SimpleGrantedAuthority(permission.getCode()))
-                    .collect(Collectors.toSet());
+            roleIds = user.getRoles().stream().map(BaseEntity::getId).collect(Collectors.toSet());
         }
 
-        return new CustomUserDetail(user.getId(), user.getUsername(), user.getPassword(), tenantId, authorities, isSuperAdmin);
+        return new CustomUserDetail(user.getId(), user.getUsername(), user.getPassword(), tenantId, roleIds, isSuperAdmin);
     }
 }

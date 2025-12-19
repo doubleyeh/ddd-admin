@@ -83,7 +83,7 @@ class AuthControllerTest {
         req.setTenantId("tenantA");
 
         CustomUserDetail userDetail = new CustomUserDetail(
-                1L, "john", "password", "tenantA", Collections.emptyList(), false
+                1L, "john", "password", "tenantA", Collections.emptySet(), false
         );
         Authentication auth = new UsernamePasswordAuthenticationToken(userDetail, "password");
 

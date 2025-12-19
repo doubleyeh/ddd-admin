@@ -2,6 +2,7 @@ package com.mok.ddd.application.service;
 
 import com.mok.ddd.application.dto.menu.MenuDTO;
 import com.mok.ddd.application.mapper.MenuMapper;
+import com.mok.ddd.common.Const;
 import com.mok.ddd.domain.entity.Menu;
 import com.mok.ddd.domain.entity.Permission;
 import com.mok.ddd.domain.repository.MenuRepository;
@@ -9,6 +10,7 @@ import com.mok.ddd.domain.repository.PermissionRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,7 @@ public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
 
     private final MenuRepository menuRepository;
     private final PermissionRepository permissionRepository;
+    private final StringRedisTemplate redisTemplate;
     private final MenuMapper menuMapper;
 
     @Transactional
@@ -82,6 +85,37 @@ public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
         }
 
         return filterEmptyParentMenus(rootMenus);
+    }
+
+    @Transactional
+    public void deleteById(Long id) {
+        List<Long> allIds = getAllMenuIds(id);
+
+        List<Long> roleIds = menuRepository.findRoleIdsByMenuIds(allIds);
+
+        permissionRepository.deleteRolePermissionsByMenuIds(allIds);
+        permissionRepository.deleteByMenuIds(allIds);
+
+        menuRepository.deleteRoleMenuByMenuIds(allIds);
+        menuRepository.deleteAllById(allIds);
+
+        redisTemplate.delete(Const.CacheKey.MENU_TREE);
+        if (!roleIds.isEmpty()) {
+            List<String> keys = roleIds.stream()
+                    .map(roleId -> Const.CacheKey.ROLE_PERMS + ":" + roleId)
+                    .toList();
+            redisTemplate.delete(keys);
+        }
+    }
+
+    private List<Long> getAllMenuIds(Long parentId) {
+        List<Long> ids = new ArrayList<>();
+        ids.add(parentId);
+        List<Menu> children = menuRepository.findByParentId(parentId);
+        for (Menu child : children) {
+            ids.addAll(getAllMenuIds(child.getId()));
+        }
+        return ids;
     }
 
     private List<MenuDTO> filterEmptyParentMenus(@NonNull List<MenuDTO> menus) {

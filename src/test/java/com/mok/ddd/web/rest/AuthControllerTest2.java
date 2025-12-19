@@ -21,7 +21,6 @@ import tools.jackson.databind.json.JsonMapper;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -60,7 +59,7 @@ class AuthControllerTest2 {
         req.setTenantId("tenantA");
 
         CustomUserDetail userDetail = new CustomUserDetail(
-                1L, "john", "password", "tenantA", Collections.emptyList(), false
+                1L, "john", "password", "tenantA", Collections.emptySet(), false
         );
         Authentication auth = new UsernamePasswordAuthenticationToken(userDetail, "password");
 

@@ -1,5 +1,6 @@
 package com.mok.ddd.infrastructure.security;
 
+import com.mok.ddd.common.Const;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisCallback;
@@ -31,16 +32,16 @@ public class JwtTokenProvider {
     }
 
     public String createToken(String username, String tenantId, CustomUserDetail principal, String ipAddress, String browser) {
-        String userKey = "user:tokens:" + tenantId + ":" + username;
+        String userKey = Const.CacheKey.USER_TOKENS + tenantId + ":" + username;
         if (!allowMultiDevice) {
             Object oldToken = redisTemplate.opsForValue().get(userKey);
             if (oldToken != null) {
-                redisTemplate.delete("auth:token:" + oldToken.toString());
+                redisTemplate.delete(Const.CacheKey.AUTH_TOKEN + oldToken);
             }
         }
 
         String token = UUID.randomUUID().toString();
-        String tokenKey = "auth:token:" + token;
+        String tokenKey = Const.CacheKey.AUTH_TOKEN + token;
         TokenSessionDTO session = new TokenSessionDTO(username, tenantId, principal, ipAddress, browser, System.currentTimeMillis());
         session.setToken(token);
         String sessionJson = jsonMapper.writeValueAsString(session);
@@ -57,7 +58,7 @@ public class JwtTokenProvider {
     }
 
     public TokenSessionDTO getSession(String token) {
-        String tokenKey = "auth:token:" + token;
+        String tokenKey = Const.CacheKey.AUTH_TOKEN + token;
         String data = redisTemplate.opsForValue().get(tokenKey);
         if (StringUtils.hasText(data)) {
             try {
@@ -71,7 +72,7 @@ public class JwtTokenProvider {
                 // 剩余时间小于10分钟，刷新
                 if (expire != null && expire > 0 && expire < 600000) {
                     redisTemplate.expire(tokenKey, jwtExpirationInMs, TimeUnit.MILLISECONDS);
-                    String userKey = "user:tokens:" + session.getTenantId() + ":" + session.getUsername();
+                    String userKey = Const.CacheKey.USER_TOKENS + session.getTenantId() + ":" + session.getUsername();
                     redisTemplate.expire(userKey, jwtExpirationInMs, TimeUnit.MILLISECONDS);
                 }
                 return session;
@@ -85,7 +86,7 @@ public class JwtTokenProvider {
     public List<OnlineUserDTO> getAllOnlineUsers(Map<String, String> tenantMap, String currentTenantId, boolean isSuper) {
         Set<String> keys = redisTemplate.execute((RedisCallback<Set<String>>) connection -> {
             Set<String> keySet = new HashSet<>();
-            ScanOptions options = ScanOptions.scanOptions().match("auth:token:*").count(1000).build();
+            ScanOptions options = ScanOptions.scanOptions().match(Const.CacheKey.AUTH_TOKEN+"*").count(1000).build();
             try (Cursor<byte[]> cursor = connection.keyCommands().scan(options)) {
                 while (cursor.hasNext()) {
                     keySet.add(new String(cursor.next()));
@@ -99,7 +100,7 @@ public class JwtTokenProvider {
         List<TokenSessionDTO> sessions = new ArrayList<>();
         if (keys != null) {
             for (String fullKey : keys) {
-                String token = fullKey.replace("auth:token:", "");
+                String token = fullKey.replace(Const.CacheKey.AUTH_TOKEN, "");
                 TokenSessionDTO session = getSession(token);
                 if (session != null) {
                     session.setToken(token);
@@ -136,8 +137,8 @@ public class JwtTokenProvider {
     public void removeToken(String token) {
         TokenSessionDTO session = getSession(token);
         if (session != null) {
-            String tokenKey = "auth:token:" + token;
-            String userKey = "user:tokens:" + session.getTenantId() + ":" + session.getUsername();
+            String tokenKey = Const.CacheKey.AUTH_TOKEN + token;
+            String userKey = Const.CacheKey.USER_TOKENS + session.getTenantId() + ":" + session.getUsername();
 
             redisTemplate.delete(tokenKey);
 

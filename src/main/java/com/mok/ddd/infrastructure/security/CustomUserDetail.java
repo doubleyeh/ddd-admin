@@ -6,6 +6,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
 
 @Getter
 public class CustomUserDetail implements UserDetails {
@@ -14,17 +16,19 @@ public class CustomUserDetail implements UserDetails {
     private final String username;
     private final String password;
     private final String tenantId;
-    private final Collection<? extends GrantedAuthority> authorities;
+    private final Set<Long> roleIds;
+    private Collection<? extends GrantedAuthority> authorities;
     @JsonProperty("superAdmin")
     private final boolean isSuperAdmin;
 
-    public CustomUserDetail(Long userId, String username, String password, String tenantId, Collection<? extends GrantedAuthority> authorities, boolean isSuperAdmin) {
+    public CustomUserDetail(Long userId, String username, String password, String tenantId, Set<Long> roleIds, boolean isSuperAdmin) {
         this.userId = userId;
         this.username = username;
         this.password = password;
         this.tenantId = tenantId;
-        this.authorities = authorities;
+        this.roleIds = roleIds;
         this.isSuperAdmin = isSuperAdmin;
+        this.authorities = Collections.emptyList();
     }
 
     @Override
