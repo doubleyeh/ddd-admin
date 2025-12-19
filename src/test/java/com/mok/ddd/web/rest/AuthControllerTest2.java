@@ -18,7 +18,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import tools.jackson.databind.json.JsonMapper;
 
-import static org.mockito.ArgumentMatchers.any;
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -55,15 +59,24 @@ class AuthControllerTest2 {
         req.setPassword("password");
         req.setTenantId("tenantA");
 
-        Authentication auth = new UsernamePasswordAuthenticationToken("john", "password");
+        CustomUserDetail userDetail = new CustomUserDetail(
+                1L, "john", "password", "tenantA", Collections.emptyList(), false
+        );
+        Authentication auth = new UsernamePasswordAuthenticationToken(userDetail, "password");
 
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(auth);
 
-        when(jwtTokenProvider.createToken("john", "tenantA", (CustomUserDetail) auth.getPrincipal(), "127.0.0.1", "Mozilla/5.0"))
-                .thenReturn("fake-jwt-token");
+        given(jwtTokenProvider.createToken(
+                eq("john"),
+                eq("tenantA"),
+                any(CustomUserDetail.class),
+                anyString(),
+                anyString()
+        )).willReturn("fake-jwt-token");
 
         mockMvc.perform(post("/api/auth/login")
+                        .header("User-Agent", "Mozilla/5.0...")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())

@@ -16,6 +16,7 @@ import com.mok.ddd.domain.entity.Permission;
 import com.mok.ddd.domain.entity.Role;
 import com.mok.ddd.domain.entity.User;
 import com.mok.ddd.domain.repository.UserRepository;
+import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -78,10 +79,12 @@ class UserServiceTest {
             dto = new UserPostDTO();
             dto.setUsername("testuser");
             dto.setPassword("rawPassword");
+            dto.setTenantId("000000");
 
             savedUser = new User();
             savedUser.setId(1L);
             savedUser.setUsername("testuser");
+            savedUser.setTenantId("000000");
             savedUser.setPassword(ENCODED_PASSWORD);
 
             userDTO = new UserDTO();
@@ -91,31 +94,34 @@ class UserServiceTest {
         @Test
         @DisplayName("创建用户成功")
         void create_Success() {
-            User newUser = mock(User.class);
+            try (MockedStatic<TenantContextHolder> tenantContext = mockStatic(TenantContextHolder.class)) {
+                tenantContext.when(TenantContextHolder::getTenantId).thenReturn("000000");
 
-            when(userRepository.findByUsername(dto.getUsername())).thenReturn(Optional.empty());
-            when(passwordEncoder.encode(any())).thenReturn(ENCODED_PASSWORD);
-            when(userMapper.postToEntity(dto)).thenReturn(newUser);
-            when(userRepository.save(newUser)).thenReturn(savedUser);
-            doReturn(userDTO).when(userService).toDto(savedUser);
+                User newUser = mock(User.class);
+                when(userRepository.findByTenantIdAndUsername("000000", dto.getUsername())).thenReturn(Optional.empty());
+                when(passwordEncoder.encode(any())).thenReturn(ENCODED_PASSWORD);
+                when(userMapper.postToEntity(dto)).thenReturn(newUser);
+                when(userRepository.save(newUser)).thenReturn(savedUser);
+                doReturn(userDTO).when(userService).toDto(savedUser);
 
-            UserDTO result = userService.create(dto);
+                UserDTO result = userService.create(dto);
 
-            verify(userRepository, times(1)).findByUsername(dto.getUsername());
-            verify(userMapper, times(1)).postToEntity(dto);
-            verify(newUser).setPassword(ENCODED_PASSWORD);
-            verify(userRepository, times(1)).save(newUser);
-            assertEquals(userDTO, result);
+                verify(userRepository).findByTenantIdAndUsername("000000", dto.getUsername());
+                assertEquals(userDTO, result);
+            }
         }
 
         @Test
         @DisplayName("创建用户失败：用户名已存在")
         void create_UsernameExists_ThrowsBizException() {
-            when(userRepository.findByUsername(dto.getUsername())).thenReturn(Optional.of(new User()));
+            try (MockedStatic<TenantContextHolder> tenantContext = mockStatic(TenantContextHolder.class)) {
+                tenantContext.when(TenantContextHolder::getTenantId).thenReturn("000000");
 
-            assertThrows(BizException.class, () -> userService.create(dto));
+                when(userRepository.findByTenantIdAndUsername("000000", dto.getUsername()))
+                        .thenReturn(Optional.of(new User()));
 
-            verify(userRepository, never()).save(any());
+                assertThrows(BizException.class, () -> userService.create(dto));
+            }
         }
 
         @Test

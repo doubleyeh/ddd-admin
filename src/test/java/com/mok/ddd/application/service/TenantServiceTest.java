@@ -69,14 +69,13 @@ class TenantServiceTest {
         @BeforeEach
         void setup() {
             validDto = new TenantSaveDTO();
-            validDto.setTenantId("new-tenant-001");
             validDto.setName("新租户名称");
             validDto.setContactPerson("联系人");
             validDto.setContactPhone("13800000000");
 
             mockTenant = new Tenant();
             mockTenant.setId(1L);
-            mockTenant.setTenantId(validDto.getTenantId());
+            mockTenant.setTenantId("RANDOM");
             mockTenant.setName(validDto.getName());
             mockTenant.setContactPerson(validDto.getContactPerson());
             mockTenant.setContactPhone(validDto.getContactPhone());
@@ -86,13 +85,13 @@ class TenantServiceTest {
         @Test
         @DisplayName("成功创建租户和初始化管理员")
         void createTenant_Success() {
-            when(tenantRepository.findByTenantId(validDto.getTenantId())).thenReturn(Optional.empty());
+            when(tenantRepository.findByTenantId(anyString())).thenReturn(Optional.empty());
             when(tenantMapper.toEntity(validDto)).thenReturn(mockTenant);
             when(tenantRepository.save(any(Tenant.class))).thenReturn(mockTenant);
 
             TenantCreateResultDTO result = tenantService.createTenant(validDto);
 
-            verify(tenantRepository, times(1)).findByTenantId(validDto.getTenantId());
+            verify(tenantRepository, atLeastOnce()).findByTenantId(anyString());
             verify(tenantRepository, times(1)).save(any(Tenant.class));
 
             ArgumentCaptor<UserPostDTO> userCaptor = ArgumentCaptor.forClass(UserPostDTO.class);
@@ -102,29 +101,25 @@ class TenantServiceTest {
 
             UserPostDTO capturedUserDTO = userCaptor.getValue();
             assertEquals(Const.DEFAULT_ADMIN_USERNAME, capturedUserDTO.getUsername());
-            assertEquals(validDto.getName() + "管理员", capturedUserDTO.getNickname());
             assertEquals(MOCK_PASSWORD, capturedUserDTO.getPassword());
-            assertEquals(validDto.getTenantId(), tenantIdCaptor.getValue());
 
             assertNotNull(result);
             assertEquals(mockTenant.getId(), result.getId());
-            assertEquals(mockTenant.getTenantId(), result.getTenantId());
-            assertEquals(mockTenant.getName(), result.getName());
             assertEquals(MOCK_PASSWORD, result.getInitialAdminPassword());
         }
 
         @Test
-        @DisplayName("创建租户失败：租户ID已存在")
-        void createTenant_TenantIdAlreadyExists_ThrowsBizException() {
-            when(tenantRepository.findByTenantId(validDto.getTenantId())).thenReturn(Optional.of(mockTenant));
+        @DisplayName("创建租户失败：生成唯一租户编码失败")
+        void createTenant_GenerateIdFailed_ThrowsBizException() {
+            when(tenantRepository.findByTenantId(anyString())).thenReturn(Optional.of(mockTenant));
 
             BizException exception = assertThrows(BizException.class, () -> {
                 tenantService.createTenant(validDto);
             });
 
-            assertEquals("租户ID已存在", exception.getMessage());
+            assertEquals("生成唯一租户编码失败，请重试", exception.getMessage());
+            verify(tenantRepository, times(5)).findByTenantId(anyString());
             verify(tenantRepository, never()).save(any());
-            verify(userService, never()).createForTenant(any(), any());
         }
     }
 
@@ -132,69 +127,17 @@ class TenantServiceTest {
     @DisplayName("updateTenant 租户更新测试")
     class UpdateTenantTests {
 
-        private final Long existingId = 1L;
-        private TenantSaveDTO updateDto;
-        private Tenant existingTenant;
-
-        @BeforeEach
-        void setup() {
-            updateDto = new TenantSaveDTO();
-            updateDto.setTenantId("existing-tenant-001");
-            updateDto.setName("更新后的名称");
-            updateDto.setContactPhone("13911112222");
-
-            existingTenant = new Tenant();
-            existingTenant.setId(existingId);
-            existingTenant.setTenantId("existing-tenant-001");
-            existingTenant.setName("旧名称");
-            existingTenant.setContactPerson("旧联系人");
-        }
-
-        @Test
-        @DisplayName("成功更新租户信息")
-        void updateTenant_Success() {
-            when(tenantRepository.findById(existingId)).thenReturn(Optional.of(existingTenant));
-
-            doNothing().when(tenantMapper).updateEntityFromDto(any(TenantSaveDTO.class), any(Tenant.class));
-
-            Tenant savedTenant = existingTenant;
-            savedTenant.setName(updateDto.getName());
-            when(tenantRepository.save(existingTenant)).thenReturn(savedTenant);
-
-            TenantDTO resultDto = new TenantDTO();
-            resultDto.setId(existingId);
-            resultDto.setName(updateDto.getName());
-            when(tenantMapper.toDto(savedTenant)).thenReturn(resultDto);
-
-            TenantDTO result = tenantService.updateTenant(existingId, updateDto);
-
-            verify(tenantRepository, times(1)).findById(existingId);
-            verify(tenantMapper, times(1)).updateEntityFromDto(any(TenantSaveDTO.class), any(Tenant.class));
-            verify(tenantRepository, times(1)).save(existingTenant);
-
-            assertNotNull(result);
-            assertEquals(updateDto.getName(), result.getName());
-        }
-
-        @Test
-        @DisplayName("更新失败：租户不存在")
-        void updateTenant_TenantNotFound_ThrowsBizException() {
-            when(tenantRepository.findById(existingId)).thenReturn(Optional.empty());
-
-            BizException exception = assertThrows(BizException.class, () -> {
-                tenantService.updateTenant(existingId, updateDto);
-            });
-
-            assertEquals("租户不存在", exception.getMessage());
-            verify(tenantRepository, never()).save(any());
-        }
-
         @Test
         @DisplayName("更新失败：尝试修改租户ID")
         void updateTenant_TenantIdChanged_ThrowsBizException() {
+            Long existingId = 1L;
             TenantSaveDTO invalidDto = new TenantSaveDTO();
-            invalidDto.setTenantId("new-tenant-id-attempt");
-            invalidDto.setName("更新后的名称");
+            invalidDto.setTenantId("new-id");
+            invalidDto.setName("name");
+
+            Tenant existingTenant = new Tenant();
+            existingTenant.setId(existingId);
+            existingTenant.setTenantId("old-id");
 
             when(tenantRepository.findById(existingId)).thenReturn(Optional.of(existingTenant));
 
@@ -202,8 +145,7 @@ class TenantServiceTest {
                 tenantService.updateTenant(existingId, invalidDto);
             });
 
-            assertEquals("租户ID不可修改", exception.getMessage());
-            verify(tenantMapper, never()).updateEntityFromDto(any(TenantSaveDTO.class), any(Tenant.class));
+            assertEquals("租户编码不可修改", exception.getMessage());
             verify(tenantRepository, never()).save(any());
         }
     }

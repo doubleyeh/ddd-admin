@@ -26,6 +26,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.util.Collections;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -80,15 +82,24 @@ class AuthControllerTest {
         req.setPassword("password");
         req.setTenantId("tenantA");
 
-        Authentication auth = new UsernamePasswordAuthenticationToken("john", "password");
+        CustomUserDetail userDetail = new CustomUserDetail(
+                1L, "john", "password", "tenantA", Collections.emptyList(), false
+        );
+        Authentication auth = new UsernamePasswordAuthenticationToken(userDetail, "password");
 
         given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .willReturn(auth);
 
-        given(jwtTokenProvider.createToken("john", "tenantA", (CustomUserDetail) auth.getPrincipal(), "127.0.0.1", "mock"))
-                .willReturn("fake-jwt-token");
+        given(jwtTokenProvider.createToken(
+                eq("john"),
+                eq("tenantA"),
+                any(CustomUserDetail.class),
+                anyString(),
+                anyString()
+        )).willReturn("fake-jwt-token");
 
         mockMvc.perform(post("/api/auth/login")
+                        .header("User-Agent", "Mozilla/5.0...")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonMapper.writeValueAsString(req))
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
