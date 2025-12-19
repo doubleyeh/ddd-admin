@@ -1,6 +1,8 @@
 package com.mok.ddd.infrastructure.security;
 
+import com.mok.ddd.application.dto.tenant.TenantDTO;
 import com.mok.ddd.application.service.PermissionService;
+import com.mok.ddd.application.service.TenantCacheService;
 import com.mok.ddd.common.Const;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import jakarta.annotation.Nonnull;
@@ -9,6 +11,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -17,20 +20,19 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
     private final PermissionService permissionService;
+    private final TenantCacheService tenantService;
 
-    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, PermissionService permissionService) {
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, PermissionService permissionService, TenantCacheService tenantService) {
         this.tokenProvider = tokenProvider;
         this.permissionService = permissionService;
+        this.tenantService = tenantService;
     }
 
     @Override
@@ -44,8 +46,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (session != null) {
                 String tenantId = session.getTenantId();
+                TenantDTO tenantDTO = tenantService.findByTenantId(tenantId);
+                if(Objects.isNull(tenantDTO) || !tenantDTO.getEnabled()){
+                    throw new AuthorizationDeniedException("租户不存在或已被禁用");
+                }
+
                 String username = session.getUsername();
                 CustomUserDetail principal = session.getPrincipal();
+                Long userId = principal.getUserId();
 
                 Set<Long> roleIds = principal.getRoleIds();
                 List<SimpleGrantedAuthority> authorities;
@@ -73,6 +81,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 ScopedValue.where(TenantContextHolder.TENANT_ID, tenantId)
                         .where(TenantContextHolder.USERNAME, username)
+                        .where(TenantContextHolder.USER_ID, userId)
                         .run(() -> {
                             try {
                                 SecurityContextHolder.getContext().setAuthentication(authentication);

@@ -131,6 +131,7 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
 
     @Transactional
     public UserDTO updateUserState(@NonNull Long id, @NonNull Integer state){
+
         User entity = userRepository.findById(id).orElseThrow(() -> new NotFoundException(Const.NOT_FOUND_MESSAGE));
         entity.setState(state);
         return this.toDto(userRepository.save(entity));

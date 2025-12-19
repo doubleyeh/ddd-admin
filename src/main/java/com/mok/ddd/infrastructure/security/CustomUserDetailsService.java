@@ -1,5 +1,7 @@
 package com.mok.ddd.infrastructure.security;
 
+import com.mok.ddd.application.dto.tenant.TenantDTO;
+import com.mok.ddd.application.service.TenantCacheService;
 import com.mok.ddd.common.SysUtil;
 import com.mok.ddd.domain.entity.BaseEntity;
 import com.mok.ddd.domain.entity.User;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
+    private final TenantCacheService tenantCacheService;
 
     @Override
     public UserDetails loadUserByUsername(@NonNull String username) throws UsernameNotFoundException {
@@ -35,6 +38,11 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         if (!StringUtils.hasLength(tenantId)) {
             throw new UsernameNotFoundException("Tenant context is missing");
+        }
+
+        TenantDTO tenant = tenantCacheService.findByTenantId(tenantId);
+        if (tenant == null || !tenant.getEnabled()) {
+            throw new BadCredentialsException("租户不存在或已被禁用");
         }
 
         User user = userRepository.findByUsername(username)

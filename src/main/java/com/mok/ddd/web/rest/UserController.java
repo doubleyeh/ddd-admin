@@ -1,28 +1,20 @@
 package com.mok.ddd.web.rest;
 
-import java.util.Objects;
-
-
-import com.mok.ddd.application.dto.tenant.TenantDTO;
+import com.mok.ddd.application.dto.user.*;
+import com.mok.ddd.application.service.UserService;
+import com.mok.ddd.common.Const;
+import com.mok.ddd.common.PasswordGenerator;
+import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import com.mok.ddd.application.dto.user.UserDTO;
-import com.mok.ddd.application.dto.user.UserPasswordDTO;
-import com.mok.ddd.application.dto.user.UserPostDTO;
-import com.mok.ddd.application.dto.user.UserPutDTO;
-import com.mok.ddd.application.dto.user.UserQuery;
-import com.mok.ddd.application.service.UserService;
-import com.mok.ddd.common.Const;
-import com.mok.ddd.common.PasswordGenerator;
-
-
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/users")
@@ -66,6 +58,9 @@ public class UserController {
     @PutMapping("/{id}/state")
     @PreAuthorize("hasAuthority('user:update')")
     public RestResponse<UserDTO> updateState(@PathVariable Long id, @Valid @NotNull @RequestParam Integer state) {
+        if (Objects.equals(0, state) && isCurrentUser(id)) {
+            return RestResponse.failure("禁止禁用当前登录用户");
+        }
         UserDTO dto = userService.updateUserState(id, state);
         return RestResponse.success(dto);
     }
@@ -86,7 +81,14 @@ public class UserController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('user:delete')")
     public RestResponse<Void> deleteById(@PathVariable Long id) {
+        if (isCurrentUser(id)) {
+            return RestResponse.failure("禁止删除当前登录用户");
+        }
         userService.deleteById(id);
         return RestResponse.success();
+    }
+
+    private boolean isCurrentUser(Long id){
+        return Objects.equals(id, TenantContextHolder.getUserId());
     }
 }

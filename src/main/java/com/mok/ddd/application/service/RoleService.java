@@ -174,7 +174,8 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
                 ))
                 .from(role)
                 .leftJoin(tenant).on(role.tenantId.eq(tenant.tenantId))
-                .where(roleQuery.toPredicate());
+                .where(roleQuery.toPredicate(),
+                        role.enabled.eq(true));
 
         roleRepository.applyTenantFilter(query, role);
         return query.fetch();

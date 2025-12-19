@@ -7,6 +7,7 @@ public class TenantContextHolder {
 
     public static final ScopedValue<String> TENANT_ID = ScopedValue.newInstance();
     public static final ScopedValue<String> USERNAME = ScopedValue.newInstance();
+    public static final ScopedValue<Long> USER_ID = ScopedValue.newInstance();
 
     public static String getTenantId() {
         return TENANT_ID.isBound() ? TENANT_ID.get() : "";
@@ -16,7 +17,8 @@ public class TenantContextHolder {
         return USERNAME.isBound() ? USERNAME.get() : "";
     }
 
-    public static void clear() {
+    public static Long getUserId() {
+        return USER_ID.isBound() ? USER_ID.get() : null;
     }
 
     public static boolean isSuperAdmin() {

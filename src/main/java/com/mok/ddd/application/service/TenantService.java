@@ -16,6 +16,7 @@ import com.mok.ddd.infrastructure.repository.CustomRepository;
 import com.querydsl.core.BooleanBuilder;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -32,6 +33,7 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
     private final TenantRepository tenantRepository;
     private final TenantMapper tenantMapper;
     private final UserService userService;
+    private final RedisTemplate<String, TenantDTO> redisTemplate;
 
     @Override
     @NonNull
@@ -106,14 +108,18 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
         }
 
         tenantMapper.updateEntityFromDto(dto, existingTenant);
-        return tenantMapper.toDto(tenantRepository.save(existingTenant));
+        TenantDTO res = tenantMapper.toDto(tenantRepository.save(existingTenant));
+        redisTemplate.delete(Const.CacheKey.TENANT + existingTenant.getTenantId());
+        return res;
     }
 
     @Transactional
     public TenantDTO updateTenantState(@NonNull Long id, @NonNull Boolean state) {
         Tenant existingTenant = tenantRepository.findById(id).orElseThrow(() -> new BizException("租户不存在"));
         existingTenant.setEnabled(state);
-        return tenantMapper.toDto(tenantRepository.save(existingTenant));
+        TenantDTO res = tenantMapper.toDto(tenantRepository.save(existingTenant));
+        redisTemplate.delete(Const.CacheKey.TENANT + existingTenant.getTenantId());
+        return res;
     }
 
     @Transactional
@@ -128,6 +134,7 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
 
         // TODO其他业务数据判断
         deleteById(id);
+        redisTemplate.delete(Const.CacheKey.TENANT + old.getTenantId());
         return true;
     }
 
@@ -137,6 +144,7 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
         if (StringUtils.hasText(name)) {
             builder.and(tenant.name.containsIgnoreCase(name));
         }
+        builder.and(tenant.enabled.eq(true));
         List<TenantDTO> list = findAll(builder);
         return tenantMapper.dtoToOptionsDto(list);
     }

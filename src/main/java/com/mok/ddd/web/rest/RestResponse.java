@@ -25,4 +25,8 @@ public class RestResponse<T> {
     public static <T> RestResponse<T> failure(int code, String message) {
         return new RestResponse<>(code, false, message, null);
     }
+
+    public static <T> RestResponse<T> failure(String message) {
+        return failure(400, message);
+    }
 }
