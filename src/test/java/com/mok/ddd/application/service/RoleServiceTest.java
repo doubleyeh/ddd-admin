@@ -4,6 +4,7 @@ import com.mok.ddd.application.dto.menu.MenuDTO;
 import com.mok.ddd.application.dto.permission.PermissionDTO;
 import com.mok.ddd.application.dto.role.RoleDTO;
 import com.mok.ddd.application.dto.role.RoleSaveDTO;
+import com.mok.ddd.application.exception.BizException;
 import com.mok.ddd.application.exception.NotFoundException;
 import com.mok.ddd.application.mapper.MenuMapper;
 import com.mok.ddd.application.mapper.PermissionMapper;
@@ -14,6 +15,7 @@ import com.mok.ddd.domain.entity.Role;
 import com.mok.ddd.domain.repository.MenuRepository;
 import com.mok.ddd.domain.repository.PermissionRepository;
 import com.mok.ddd.domain.repository.RoleRepository;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -231,5 +233,147 @@ class RoleServiceTest {
                 roleService.getPermissionsByRole(existingId);
             });
         }
+    }
+
+    @Nested
+    @DisplayName("findPage 分页查询测试")
+    class FindPageTests {
+        @Test
+        @DisplayName("分页查询角色成功")
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        void findPage_Success() {
+            com.querydsl.core.types.Predicate predicate = mock(com.querydsl.core.types.Predicate.class);
+            org.springframework.data.domain.Pageable pageable = mock(org.springframework.data.domain.Pageable.class);
+            com.querydsl.jpa.impl.JPAQueryFactory queryFactory = mock(com.querydsl.jpa.impl.JPAQueryFactory.class);
+            com.querydsl.jpa.impl.JPAQuery jpaQuery = mock(com.querydsl.jpa.impl.JPAQuery.class);
+            com.querydsl.jpa.impl.JPAQuery countQuery = mock(com.querydsl.jpa.impl.JPAQuery.class);
+            com.querydsl.jpa.JPQLQuery jpqlQuery = mock(com.querydsl.jpa.JPQLQuery.class);
+            org.springframework.data.jpa.repository.support.Querydsl querydsl = mock(org.springframework.data.jpa.repository.support.Querydsl.class);
+
+            when(roleRepository.getJPAQueryFactory()).thenReturn(queryFactory);
+            when(roleRepository.getQuerydsl()).thenReturn(querydsl);
+
+            when(queryFactory.select(any(com.querydsl.core.types.Expression.class)))
+                    .thenReturn(jpaQuery)
+                    .thenReturn(countQuery);
+
+            when(jpaQuery.from(any(com.querydsl.core.types.EntityPath.class))).thenReturn(jpaQuery);
+            when(jpaQuery.leftJoin(any(com.querydsl.core.types.EntityPath.class))).thenReturn(jpaQuery);
+            when(jpaQuery.on(any(com.querydsl.core.types.Predicate.class))).thenReturn(jpaQuery);
+            when(jpaQuery.where(any(com.querydsl.core.types.Predicate.class))).thenReturn(jpaQuery);
+
+            when(querydsl.applyPagination(eq(pageable), any())).thenReturn(jpqlQuery);
+            when(jpqlQuery.fetch()).thenReturn(List.of(new RoleDTO()));
+
+            when(countQuery.from(any(com.querydsl.core.types.EntityPath.class))).thenReturn(countQuery);
+            when(countQuery.leftJoin(any(com.querydsl.core.types.EntityPath.class))).thenReturn(countQuery);
+            when(countQuery.on(any(com.querydsl.core.types.Predicate.class))).thenReturn(countQuery);
+            when(countQuery.where(any(com.querydsl.core.types.Predicate.class))).thenReturn(countQuery);
+            when(countQuery.fetchOne()).thenReturn(1L);
+
+            org.springframework.data.domain.Page<@NonNull RoleDTO> result = roleService.findPage(predicate, pageable);
+
+            assertNotNull(result);
+            assertEquals(1, result.getTotalElements());
+            verify(roleRepository).applyTenantFilter(any(), any());
+        }
+    }
+
+    @Nested
+    @DisplayName("updateState 状态更新测试")
+    class UpdateStateTests {
+        @Test
+        @DisplayName("更新角色状态成功")
+        void updateState_Success() {
+            Long id = 1L;
+            Boolean enabled = true;
+            Role role = new Role();
+            role.setId(id);
+            RoleDTO roleDTO = new RoleDTO();
+
+            when(roleRepository.findById(id)).thenReturn(Optional.of(role));
+            when(roleRepository.save(role)).thenReturn(role);
+            when(roleMapper.toDto(role)).thenReturn(roleDTO);
+
+            RoleDTO result = roleService.updateState(id, enabled);
+
+            assertTrue(role.getEnabled());
+            assertEquals(roleDTO, result);
+        }
+    }
+
+    @Nested
+    @DisplayName("deleteRoleBeforeValidation 删除校验测试")
+    class DeleteRoleTests {
+        @Test
+        @DisplayName("删除角色成功")
+        void deleteRole_Success() {
+            Long id = 1L;
+            when(roleRepository.existsUserAssociatedWithRole(id)).thenReturn(false);
+
+            roleService.deleteRoleBeforeValidation(id);
+
+            verify(roleRepository).deleteById(id);
+        }
+
+        @Test
+        @DisplayName("删除角色失败：存在关联用户")
+        void deleteRole_HasUserAssociated_ThrowsBizException() {
+            Long id = 1L;
+            when(roleRepository.existsUserAssociatedWithRole(id)).thenReturn(true);
+
+            BizException exception = assertThrows(BizException.class, () ->
+                    roleService.deleteRoleBeforeValidation(id)
+            );
+
+            assertEquals("该角色下存在用户，请先删除用户关联该角色", exception.getMessage());
+            verify(roleRepository, never()).deleteById(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("getRoleOptions 选项查询测试")
+    class GetRoleOptionsTests {
+        @Test
+        @DisplayName("获取角色选项列表成功")
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        void getRoleOptions_Success() {
+            com.mok.ddd.application.dto.role.RoleQuery roleQuery = mock(com.mok.ddd.application.dto.role.RoleQuery.class);
+            com.querydsl.jpa.impl.JPAQueryFactory queryFactory = mock(com.querydsl.jpa.impl.JPAQueryFactory.class);
+            com.querydsl.jpa.impl.JPAQuery jpaQuery = mock(com.querydsl.jpa.impl.JPAQuery.class);
+            List<com.mok.ddd.application.dto.role.RoleOptionsDTO> options = List.of(new com.mok.ddd.application.dto.role.RoleOptionsDTO());
+
+            when(roleQuery.toPredicate()).thenReturn(mock(com.querydsl.core.types.Predicate.class));
+            when(roleRepository.getJPAQueryFactory()).thenReturn(queryFactory);
+
+            doReturn(jpaQuery).when(queryFactory).select(any(com.querydsl.core.types.Expression.class));
+            doReturn(jpaQuery).when(jpaQuery).from(any(com.querydsl.core.types.EntityPath.class));
+            doReturn(jpaQuery).when(jpaQuery).leftJoin(any(com.querydsl.core.types.EntityPath.class));
+
+            doReturn(jpaQuery).when(jpaQuery).on(any(com.querydsl.core.types.Predicate.class));
+            doReturn(jpaQuery).when(jpaQuery).where(any(com.querydsl.core.types.Predicate.class));
+
+            when(jpaQuery.fetch()).thenReturn(options);
+
+            List<com.mok.ddd.application.dto.role.RoleOptionsDTO> result = roleService.getRoleOptions(roleQuery);
+
+            assertNotNull(result);
+            assertEquals(options, result);
+        }
+    }
+
+    @Test
+    @DisplayName("基础转换方法测试")
+    void testBaseMethods() {
+        RoleDTO dto = new RoleDTO();
+        Role entity = new Role();
+
+        when(roleMapper.toEntity(dto)).thenReturn(entity);
+        assertEquals(entity, roleService.toEntity(dto));
+
+        when(roleMapper.toDto(entity)).thenReturn(dto);
+        assertEquals(dto, roleService.toDto(entity));
+
+        assertEquals(roleRepository, roleService.getRepository());
     }
 }

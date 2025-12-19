@@ -17,6 +17,7 @@ import com.mok.ddd.domain.entity.Role;
 import com.mok.ddd.domain.entity.User;
 import com.mok.ddd.domain.repository.UserRepository;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -408,6 +409,104 @@ class UserServiceTest {
             when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
 
             assertThrows(NotFoundException.class, () -> userService.findAccountInfoByUsername(username));
+        }
+    }
+
+    @Nested
+    @DisplayName("用户状态更新测试")
+    class UpdateStateTests {
+        @Test
+        @DisplayName("更新用户状态成功")
+        void updateUserState_Success() {
+            Long id = 1L;
+            Integer state = 1;
+            User user = new User();
+            UserDTO userDTO = new UserDTO();
+
+            when(userRepository.findById(id)).thenReturn(Optional.of(user));
+            when(userRepository.save(user)).thenReturn(user);
+            doReturn(userDTO).when(userService).toDto(user);
+
+            UserDTO result = userService.updateUserState(id, state);
+
+            assertEquals(state, user.getState());
+            assertEquals(userDTO, result);
+            verify(userRepository).save(user);
+        }
+
+        @Test
+        @DisplayName("更新状态失败：用户不存在")
+        void updateUserState_NotFound() {
+            when(userRepository.findById(anyLong())).thenReturn(Optional.empty());
+            assertThrows(NotFoundException.class, () -> userService.updateUserState(1L, 1));
+        }
+    }
+
+    @Test
+    @DisplayName("测试 getRepository")
+    void testGetRepository() {
+        assertEquals(userRepository, userService.getRepository());
+    }
+
+    @Test
+    @DisplayName("测试 toEntity")
+    void testToEntity() {
+        UserDTO dto = new UserDTO();
+        User entity = new User();
+        when(userMapper.toEntity(dto)).thenReturn(entity);
+        assertEquals(entity, userService.toEntity(dto));
+    }
+
+    @Test
+    @DisplayName("测试 toDto")
+    void testToDto() {
+        User entity = new User();
+        UserDTO dto = new UserDTO();
+        when(userMapper.toDto(entity)).thenReturn(dto);
+        assertEquals(dto, userService.toDto(entity));
+    }
+
+    @Nested
+    @DisplayName("测试 分页查询")
+    class FindPageTests {
+        @Test
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        void findPage_Success() {
+            com.querydsl.core.types.Predicate predicate = mock(com.querydsl.core.types.Predicate.class);
+            org.springframework.data.domain.Pageable pageable = mock(org.springframework.data.domain.Pageable.class);
+            com.querydsl.jpa.impl.JPAQueryFactory queryFactory = mock(com.querydsl.jpa.impl.JPAQueryFactory.class);
+            com.querydsl.jpa.impl.JPAQuery jpaQuery = mock(com.querydsl.jpa.impl.JPAQuery.class);
+            com.querydsl.jpa.impl.JPAQuery countQuery = mock(com.querydsl.jpa.impl.JPAQuery.class);
+            com.querydsl.jpa.JPQLQuery jpqlQuery = mock(com.querydsl.jpa.JPQLQuery.class);
+
+            org.springframework.data.jpa.repository.support.Querydsl querydsl = mock(org.springframework.data.jpa.repository.support.Querydsl.class);
+
+            when(userRepository.getJPAQueryFactory()).thenReturn(queryFactory);
+            when(userRepository.getQuerydsl()).thenReturn(querydsl);
+
+            when(queryFactory.select(any(com.querydsl.core.types.Expression.class)))
+                    .thenReturn(jpaQuery)
+                    .thenReturn(countQuery);
+
+            when(jpaQuery.from(any(com.querydsl.core.types.EntityPath.class))).thenReturn(jpaQuery);
+            when(jpaQuery.leftJoin(any(com.querydsl.core.types.EntityPath.class))).thenReturn(jpaQuery);
+            when(jpaQuery.on(any(com.querydsl.core.types.Predicate.class))).thenReturn(jpaQuery);
+            when(jpaQuery.where(any(com.querydsl.core.types.Predicate.class))).thenReturn(jpaQuery);
+
+            when(querydsl.applyPagination(eq(pageable), any())).thenReturn(jpqlQuery);
+            when(jpqlQuery.fetch()).thenReturn(List.of(new UserDTO()));
+
+            when(countQuery.from(any(com.querydsl.core.types.EntityPath.class))).thenReturn(countQuery);
+            when(countQuery.leftJoin(any(com.querydsl.core.types.EntityPath.class))).thenReturn(countQuery);
+            when(countQuery.on(any(com.querydsl.core.types.Predicate.class))).thenReturn(countQuery);
+            when(countQuery.where(any(com.querydsl.core.types.Predicate.class))).thenReturn(countQuery);
+            when(countQuery.fetchOne()).thenReturn(1L);
+
+            org.springframework.data.domain.Page<@NonNull UserDTO> result = userService.findPage(predicate, pageable);
+
+            assertNotNull(result);
+            assertEquals(1, result.getTotalElements());
+            verify(userRepository).applyTenantFilter(any(), any());
         }
     }
 }
