@@ -2,6 +2,7 @@ package com.mok.ddd.application.service;
 
 import com.mok.ddd.application.dto.tenant.TenantCreateResultDTO;
 import com.mok.ddd.application.dto.tenant.TenantDTO;
+import com.mok.ddd.application.dto.tenant.TenantOptionsDTO;
 import com.mok.ddd.application.dto.tenant.TenantSaveDTO;
 import com.mok.ddd.application.dto.user.UserPostDTO;
 import com.mok.ddd.application.exception.BizException;
@@ -22,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -147,6 +149,90 @@ class TenantServiceTest {
 
             assertEquals("租户编码不可修改", exception.getMessage());
             verify(tenantRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("租户状态与删除测试")
+    class StateAndDeleteTests {
+
+        @Test
+        @DisplayName("更新租户状态成功")
+        void updateTenantState_Success() {
+            Long id = 1L;
+            Boolean newState = false;
+            Tenant tenant = new Tenant();
+            tenant.setId(id);
+            tenant.setEnabled(true);
+
+            when(tenantRepository.findById(id)).thenReturn(Optional.of(tenant));
+            when(tenantRepository.save(any(Tenant.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(tenantMapper.toDto(any(Tenant.class))).thenReturn(new TenantDTO());
+
+            tenantService.updateTenantState(id, newState);
+
+            verify(tenantRepository).save(tenant);
+            assertFalse(tenant.getEnabled());
+        }
+
+        @Test
+        @DisplayName("验证删除租户成功")
+        void deleteByVerify_Success() {
+            Long id = 1L;
+            TenantDTO dto = new TenantDTO();
+            dto.setTenantId("NORMAL_001");
+
+            TenantService spyService = spy(tenantService);
+            doReturn(dto).when(spyService).getById(id);
+            doNothing().when(spyService).deleteById(id);
+
+            boolean result = spyService.deleteByVerify(id);
+
+            verify(spyService).deleteById(id);
+            assertTrue(result);
+        }
+
+        @Test
+        @DisplayName("删除租户失败：超管租户不可删除")
+        void deleteByVerify_SuperTenant_ThrowsBizException() {
+            Long id = 1L;
+            TenantDTO superTenantDto = new TenantDTO();
+            superTenantDto.setTenantId("000000");
+
+            TenantService spyService = spy(tenantService);
+            doReturn(superTenantDto).when(spyService).getById(id);
+
+            BizException exception = assertThrows(BizException.class, () -> spyService.deleteByVerify(id));
+            assertEquals("该租户不可删除", exception.getMessage());
+            verify(spyService, never()).deleteById(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("查询测试")
+    class QueryTests {
+
+        @Test
+        @DisplayName("获取租户选项列表成功")
+        void findOptions_Success() {
+            String name = "测试";
+            TenantDTO dto = new TenantDTO();
+            dto.setName("测试租户");
+
+            List<TenantDTO> dtoList = List.of(dto);
+            TenantOptionsDTO option = new TenantOptionsDTO();
+            option.setName("测试租户");
+
+            when(tenantRepository.findAll(any(com.querydsl.core.types.Predicate.class)))
+                    .thenReturn(List.of(new Tenant()));
+
+            when(tenantMapper.dtoToOptionsDto(any())).thenReturn(List.of(option));
+
+            List<TenantOptionsDTO> result = tenantService.findOptions(name);
+
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals("测试租户", result.getFirst().getName());
         }
     }
 }
