@@ -20,9 +20,9 @@ public class TenantCacheService {
 
     public TenantDTO findByTenantId(@NonNull String tenantId) {
         String key = Const.CacheKey.TENANT + tenantId;
-        TenantDTO cached = redisTemplate.opsForValue().get(key);
-        if (cached != null) {
-            return cached;
+        Object cached = redisTemplate.opsForValue().get(key);
+        if (cached instanceof TenantDTO tenantDTO) {
+            return tenantDTO;
         }
 
         TenantQuery query = new TenantQuery();

@@ -1,5 +1,6 @@
 package com.mok.ddd.infrastructure.config;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -12,17 +13,12 @@ import tools.jackson.databind.json.JsonMapper;
 @Configuration
 public class RedisConfig {
 
-    private final JsonMapper jsonMapper;
-
-    public RedisConfig(JsonMapper jsonMapper) {
-        this.jsonMapper = jsonMapper;
-    }
-
     @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory,
+                                                       @Qualifier("redisJsonMapper") JsonMapper redisJsonMapper) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
-        GenericJacksonJsonRedisSerializer jsonSerializer = new GenericJacksonJsonRedisSerializer(jsonMapper);
+        GenericJacksonJsonRedisSerializer jsonSerializer = new GenericJacksonJsonRedisSerializer(redisJsonMapper);
         template.setKeySerializer(RedisSerializer.string());
         template.setValueSerializer(jsonSerializer);
         template.setHashValueSerializer(jsonSerializer);

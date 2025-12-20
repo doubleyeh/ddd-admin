@@ -33,7 +33,7 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
     private final TenantRepository tenantRepository;
     private final TenantMapper tenantMapper;
     private final UserService userService;
-    private final RedisTemplate<String, TenantDTO> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
     @NonNull
