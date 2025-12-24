@@ -15,4 +15,5 @@ public class Tenant extends BaseEntity {
     private String contactPerson;
     private String contactPhone;
     private Boolean enabled;
+    private Long packageId;
 }

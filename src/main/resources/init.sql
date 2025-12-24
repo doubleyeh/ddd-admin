@@ -32,6 +32,16 @@ VALUES
 (998, 999, '在线用户查询', 'admin:online-user', NULL, NULL, '查看在线登录用户列表', NOW(), NOW()),
 (999, 999, '在线用户强退', 'admin:online-user:kickout', NULL, NULL, '强制下线指定用户', NOW(), NOW());
 
+INSERT INTO sys_menu (id, parent_id, name, path, component, icon, sort, is_hidden, create_time, update_time)
+VALUES (105, 100, '套餐管理', '/system/package', 'system/package/index', 'GiftOutline', 51, FALSE, NOW(), NOW());
+
+INSERT INTO sys_permission (id, menu_id, name, code, url, method, description, create_time, update_time)
+VALUES
+(17, 105, '套餐查询', 'tenantPackage:list', NULL, NULL, '查询套餐分页及详情', NOW(), NOW()),
+(18, 105, '套餐创建', 'tenantPackage:create', NULL, NULL, '新增套餐', NOW(), NOW()),
+(19, 105, '套餐修改', 'tenantPackage:update', NULL, NULL, '修改套餐信息', NOW(), NOW()),
+(20, 105, '套餐删除', 'tenantPackage:delete', NULL, NULL, '删除套餐', NOW(), NOW());
+
 INSERT INTO `sys_tenant` (`id`, `create_by`, `create_time`, `update_by`, `update_time`, `contact_person`, `contact_phone`, `enabled`, `name`, `tenant_id`) VALUES (1, 'root', '2025-11-29 16:45:25.000000', 'root', '2025-11-29 16:45:30.000000', 'root', '1', b'1', 'root', '000000');
 
 INSERT INTO `sys_user` (`id`, `create_by`, `create_time`, `update_by`, `update_time`, `tenant_id`, `nickname`, `password`, `state`, `username`) VALUES (1, 'root', '2025-11-30 07:52:38.000000', 'root', '2025-11-30 07:52:44.000000', '000000', 'Root', '$2a$10$3UzFSpn1EaTqUhU5tN/n/e3lZQUkXf0zCIAbefLrbuzNIEXKmECUG', 1, 'root');

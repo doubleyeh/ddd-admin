@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface TenantRepository extends CustomRepository<Tenant, Long> {
     Optional<Tenant> findByTenantId(String tenantId);
+
+    long countByPackageId(Long packageId);
 }
