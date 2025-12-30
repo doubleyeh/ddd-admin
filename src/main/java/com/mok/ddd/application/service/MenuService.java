@@ -5,21 +5,23 @@ import com.mok.ddd.application.dto.menu.MenuOptionDTO;
 import com.mok.ddd.application.dto.permission.PermissionOptionDTO;
 import com.mok.ddd.application.mapper.MenuMapper;
 import com.mok.ddd.common.Const;
+import com.mok.ddd.common.SysUtil;
 import com.mok.ddd.domain.entity.Menu;
 import com.mok.ddd.domain.entity.Permission;
+import com.mok.ddd.domain.entity.TenantPackage;
 import com.mok.ddd.domain.repository.MenuRepository;
 import com.mok.ddd.domain.repository.PermissionRepository;
+import com.mok.ddd.domain.repository.TenantPackageRepository;
+import com.mok.ddd.domain.repository.TenantRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
+import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,6 +32,8 @@ public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
     private final PermissionRepository permissionRepository;
     private final StringRedisTemplate redisTemplate;
     private final MenuMapper menuMapper;
+    private final TenantRepository tenantRepository;
+    private final TenantPackageRepository tenantPackageRepository;
 
     @Transactional
     @Override
@@ -142,6 +146,59 @@ public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
     public List<MenuOptionDTO> buildMenuAndPermissionTree() {
         List<Menu> entities = menuRepository.findAll();
 
+        // 过滤逻辑：如果不是超级租户，则只能看到套餐内的菜单和权限
+        String currentTenantId = TenantContextHolder.getTenantId();
+        if (!SysUtil.isSuperTenant(currentTenantId)) {
+            Long packageId = tenantRepository.findByTenantId(currentTenantId)
+                    .map(com.mok.ddd.domain.entity.Tenant::getPackageId)
+                    .orElse(null);
+
+            if (packageId != null) {
+                TenantPackage tenantPackage = tenantPackageRepository.findById(packageId).orElse(null);
+                if (tenantPackage != null) {
+                    Set<Long> allowedMenuIds = tenantPackage.getMenus().stream().map(Menu::getId).collect(Collectors.toSet());
+                    Set<Long> allowedPermissionIds = tenantPackage.getPermissions().stream().map(Permission::getId).collect(Collectors.toSet());
+
+                    entities = entities.stream()
+                            .filter(m -> allowedMenuIds.contains(m.getId()))
+                            .toList();
+                    
+                    // 还需要过滤每个菜单下的权限，这里先在 map 转换时处理
+                    final Set<Long> finalAllowedPermissionIds = allowedPermissionIds;
+                    
+                    List<MenuOptionDTO> flatList = entities.stream()
+                            .map(entity -> {
+                                MenuOptionDTO dto = new MenuOptionDTO();
+                                dto.setId(entity.getId());
+                                dto.setParentId(entity.getParent() != null ? entity.getParent().getId() : null);
+                                dto.setName(entity.getName());
+                                dto.setPath(entity.getPath());
+                                dto.setIsPermission(false);
+
+                                if (entity.getPermissions() != null) {
+                                    List<PermissionOptionDTO> pDtos = entity.getPermissions().stream()
+                                            .filter(p -> finalAllowedPermissionIds.contains(p.getId()))
+                                            .map(p -> {
+                                                PermissionOptionDTO pDto = new PermissionOptionDTO();
+                                                pDto.setId(p.getId());
+                                                pDto.setName(p.getName());
+                                                pDto.setIsPermission(true);
+                                                return pDto;
+                                            }).toList();
+                                    dto.setPermissions(pDtos);
+                                }
+                                return dto;
+                            }).toList();
+                    
+                    return buildTreeFromFlatList(flatList);
+                }
+            }
+            // 如果没有套餐或者套餐为空，理论上应该返回空，或者根据业务需求处理
+            // 这里假设如果没有套餐，就什么都看不到
+            return Collections.emptyList();
+        }
+
+        // 超级租户逻辑保持不变
         List<MenuOptionDTO> flatList = entities.stream()
                 .map(entity -> {
                     MenuOptionDTO dto = new MenuOptionDTO();
@@ -165,6 +222,10 @@ public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
                     return dto;
                 }).toList();
 
+        return buildTreeFromFlatList(flatList);
+    }
+
+    private List<MenuOptionDTO> buildTreeFromFlatList(List<MenuOptionDTO> flatList) {
         Map<Long, MenuOptionDTO> dtoMap = flatList.stream()
                 .collect(Collectors.toMap(MenuOptionDTO::getId, dto -> dto));
 
