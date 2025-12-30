@@ -76,15 +76,4 @@ public class TenantPackageController {
         return RestResponse.success(packageService.findOptions(name));
     }
 
-    @GetMapping("/{id}/menus")
-    @PreAuthorize("hasAuthority('tenantPackage:list')")
-    public RestResponse<Set<MenuDTO>> getMenus(@PathVariable Long id) {
-        return RestResponse.success(packageService.getMenusByPackage(id));
-    }
-
-    @GetMapping("/{id}/permissions")
-    @PreAuthorize("hasAuthority('tenantPackage:list')")
-    public RestResponse<Set<PermissionDTO>> getPermissions(@PathVariable Long id) {
-        return RestResponse.success(packageService.getPermissionsByPackage(id));
-    }
 }

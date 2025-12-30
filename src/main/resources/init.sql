@@ -33,7 +33,7 @@ VALUES
 (999, 999, '在线用户强退', 'admin:online-user:kickout', NULL, NULL, '强制下线指定用户', NOW(), NOW());
 
 INSERT INTO sys_menu (id, parent_id, name, path, component, icon, sort, is_hidden, create_time, update_time)
-VALUES (105, 100, '套餐管理', '/system/package', 'system/package/index', 'GiftOutline', 51, FALSE, NOW(), NOW());
+VALUES (105, 100, '套餐管理', '/system/package', 'system/tenant-package', 'GiftOutline', 51, FALSE, NOW(), NOW());
 
 INSERT INTO sys_permission (id, menu_id, name, code, url, method, description, create_time, update_time)
 VALUES
