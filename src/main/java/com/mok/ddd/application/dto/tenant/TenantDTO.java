@@ -10,4 +10,6 @@ public class TenantDTO {
     private String contactPerson;
     private String contactPhone;
     private Boolean enabled;
+    private Long packageId;
+    private String packageName;
 }

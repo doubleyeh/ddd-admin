@@ -10,19 +10,29 @@ import com.mok.ddd.application.mapper.TenantMapper;
 import com.mok.ddd.common.Const;
 import com.mok.ddd.common.PasswordGenerator;
 import com.mok.ddd.common.SysUtil;
+import com.mok.ddd.domain.entity.QTenant;
+import com.mok.ddd.domain.entity.QTenantPackage;
 import com.mok.ddd.domain.entity.Tenant;
 import com.mok.ddd.domain.repository.TenantRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Predicate;
+import com.querydsl.core.types.Projections;
+import com.querydsl.jpa.JPQLQuery;
+import com.querydsl.jpa.impl.JPAQuery;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static com.mok.ddd.domain.entity.QTenant.tenant;
 
@@ -51,8 +61,45 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
         return tenantMapper.toDto(entity);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<@NonNull TenantDTO> findPage(Predicate predicate, Pageable pageable) {
+        QTenant tenant = QTenant.tenant;
+        QTenantPackage tenantPackage = QTenantPackage.tenantPackage;
+
+        JPAQuery<TenantDTO> query = tenantRepository.getJPAQueryFactory()
+                .select(Projections.bean(TenantDTO.class,
+                        tenant.id,
+                        tenant.tenantId,
+                        tenant.name,
+                        tenant.contactPerson,
+                        tenant.contactPhone,
+                        tenant.enabled,
+                        tenant.packageId,
+                        tenantPackage.name.as("packageName")
+                ))
+                .from(tenant)
+                .leftJoin(tenantPackage).on(tenant.packageId.eq(tenantPackage.id))
+                .where(predicate);
+
+        JPQLQuery<TenantDTO> paginatedQuery = tenantRepository.getQuerydsl().applyPagination(pageable, query);
+
+        return PageableExecutionUtils.getPage(paginatedQuery.fetch(), pageable, () -> {
+            JPAQuery<Long> countQuery = tenantRepository.getJPAQueryFactory()
+                    .select(tenant.count())
+                    .from(tenant)
+                    .leftJoin(tenantPackage).on(tenant.packageId.eq(tenantPackage.id))
+                    .where(predicate);
+            return Optional.ofNullable(countQuery.fetchOne()).orElse(0L);
+        });
+    }
+
     @Transactional
     public TenantCreateResultDTO createTenant(@NonNull TenantSaveDTO dto) {
+        if (dto.getPackageId() == null) {
+            throw new BizException("套餐不能为空");
+        }
+
         Tenant tenant = tenantMapper.toEntity(dto);
 
         int maxRetry = 5;
@@ -105,6 +152,10 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
 
         if (!existingTenant.getTenantId().equals(dto.getTenantId())) {
             throw new BizException("租户编码不可修改");
+        }
+
+        if (!SysUtil.isSuperTenant(existingTenant.getTenantId()) && dto.getPackageId() == null) {
+            throw new BizException("套餐不能为空");
         }
 
         tenantMapper.updateEntityFromDto(dto, existingTenant);

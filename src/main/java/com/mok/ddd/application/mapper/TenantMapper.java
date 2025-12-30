@@ -19,6 +19,7 @@ public interface TenantMapper {
     Tenant toEntity(TenantSaveDTO dto);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "packageId", source = "packageId")
     void updateEntityFromDto(TenantSaveDTO dto, @MappingTarget Tenant entity);
 
     void updateEntityFromDto(Tenant entity, @MappingTarget TenantCreateResultDTO dto);

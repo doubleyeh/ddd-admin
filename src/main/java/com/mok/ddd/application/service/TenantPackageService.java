@@ -11,6 +11,7 @@ import com.mok.ddd.application.mapper.MenuMapper;
 import com.mok.ddd.application.mapper.PermissionMapper;
 import com.mok.ddd.application.mapper.TenantPackageMapper;
 import com.mok.ddd.common.Const;
+import com.mok.ddd.domain.entity.QTenantPackage;
 import com.mok.ddd.domain.entity.TenantPackage;
 import com.mok.ddd.domain.repository.MenuRepository;
 import com.mok.ddd.domain.repository.PermissionRepository;
@@ -30,8 +31,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.mok.ddd.domain.entity.QTenant.tenant;
 
 @Service
 @RequiredArgsConstructor
@@ -96,11 +95,12 @@ public class TenantPackageService extends BaseServiceImpl<TenantPackage, Long, T
 
     @Transactional(readOnly = true)
     public List<TenantPackageOptionDTO> findOptions(String name){
+        QTenantPackage tenantPackage = QTenantPackage.tenantPackage;
         BooleanBuilder builder = new BooleanBuilder();
         if (StringUtils.hasText(name)) {
-            builder.and(tenant.name.containsIgnoreCase(name));
+            builder.and(tenantPackage.name.containsIgnoreCase(name));
         }
-        builder.and(tenant.enabled.eq(true));
+        builder.and(tenantPackage.enabled.eq(true));
         List<TenantPackageDTO> list = findAll(builder);
         return packageMapper.dtoToOptionsDto(list);
     }

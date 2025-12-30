@@ -18,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +42,9 @@ class TenantServiceTest {
 
     @Mock
     private UserService userService;
+
+    @Mock
+    private RedisTemplate<String, Object> redisTemplate;
 
     private MockedStatic<PasswordGenerator> mockedPasswordGenerator;
 
@@ -110,6 +114,7 @@ class TenantServiceTest {
         @DisplayName("创建租户失败：生成唯一租户编码失败")
         void createTenant_GenerateIdFailed_ThrowsBizException() {
             when(tenantRepository.findByTenantId(anyString())).thenReturn(Optional.of(mockTenant));
+            when(tenantMapper.toEntity(validDto)).thenReturn(mockTenant);
 
             BizException exception = assertThrows(BizException.class, () -> {
                 tenantService.createTenant(validDto);
@@ -160,6 +165,7 @@ class TenantServiceTest {
             Tenant tenant = new Tenant();
             tenant.setId(id);
             tenant.setEnabled(true);
+            tenant.setTenantId("TEST_001");
 
             when(tenantRepository.findById(id)).thenReturn(Optional.of(tenant));
             when(tenantRepository.save(any(Tenant.class))).thenAnswer(inv -> inv.getArgument(0));
