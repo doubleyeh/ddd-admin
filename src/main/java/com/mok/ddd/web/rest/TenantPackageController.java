@@ -1,9 +1,8 @@
 package com.mok.ddd.web.rest;
 
-import com.mok.ddd.application.dto.tenantPackage.TenantPackageDTO;
-import com.mok.ddd.application.dto.tenantPackage.TenantPackageOptionDTO;
-import com.mok.ddd.application.dto.tenantPackage.TenantPackageQuery;
-import com.mok.ddd.application.dto.tenantPackage.TenantPackageSaveDTO;
+import com.mok.ddd.application.dto.menu.MenuDTO;
+import com.mok.ddd.application.dto.permission.PermissionDTO;
+import com.mok.ddd.application.dto.tenantPackage.*;
 import com.mok.ddd.application.service.TenantPackageService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -15,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/tenant-packages")
@@ -50,6 +50,13 @@ public class TenantPackageController {
         return RestResponse.success();
     }
 
+    @PutMapping("/{id}/grant")
+    @PreAuthorize("hasAuthority('tenantPackage:update')")
+    public RestResponse<Void> grant(@PathVariable Long id, @RequestBody TenantPackageGrantDTO dto) {
+        packageService.grant(id, dto);
+        return RestResponse.success();
+    }
+
     @PutMapping("/{id}/state")
     @PreAuthorize("hasAuthority('tenantPackage:update')")
     public RestResponse<TenantPackageDTO> updateState(@PathVariable Long id, @Valid @NotNull @RequestParam Boolean state) {
@@ -67,5 +74,17 @@ public class TenantPackageController {
     @GetMapping("/options")
     public RestResponse<List<TenantPackageOptionDTO>> getOptions(@RequestParam(required = false) String name) {
         return RestResponse.success(packageService.findOptions(name));
+    }
+
+    @GetMapping("/{id}/menus")
+    @PreAuthorize("hasAuthority('tenantPackage:list')")
+    public RestResponse<Set<MenuDTO>> getMenus(@PathVariable Long id) {
+        return RestResponse.success(packageService.getMenusByPackage(id));
+    }
+
+    @GetMapping("/{id}/permissions")
+    @PreAuthorize("hasAuthority('tenantPackage:list')")
+    public RestResponse<Set<PermissionDTO>> getPermissions(@PathVariable Long id) {
+        return RestResponse.success(packageService.getPermissionsByPackage(id));
     }
 }

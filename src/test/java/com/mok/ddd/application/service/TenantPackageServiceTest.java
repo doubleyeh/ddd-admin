@@ -1,10 +1,9 @@
 package com.mok.ddd.application.service;
 
-import com.mok.ddd.application.dto.tenantPackage.TenantPackageDTO;
-import com.mok.ddd.application.dto.tenantPackage.TenantPackageOptionDTO;
-import com.mok.ddd.application.dto.tenantPackage.TenantPackageQuery;
-import com.mok.ddd.application.dto.tenantPackage.TenantPackageSaveDTO;
+import com.mok.ddd.application.dto.tenantPackage.*;
 import com.mok.ddd.application.exception.BizException;
+import com.mok.ddd.application.mapper.MenuMapper;
+import com.mok.ddd.application.mapper.PermissionMapper;
 import com.mok.ddd.application.mapper.TenantPackageMapper;
 import com.mok.ddd.domain.entity.TenantPackage;
 import com.mok.ddd.domain.repository.MenuRepository;
@@ -21,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.util.Collections;
 import java.util.List;
@@ -48,6 +48,12 @@ class TenantPackageServiceTest {
     private PermissionRepository permissionRepository;
     @Mock
     private TenantRepository tenantRepository;
+    @Mock
+    private StringRedisTemplate redisTemplate;
+    @Mock
+    private MenuMapper menuMapper;
+    @Mock
+    private PermissionMapper permissionMapper;
 
     @Nested
     @DisplayName("查询业务测试")
@@ -69,6 +75,8 @@ class TenantPackageServiceTest {
         void getById_ReturnDto() {
             Long id = 1L;
             TenantPackage entity = new TenantPackage();
+            entity.setMenus(Collections.emptySet());
+            entity.setPermissions(Collections.emptySet());
             when(packageRepository.findById(id)).thenReturn(Optional.of(entity));
             when(packageMapper.toDto(entity)).thenReturn(new TenantPackageDTO());
 
@@ -94,7 +102,6 @@ class TenantPackageServiceTest {
         @Test
         void createPackage_Success() {
             TenantPackageSaveDTO saveDto = new TenantPackageSaveDTO();
-            saveDto.setMenuIds(Set.of(1L));
             TenantPackage entity = new TenantPackage();
 
             when(packageMapper.toEntity(saveDto)).thenReturn(entity);
@@ -110,7 +117,6 @@ class TenantPackageServiceTest {
         void updatePackage_Success() {
             Long id = 1L;
             TenantPackageSaveDTO saveDto = new TenantPackageSaveDTO();
-            saveDto.setMenuIds(Set.of(1L));
             TenantPackage entity = new TenantPackage();
 
             when(packageRepository.findById(id)).thenReturn(Optional.of(entity));
@@ -119,6 +125,22 @@ class TenantPackageServiceTest {
             tenantPackageService.updatePackage(id, saveDto);
 
             verify(packageMapper).updateEntityFromDto(eq(saveDto), eq(entity));
+            verify(packageRepository).save(entity);
+        }
+
+        @Test
+        void grant_Success() {
+            Long id = 1L;
+            TenantPackageGrantDTO grantDto = new TenantPackageGrantDTO();
+            grantDto.setMenuIds(Set.of(1L));
+            TenantPackage entity = new TenantPackage();
+
+            when(packageRepository.findById(id)).thenReturn(Optional.of(entity));
+            when(packageRepository.save(entity)).thenReturn(entity);
+            when(menuRepository.findAllById(any())).thenReturn(Collections.emptyList());
+
+            tenantPackageService.grant(id, grantDto);
+
             verify(packageRepository).save(entity);
         }
 

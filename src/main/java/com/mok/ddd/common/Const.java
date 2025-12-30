@@ -13,6 +13,7 @@ public interface Const {
     class CacheKey {
         public static final String MENU_TREE = "sys:menu:tree";
         public static final String ROLE_PERMS = "sys:role:perms";
+        public static final String TENANT_PACKAGE_PERMS = "sys:tenant:package:perms";
 
         public static final String TENANT = "sys:tenant:";
 

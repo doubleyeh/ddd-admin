@@ -1,5 +1,7 @@
 package com.mok.ddd.application.dto.tenantPackage;
 
+import com.mok.ddd.application.dto.menu.MenuDTO;
+import com.mok.ddd.application.dto.permission.PermissionDTO;
 import lombok.Data;
 
 import java.util.Set;
@@ -10,6 +12,6 @@ public class TenantPackageDTO {
     private String name;
     private String description;
     private Boolean enabled;
-    private Set<Long> menuIds;
-    private Set<Long> permissionIds;
+    private Set<MenuDTO> menus;
+    private Set<PermissionDTO> permissions;
 }
