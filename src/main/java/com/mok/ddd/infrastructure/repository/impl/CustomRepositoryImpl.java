@@ -1,8 +1,8 @@
 package com.mok.ddd.infrastructure.repository.impl;
 
 import com.mok.ddd.common.Const;
-import com.mok.ddd.domain.entity.BaseEntity;
-import com.mok.ddd.domain.entity.TenantBaseEntity;
+import com.mok.ddd.domain.common.model.BaseEntity;
+import com.mok.ddd.domain.common.model.TenantBaseEntity;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import com.querydsl.core.types.*;

@@ -1,6 +1,6 @@
 package com.mok.ddd.infrastructure.repository;
 
-import com.mok.ddd.domain.entity.BaseEntity;
+import com.mok.ddd.domain.common.model.BaseEntity;
 import com.querydsl.core.types.EntityPath;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Predicate;

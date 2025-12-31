@@ -1,5 +1,6 @@
 package com.mok.ddd.infrastructure.security;
 
+import com.mok.ddd.infrastructure.sys.security.CustomUserDetailsService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

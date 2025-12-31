@@ -1,8 +1,8 @@
 package com.mok.ddd.infrastructure.security;
 
-import com.mok.ddd.application.dto.tenant.TenantDTO;
-import com.mok.ddd.application.service.PermissionService;
-import com.mok.ddd.application.service.TenantCacheService;
+import com.mok.ddd.application.sys.dto.tenant.TenantDTO;
+import com.mok.ddd.application.sys.service.PermissionService;
+import com.mok.ddd.application.sys.service.TenantCacheService;
 import com.mok.ddd.common.Const;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import jakarta.annotation.Nonnull;

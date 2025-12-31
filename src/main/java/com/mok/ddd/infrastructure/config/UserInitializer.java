@@ -1,7 +1,7 @@
 package com.mok.ddd.infrastructure.config;
 
-import com.mok.ddd.domain.entity.User;
-import com.mok.ddd.domain.repository.UserRepository;
+import com.mok.ddd.domain.sys.model.User;
+import com.mok.ddd.domain.sys.repository.UserRepository;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
