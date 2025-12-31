@@ -18,6 +18,12 @@ public class User extends TenantBaseEntity {
      * 1正常， 0禁用
      */
     private Integer state;
+    
+    /**
+     * 是否为租户管理员（仅租户创建时初始化的用户为true）
+     */
+    @Column(name = "is_tenant_admin")
+    private Boolean isTenantAdmin = false;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

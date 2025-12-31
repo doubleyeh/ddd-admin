@@ -33,7 +33,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final TenantCacheService tenantCacheService;
 
     @Override
-    public UserDetails loadUserByUsername(@NonNull String username) throws UsernameNotFoundException {
+    public @NonNull UserDetails loadUserByUsername(@NonNull String username) throws UsernameNotFoundException {
         String tenantId = TenantContextHolder.getTenantId();
 
         if (!StringUtils.hasLength(tenantId)) {

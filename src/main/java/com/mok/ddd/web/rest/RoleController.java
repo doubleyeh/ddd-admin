@@ -72,20 +72,6 @@ public class RoleController {
         return RestResponse.success();
     }
 
-    @GetMapping("/{id}/menus")
-    @PreAuthorize("hasAuthority('role:list')")
-    public RestResponse<Set<MenuDTO>> getMenus(@PathVariable Long id) {
-        Set<MenuDTO> menus = roleService.getMenusByRole(id);
-        return RestResponse.success(menus);
-    }
-
-    @GetMapping("/{id}/permissions")
-    @PreAuthorize("hasAuthority('role:list')")
-    public RestResponse<Set<PermissionDTO>> getPermissions(@PathVariable Long id) {
-        Set<PermissionDTO> permissions = roleService.getPermissionsByRole(id);
-        return RestResponse.success(permissions);
-    }
-
     @GetMapping("/options")
     public RestResponse<List<RoleOptionDTO>> getRoleOptions(RoleQuery query) {
         List<RoleOptionDTO> options = roleService.getRoleOptions(query);

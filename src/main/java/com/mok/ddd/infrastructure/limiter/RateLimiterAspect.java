@@ -25,7 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RateLimiterAspect {
 
-    private final RedisTemplate<Object, Object> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
     private final RateLimitProperties rateLimitProperties;
 
     @Pointcut("within(@org.springframework.web.bind.annotation.RestController *)")
@@ -60,7 +60,7 @@ public class RateLimiterAspect {
         }
         key += method.getName();
 
-        List<Object> keys = Collections.singletonList(key);
+        List<String> keys = Collections.singletonList(key);
         String luaScript = buildLuaScript();
         RedisScript<Long> redisScript = new DefaultRedisScript<>(luaScript, Long.class);
         Long currentCount = redisTemplate.execute(redisScript, keys, count, time);
@@ -74,15 +74,25 @@ public class RateLimiterAspect {
     }
 
     private String buildLuaScript() {
-        return "local c" +
-                "\nc = redis.call('get',KEYS[1])" +
-                "\nif c and tonumber(c) > tonumber(ARGV[1]) then" +
-                "\nreturn c;" +
-                "\nend" +
-                "\nc = redis.call('incr',KEYS[1])" +
-                "\nif tonumber(c) == 1 then" +
-                "\nredis.call('expire',KEYS[1],ARGV[2])" +
-                "\nend" +
-                "\nreturn c;";
+        return """
+                local c\
+                
+                c = redis.call('get',KEYS[1])\
+                
+                if c and tonumber(c) > tonumber(ARGV[1]) then\
+                
+                return c;\
+                
+                end\
+                
+                c = redis.call('incr',KEYS[1])\
+                
+                if tonumber(c) == 1 then\
+                
+                redis.call('expire',KEYS[1],ARGV[2])\
+                
+                end\
+                
+                return c;""";
     }
 }

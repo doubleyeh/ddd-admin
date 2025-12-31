@@ -1,7 +1,5 @@
 package com.mok.ddd.application.service;
 
-import com.mok.ddd.application.dto.menu.MenuDTO;
-import com.mok.ddd.application.dto.permission.PermissionDTO;
 import com.mok.ddd.application.dto.tenantPackage.TenantPackageDTO;
 import com.mok.ddd.application.dto.tenantPackage.TenantPackageGrantDTO;
 import com.mok.ddd.application.dto.tenantPackage.TenantPackageOptionDTO;
@@ -11,6 +9,8 @@ import com.mok.ddd.application.mapper.MenuMapper;
 import com.mok.ddd.application.mapper.PermissionMapper;
 import com.mok.ddd.application.mapper.TenantPackageMapper;
 import com.mok.ddd.common.Const;
+import com.mok.ddd.domain.entity.Menu;
+import com.mok.ddd.domain.entity.Permission;
 import com.mok.ddd.domain.entity.QTenantPackage;
 import com.mok.ddd.domain.entity.TenantPackage;
 import com.mok.ddd.domain.repository.MenuRepository;
@@ -21,7 +21,7 @@ import com.mok.ddd.infrastructure.repository.CustomRepository;
 import com.querydsl.core.BooleanBuilder;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -41,7 +41,7 @@ public class TenantPackageService extends BaseServiceImpl<TenantPackage, Long, T
     private final PermissionRepository permissionRepository;
     private final TenantPackageMapper packageMapper;
     private final TenantRepository tenantRepository;
-    private final StringRedisTemplate redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
     private final MenuMapper menuMapper;
     private final PermissionMapper permissionMapper;
 
@@ -72,8 +72,12 @@ public class TenantPackageService extends BaseServiceImpl<TenantPackage, Long, T
         }
         packageRepository.save(entity);
 
-        String cacheKey = Const.CacheKey.TENANT_PACKAGE_PERMS + ":" + id;
-        redisTemplate.delete(cacheKey);
+        // 清理缓存
+        Set<String> keys = Set.of(
+                Const.CacheKey.TENANT_PACKAGE_PERMS + ":menus:" + id,
+                Const.CacheKey.TENANT_PACKAGE_PERMS + ":permissions:" + id
+        );
+        redisTemplate.delete(keys);
     }
 
     @Transactional
@@ -106,25 +110,37 @@ public class TenantPackageService extends BaseServiceImpl<TenantPackage, Long, T
     }
 
     @Transactional(readOnly = true)
-    public Set<MenuDTO> getMenusByPackage(Long id) {
-        TenantPackage tenantPackage = packageRepository.findById(id).orElseThrow(() -> new BizException("套餐不存在"));
-        if (tenantPackage.getMenus() == null) {
+    public Set<Long> getMenuIdsByPackage(Long id) {
+        String cacheKey = Const.CacheKey.TENANT_PACKAGE_PERMS + ":menus:" + id;
+        Object cached = redisTemplate.opsForValue().get(cacheKey);
+        if (cached instanceof Set) {
+            return (Set<Long>) cached;
+        }
+
+        TenantPackage tenantPackage = packageRepository.findById(id).orElse(null);
+        if (tenantPackage == null || tenantPackage.getMenus() == null) {
             return Collections.emptySet();
         }
-        return tenantPackage.getMenus().stream()
-                .map(menuMapper::toDto)
-                .collect(Collectors.toSet());
+        Set<Long> menuIds = tenantPackage.getMenus().stream().map(Menu::getId).collect(Collectors.toSet());
+        redisTemplate.opsForValue().set(cacheKey, menuIds);
+        return menuIds;
     }
 
     @Transactional(readOnly = true)
-    public Set<PermissionDTO> getPermissionsByPackage(Long id) {
-        TenantPackage tenantPackage = packageRepository.findById(id).orElseThrow(() -> new BizException("套餐不存在"));
-        if (tenantPackage.getPermissions() == null) {
+    public Set<Long> getPermissionIdsByPackage(Long id) {
+        String cacheKey = Const.CacheKey.TENANT_PACKAGE_PERMS + ":permissions:" + id;
+        Object cached = redisTemplate.opsForValue().get(cacheKey);
+        if (cached instanceof Set) {
+            return (Set<Long>) cached;
+        }
+
+        TenantPackage tenantPackage = packageRepository.findById(id).orElse(null);
+        if (tenantPackage == null || tenantPackage.getPermissions() == null) {
             return Collections.emptySet();
         }
-        return tenantPackage.getPermissions().stream()
-                .map(permissionMapper::toDto)
-                .collect(Collectors.toSet());
+        Set<Long> permissionIds = tenantPackage.getPermissions().stream().map(Permission::getId).collect(Collectors.toSet());
+        redisTemplate.opsForValue().set(cacheKey, permissionIds);
+        return permissionIds;
     }
 
     @Override

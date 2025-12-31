@@ -14,6 +14,8 @@ import com.mok.ddd.common.Const;
 import com.mok.ddd.common.SysUtil;
 import com.mok.ddd.domain.entity.*;
 import com.mok.ddd.domain.repository.RoleRepository;
+import com.mok.ddd.domain.repository.TenantPackageRepository;
+import com.mok.ddd.domain.repository.TenantRepository;
 import com.mok.ddd.domain.repository.UserRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
@@ -45,6 +47,8 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
     private final MenuService menuService;
     private final MenuMapper menuMapper;
     private final PermissionService permissionService;
+    private final TenantRepository tenantRepository;
+    private final TenantPackageRepository tenantPackageRepository;
 
     @Transactional(readOnly = true)
     @Override
@@ -89,6 +93,8 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
         }
         User entity = userMapper.postToEntity(dto);
         entity.setPassword(passwordEncoder.encode(dto.getPassword()));
+        // 普通创建的用户不是租户管理员
+        entity.setIsTenantAdmin(false);
 
         if (dto.getRoleIds() != null) {
             List<Role> roles = roleRepository.findAllById(dto.getRoleIds());
@@ -107,6 +113,8 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
         User entity = userMapper.postToEntity(dto);
         entity.setPassword(passwordEncoder.encode(dto.getPassword()));
         entity.setTenantId(tenantId);
+        // 租户创建时初始化的用户是租户管理员
+        entity.setIsTenantAdmin(true);
 
         if (dto.getRoleIds() != null) {
             List<Role> roles = roleRepository.findAllById(dto.getRoleIds());
@@ -156,6 +164,9 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
         if (SysUtil.isSuperAdmin(userToDelete.get().getTenantId(), userToDelete.get().getUsername())) {
             throw new BizException("用户不允许删除");
         }
+        if (Boolean.TRUE.equals(userToDelete.get().getIsTenantAdmin())) {
+            throw new BizException("租户管理员不允许删除");
+        }
 
         super.deleteById(id);
     }
@@ -175,10 +186,33 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
         Set<String> distinctPermissions;
 
         if (SysUtil.isSuperAdmin(user.getTenantId(), username)) {
+            // 超级管理员拥有所有权限
             flatMenus = new ArrayList<>(menuService.findAll());
             distinctPermissions = new HashSet<>(permissionService.getAllPermissionCodes());
             distinctPermissions.add(Const.SUPER_ADMIN_ROLE_CODE);
+        } else if (Boolean.TRUE.equals(user.getIsTenantAdmin())) {
+            // 租户管理员，拥有该租户套餐下的所有权限
+            Long packageId = tenantRepository.findByTenantId(user.getTenantId())
+                    .map(Tenant::getPackageId)
+                    .orElse(null);
+
+            if (packageId != null) {
+                TenantPackage tenantPackage = tenantPackageRepository.findById(packageId).orElse(null);
+                if (tenantPackage != null) {
+                    flatMenus = new ArrayList<>(menuMapper.toDtoList(tenantPackage.getMenus()));
+                    distinctPermissions = tenantPackage.getPermissions().stream()
+                            .map(Permission::getCode)
+                            .collect(Collectors.toSet());
+                } else {
+                    flatMenus = new ArrayList<>();
+                    distinctPermissions = new HashSet<>();
+                }
+            } else {
+                flatMenus = new ArrayList<>();
+                distinctPermissions = new HashSet<>();
+            }
         } else {
+            // 普通用户，根据角色获取权限
             Set<Menu> distinctMenuEntities = user.getRoles().stream()
                     .flatMap(role -> role.getMenus().stream())
                     .collect(Collectors.toSet());

@@ -17,5 +17,7 @@ public class UserDTO {
     private String tenantId;
     private String tenantName;
 
+    private Boolean isTenantAdmin;
+
     private Set<RoleOptionDTO> roles;
 }

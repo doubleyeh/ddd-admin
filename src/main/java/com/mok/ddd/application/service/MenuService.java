@@ -8,10 +8,8 @@ import com.mok.ddd.common.Const;
 import com.mok.ddd.common.SysUtil;
 import com.mok.ddd.domain.entity.Menu;
 import com.mok.ddd.domain.entity.Permission;
-import com.mok.ddd.domain.entity.TenantPackage;
 import com.mok.ddd.domain.repository.MenuRepository;
 import com.mok.ddd.domain.repository.PermissionRepository;
-import com.mok.ddd.domain.repository.TenantPackageRepository;
 import com.mok.ddd.domain.repository.TenantRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
@@ -33,7 +31,7 @@ public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
     private final StringRedisTemplate redisTemplate;
     private final MenuMapper menuMapper;
     private final TenantRepository tenantRepository;
-    private final TenantPackageRepository tenantPackageRepository;
+    private final TenantPackageService tenantPackageService;
 
     @Transactional
     @Override
@@ -146,7 +144,7 @@ public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
     public List<MenuOptionDTO> buildMenuAndPermissionTree() {
         List<Menu> entities = menuRepository.findAll();
 
-        // 过滤逻辑：如果不是超级租户，则只能看到套餐内的菜单和权限
+        // 如果不是超级租户，则只能看到套餐内的菜单和权限
         String currentTenantId = TenantContextHolder.getTenantId();
         if (!SysUtil.isSuperTenant(currentTenantId)) {
             Long packageId = tenantRepository.findByTenantId(currentTenantId)
@@ -154,46 +152,39 @@ public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
                     .orElse(null);
 
             if (packageId != null) {
-                TenantPackage tenantPackage = tenantPackageRepository.findById(packageId).orElse(null);
-                if (tenantPackage != null) {
-                    Set<Long> allowedMenuIds = tenantPackage.getMenus().stream().map(Menu::getId).collect(Collectors.toSet());
-                    Set<Long> allowedPermissionIds = tenantPackage.getPermissions().stream().map(Permission::getId).collect(Collectors.toSet());
+                Set<Long> allowedMenuIds = tenantPackageService.getMenuIdsByPackage(packageId);
+                Set<Long> allowedPermissionIds = tenantPackageService.getPermissionIdsByPackage(packageId);
 
-                    entities = entities.stream()
-                            .filter(m -> allowedMenuIds.contains(m.getId()))
-                            .toList();
-                    
-                    // 还需要过滤每个菜单下的权限，这里先在 map 转换时处理
-                    final Set<Long> finalAllowedPermissionIds = allowedPermissionIds;
-                    
-                    List<MenuOptionDTO> flatList = entities.stream()
-                            .map(entity -> {
-                                MenuOptionDTO dto = new MenuOptionDTO();
-                                dto.setId(entity.getId());
-                                dto.setParentId(entity.getParent() != null ? entity.getParent().getId() : null);
-                                dto.setName(entity.getName());
-                                dto.setPath(entity.getPath());
-                                dto.setIsPermission(false);
+                entities = entities.stream()
+                        .filter(m -> allowedMenuIds.contains(m.getId()))
+                        .toList();
 
-                                if (entity.getPermissions() != null) {
-                                    List<PermissionOptionDTO> pDtos = entity.getPermissions().stream()
-                                            .filter(p -> finalAllowedPermissionIds.contains(p.getId()))
-                                            .map(p -> {
-                                                PermissionOptionDTO pDto = new PermissionOptionDTO();
-                                                pDto.setId(p.getId());
-                                                pDto.setName(p.getName());
-                                                pDto.setIsPermission(true);
-                                                return pDto;
-                                            }).toList();
-                                    dto.setPermissions(pDtos);
-                                }
-                                return dto;
-                            }).toList();
-                    
-                    return buildTreeFromFlatList(flatList);
-                }
+                List<MenuOptionDTO> flatList = entities.stream()
+                        .map(entity -> {
+                            MenuOptionDTO dto = new MenuOptionDTO();
+                            dto.setId(entity.getId());
+                            dto.setParentId(entity.getParent() != null ? entity.getParent().getId() : null);
+                            dto.setName(entity.getName());
+                            dto.setPath(entity.getPath());
+                            dto.setIsPermission(false);
+
+                            if (entity.getPermissions() != null) {
+                                List<PermissionOptionDTO> pDtos = entity.getPermissions().stream()
+                                        .filter(p -> allowedPermissionIds.contains(p.getId()))
+                                        .map(p -> {
+                                            PermissionOptionDTO pDto = new PermissionOptionDTO();
+                                            pDto.setId(p.getId());
+                                            pDto.setName(p.getName());
+                                            pDto.setIsPermission(true);
+                                            return pDto;
+                                        }).toList();
+                                dto.setPermissions(pDtos);
+                            }
+                            return dto;
+                        }).toList();
+
+                return buildTreeFromFlatList(flatList);
             }
-            // 如果没有套餐或者套餐为空，理论上应该返回空，或者根据业务需求处理
             return Collections.emptyList();
         }
 
