@@ -10,6 +10,7 @@ import com.mok.ddd.application.exception.BizException;
 import com.mok.ddd.application.exception.NotFoundException;
 import com.mok.ddd.application.mapper.MenuMapper;
 import com.mok.ddd.application.mapper.UserMapper;
+import com.mok.ddd.common.Const;
 import com.mok.ddd.common.SysUtil;
 import com.mok.ddd.domain.entity.Menu;
 import com.mok.ddd.domain.entity.Permission;
@@ -30,10 +31,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -357,7 +355,10 @@ class UserServiceTest {
                 verify(permissionService, times(1)).getAllPermissionCodes();
                 verify(menuService, times(1)).buildMenuTree(flatMenus);
                 assertEquals(menuTree, result.getMenus());
-                assertEquals(allPermissions, result.getPermissions());
+
+                Set<String> expectedPermissions = new HashSet<>(allPermissions);
+                expectedPermissions.add(Const.SUPER_ADMIN_ROLE_CODE);
+                assertEquals(expectedPermissions, result.getPermissions());
             }
         }
 

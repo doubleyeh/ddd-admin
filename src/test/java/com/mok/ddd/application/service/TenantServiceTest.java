@@ -74,6 +74,7 @@ class TenantServiceTest {
             validDto.setName("新租户名称");
             validDto.setContactPerson("联系人");
             validDto.setContactPhone("13800000000");
+            validDto.setPackageId(1L);
 
             mockTenant = new Tenant();
             mockTenant.setId(1L);
@@ -116,9 +117,7 @@ class TenantServiceTest {
             when(tenantRepository.findByTenantId(anyString())).thenReturn(Optional.of(mockTenant));
             when(tenantMapper.toEntity(validDto)).thenReturn(mockTenant);
 
-            BizException exception = assertThrows(BizException.class, () -> {
-                tenantService.createTenant(validDto);
-            });
+            BizException exception = assertThrows(BizException.class, () -> tenantService.createTenant(validDto));
 
             assertEquals("生成唯一租户编码失败，请重试", exception.getMessage());
             verify(tenantRepository, times(5)).findByTenantId(anyString());
@@ -144,9 +143,7 @@ class TenantServiceTest {
 
             when(tenantRepository.findById(existingId)).thenReturn(Optional.of(existingTenant));
 
-            BizException exception = assertThrows(BizException.class, () -> {
-                tenantService.updateTenant(existingId, invalidDto);
-            });
+            BizException exception = assertThrows(BizException.class, () -> tenantService.updateTenant(existingId, invalidDto));
 
             assertEquals("租户编码不可修改", exception.getMessage());
             verify(tenantRepository, never()).save(any());
@@ -218,10 +215,6 @@ class TenantServiceTest {
         @DisplayName("获取租户选项列表成功")
         void findOptions_Success() {
             String name = "测试";
-            TenantDTO dto = new TenantDTO();
-            dto.setName("测试租户");
-
-            List<TenantDTO> dtoList = List.of(dto);
             TenantOptionDTO option = new TenantOptionDTO();
             option.setName("测试租户");
 

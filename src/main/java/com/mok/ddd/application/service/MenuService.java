@@ -194,7 +194,6 @@ public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
                 }
             }
             // 如果没有套餐或者套餐为空，理论上应该返回空，或者根据业务需求处理
-            // 这里假设如果没有套餐，就什么都看不到
             return Collections.emptyList();
         }
 
