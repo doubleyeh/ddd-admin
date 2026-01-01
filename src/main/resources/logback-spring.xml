@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <springProperty scope="context" name="springAppName" source="spring.application.name" defaultValue="ddd-admin"/>
+    <property name="LOG_PATH" value="logs"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %clr([%X{traceId}]){magenta} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}</pattern>
+            <charset>utf8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="JSON_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${springAppName}.json</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${springAppName}.%d{yyyy-MM-dd}.json.gz</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp>
+                    <timeZone>Asia/Shanghai</timeZone>
+                </timestamp>
+                <logLevel/>
+                <mdc>
+                    <includeMdcKeyName>traceId</includeMdcKeyName>
+                </mdc>
+                <pattern>
+                    <pattern>
+                        { "app": "${springAppName}" }
+                    </pattern>
+                </pattern>
+                <threadName/>
+                <loggerName/>
+                <message/>
+                <stackTrace>
+                    <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                        <maxDepthPerThrowable>30</maxDepthPerThrowable>
+                        <rootCauseFirst>true</rootCauseFirst>
+                    </throwableConverter>
+                </stackTrace>
+                <mdc>
+                    <excludeMdcKeyName>traceId</excludeMdcKeyName>
+                </mdc>
+            </providers>
+        </encoder>
+    </appender>
+
+    <springProfile name="dev">
+        <logger name="org.hibernate.SQL" level="DEBUG" />
+        <logger name="org.hibernate.orm.jdbc.bind" level="TRACE" />
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="JSON_FILE"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="prod,test">
+        <logger name="org.hibernate.SQL" level="WARN" />
+        <root level="INFO">
+            <appender-ref ref="JSON_FILE"/>
+        </root>
+    </springProfile>
+
+</configuration>

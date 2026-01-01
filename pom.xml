@@ -29,6 +29,7 @@
         <jwt.version>0.13.0</jwt.version>
         <p6spy.version>2.0.0</p6spy.version>
         <springdoc.openapi.version>3.0.0</springdoc.openapi.version>
+        <logstash-logback-encoder.version>9.0</logstash-logback-encoder.version>
     </properties>
 
     <dependencies>
@@ -87,6 +88,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>${logstash-logback-encoder.version}</version>
         </dependency>
 
 <!--        <dependency>-->

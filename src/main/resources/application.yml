@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: ddd-admin
   profiles:
     active: @activatedProperties@
   threads:
