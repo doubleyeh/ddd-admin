@@ -23,4 +23,6 @@ public interface BaseService<E extends BaseEntity, ID, DTO> {
     DTO update(DTO dto);
 
     void deleteById(ID id);
+
+    Pageable convertToQSortPageable(Pageable pageable);
 }

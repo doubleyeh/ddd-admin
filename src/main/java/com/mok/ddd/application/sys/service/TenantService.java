@@ -24,6 +24,8 @@ import com.querydsl.jpa.impl.JPAQuery;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.support.PageableExecutionUtils;
@@ -63,6 +65,11 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
     }
 
     @Override
+    protected String getEntityAlias(){
+        return QTenant.tenant.getMetadata().getName();
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Page<@NonNull TenantDTO> findPage(Predicate predicate, Pageable pageable) {
         QTenant tenant = QTenant.tenant;
@@ -83,16 +90,18 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
                 .leftJoin(tenantPackage).on(tenant.packageId.eq(tenantPackage.id))
                 .where(predicate);
 
-        JPQLQuery<TenantDTO> paginatedQuery = tenantRepository.getQuerydsl().applyPagination(pageable, query);
+        Pageable qSortPageable = this.convertToQSortPageable(pageable);
+        JPQLQuery<TenantDTO> paginatedQuery = tenantRepository.getQuerydsl().applyPagination(qSortPageable, query);
+        List<TenantDTO> content = paginatedQuery.fetch();
 
-        return PageableExecutionUtils.getPage(paginatedQuery.fetch(), pageable, () -> {
-            JPAQuery<Long> countQuery = tenantRepository.getJPAQueryFactory()
-                    .select(tenant.count())
-                    .from(tenant)
-                    .leftJoin(tenantPackage).on(tenant.packageId.eq(tenantPackage.id))
-                    .where(predicate);
-            return Optional.ofNullable(countQuery.fetchOne()).orElse(0L);
-        });
+        long total = Optional.ofNullable(tenantRepository.getJPAQueryFactory()
+                .select(tenant.count())
+                .from(tenant)
+                .where(predicate)
+                .fetchOne()).orElse(0L);
+
+        Pageable cleanPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+        return new PageImpl<>(content, cleanPageable, total);
     }
 
     @Transactional

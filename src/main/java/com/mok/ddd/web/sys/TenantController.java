@@ -3,12 +3,14 @@ package com.mok.ddd.web.sys;
 
 import com.mok.ddd.application.sys.dto.tenant.*;
 import com.mok.ddd.application.sys.service.TenantService;
+import com.mok.ddd.domain.sys.model.Tenant;
 import com.mok.ddd.web.common.RestResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.querydsl.binding.QuerydslPredicate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
