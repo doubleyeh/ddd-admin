@@ -38,21 +38,21 @@ public class CustomUserDetailsService implements UserDetailsService {
         String tenantId = TenantContextHolder.getTenantId();
 
         if (!StringUtils.hasLength(tenantId)) {
-            throw new UsernameNotFoundException("Tenant context is missing");
+            throw new UsernameNotFoundException("租户不能为空");
         }
 
         TenantDTO tenant = tenantCacheService.findByTenantId(tenantId);
         if (tenant == null || !tenant.getEnabled()) {
-            throw new BadCredentialsException("租户不存在或已被禁用");
+            throw new UsernameNotFoundException("租户不存在或已被禁用");
         }
 
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("用户未找到: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException("用户不存在或密码错误"));
 
         boolean isSuperAdmin = SysUtil.isSuperAdmin(tenantId, user.getUsername());
         Set<Long> roleIds = new HashSet<>();
         if(Objects.equals(0, user.getState())){
-            throw new BadCredentialsException("用户已被禁用");
+            throw new UsernameNotFoundException("用户已被禁用");
         }
         if (isSuperAdmin) {
             roleIds.add(0L);

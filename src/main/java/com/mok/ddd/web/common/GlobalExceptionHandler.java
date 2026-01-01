@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -22,8 +23,26 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({UsernameNotFoundException.class, BadCredentialsException.class})
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public RestResponse<?> handleAuthenticationException(RuntimeException e) {
+        String error = e.getMessage();
+        Throwable cause = e.getCause();
+        if(cause instanceof UsernameNotFoundException || cause instanceof BadCredentialsException){
+            error = cause.getMessage();
+        }
         log.warn("Authentication failed: {}", e.getMessage());
-        return RestResponse.failure(401, "用户名或密码错误");
+        return RestResponse.failure(401,  error);
+    }
+
+    @ExceptionHandler(InternalAuthenticationServiceException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public RestResponse<?> handleInternalAuthException(InternalAuthenticationServiceException e) {
+        Throwable cause = e.getCause();
+        if (cause instanceof BadCredentialsException) {
+            log.warn("Authentication failed (wrapped): {}", cause.getMessage());
+            return RestResponse.failure(401, cause.getMessage());
+        }
+
+        log.error("Internal Auth Error:", e);
+        return RestResponse.failure(401, "认证系统异常");
     }
 
     @ExceptionHandler(AuthorizationDeniedException.class)
