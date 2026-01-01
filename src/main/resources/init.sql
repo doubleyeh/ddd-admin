@@ -11,6 +11,8 @@ VALUES
 (103, 100, '角色管理', '/system/role', 'system/role', 'ShieldOutline', 31, FALSE, NOW(), NOW()),
 (104, 100, '菜单管理', '/system/menu', 'system/menu', 'MenuOutline', 41, FALSE, NOW(), NOW()),
 (105, 100, '套餐管理', '/system/package', 'system/tenant-package', 'GiftOutline', 51, FALSE, NOW(), NOW()),
+(200, NULL, '日志管理', '/log', 'Layout', 'ReceiptLongSharp', 60, FALSE, NOW(), NOW()),
+(201, 200, '登录日志', '/log/login', 'log/login', 'LogInOutline', 61, FALSE, NOW(), NOW()),
 (999, 100, '在线用户', '/system/online-user', 'system/online-user', 'GlobeOutline', 99, FALSE, NOW(), NOW());
 
 -- 权限ID 5位数
@@ -36,6 +38,7 @@ VALUES
 (10502, 105, '套餐创建', 'tenantPackage:create', NULL, NULL, '新增套餐', NOW(), NOW()),
 (10503, 105, '套餐修改', 'tenantPackage:update', NULL, NULL, '修改套餐信息', NOW(), NOW()),
 (10504, 105, '套餐删除', 'tenantPackage:delete', NULL, NULL, '删除套餐', NOW(), NOW()),
+(20101, 201, '登录日志查询', 'log:login:list', NULL, NULL, '查询登录日志分页列表', NOW(), NOW()),
 (99901, 999, '在线用户查询', 'admin:online-user', NULL, NULL, '查看在线登录用户列表', NOW(), NOW()),
 (99902, 999, '在线用户强退', 'admin:online-user:kickout', NULL, NULL, '强制下线指定用户', NOW(), NOW());
 

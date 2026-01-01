@@ -13,5 +13,5 @@ public class LoginLogDTO {
     private String message;
     private String tenantId;
     private String tenantName;
-    private LocalDateTime createdTime;
+    private LocalDateTime createTime;
 }

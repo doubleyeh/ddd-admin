@@ -43,11 +43,12 @@ public class LoginLogService {
                         loginLog.message,
                         loginLog.tenantId,
                         tenant.name.as("tenantName"),
-                        loginLog.createTime
+                        loginLog.createTime.as("createTime")
                 ))
                 .from(loginLog)
                 .leftJoin(tenant).on(loginLog.tenantId.eq(tenant.tenantId))
-                .where(predicate);
+                .where(predicate)
+                .orderBy(loginLog.createTime.desc());
 
         loginLogRepository.applyTenantFilter(query, loginLog);
         JPQLQuery<LoginLogDTO> paginatedQuery = loginLogRepository.getQuerydsl().applyPagination(pageable, query);
