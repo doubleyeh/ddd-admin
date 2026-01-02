@@ -177,6 +177,9 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
     @Transactional
     public TenantDTO updateTenantState(@NonNull Long id, @NonNull Boolean state) {
         Tenant existingTenant = tenantRepository.findById(id).orElseThrow(() -> new BizException("租户不存在"));
+        if (SysUtil.isSuperTenant(existingTenant.getTenantId())) {
+            throw new BizException("无法对该租户进行操作");
+        }
         existingTenant.setEnabled(state);
         TenantDTO res = tenantMapper.toDto(tenantRepository.save(existingTenant));
         redisTemplate.delete(Const.CacheKey.TENANT + existingTenant.getTenantId());

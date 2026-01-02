@@ -4,6 +4,8 @@ import com.mok.ddd.application.sys.dto.user.*;
 import com.mok.ddd.application.sys.service.UserService;
 import com.mok.ddd.common.Const;
 import com.mok.ddd.common.PasswordGenerator;
+import com.mok.ddd.infrastructure.log.annotation.OperLog;
+import com.mok.ddd.infrastructure.log.enums.BusinessType;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import com.mok.ddd.web.common.RestResponse;
 import jakarta.validation.Valid;
@@ -43,6 +45,7 @@ public class UserController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('user:create')")
+    @OperLog(title = "用户管理", businessType = BusinessType.INSERT)
     public RestResponse<UserDTO> save(@RequestBody @Valid UserPostDTO userDTO) {
         UserDTO savedUser = userService.create(userDTO);
         return RestResponse.success(savedUser);
@@ -50,6 +53,7 @@ public class UserController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('user:update')")
+    @OperLog(title = "用户管理", businessType = BusinessType.UPDATE)
     public RestResponse<UserDTO> update(@PathVariable Long id, @RequestBody @Valid UserPutDTO userDTO) {
         userDTO.setId(id);
         UserDTO updatedUser = userService.updateUser(userDTO);
@@ -58,6 +62,7 @@ public class UserController {
 
     @PutMapping("/{id}/state")
     @PreAuthorize("hasAuthority('user:update')")
+    @OperLog(title = "用户管理", businessType = BusinessType.UPDATE)
     public RestResponse<UserDTO> updateState(@PathVariable Long id, @Valid @NotNull @RequestParam Integer state) {
         if (Objects.equals(0, state) && isCurrentUser(id)) {
             return RestResponse.failure("禁止禁用当前登录用户");
@@ -68,6 +73,7 @@ public class UserController {
 
     @PutMapping("/{id}/password")
     @PreAuthorize("hasAuthority('user:update')")
+    @OperLog(title = "用户管理", businessType = BusinessType.UPDATE)
     public RestResponse<String> resetPassword(@PathVariable Long id) {
         String newPassword = PasswordGenerator.generateRandomPassword();
 
@@ -81,6 +87,7 @@ public class UserController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('user:delete')")
+    @OperLog(title = "用户管理", businessType = BusinessType.DELETE)
     public RestResponse<Void> deleteById(@PathVariable Long id) {
         if (isCurrentUser(id)) {
             return RestResponse.failure("禁止删除当前登录用户");

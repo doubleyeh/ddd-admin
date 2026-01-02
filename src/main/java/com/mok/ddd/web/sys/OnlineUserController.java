@@ -2,6 +2,8 @@ package com.mok.ddd.web.sys;
 
 import com.mok.ddd.application.sys.dto.tenant.TenantOptionDTO;
 import com.mok.ddd.application.sys.service.TenantService;
+import com.mok.ddd.infrastructure.log.annotation.OperLog;
+import com.mok.ddd.infrastructure.log.enums.BusinessType;
 import com.mok.ddd.infrastructure.security.JwtTokenProvider;
 import com.mok.ddd.infrastructure.security.OnlineUserDTO;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
@@ -38,6 +40,7 @@ public class OnlineUserController {
 
     @PostMapping("/kickout")
     @PreAuthorize("hasAuthority('admin:online-user:kickout')")
+    @OperLog(title = "在线用户", businessType = BusinessType.FORCE)
     public RestResponse<Void> kickout(@RequestBody Map<String, String> body) {
         String token = body.get("token");
         if (token != null) {

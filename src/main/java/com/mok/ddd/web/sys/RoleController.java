@@ -2,10 +2,13 @@ package com.mok.ddd.web.sys;
 
 import com.mok.ddd.application.sys.dto.role.*;
 import com.mok.ddd.application.sys.service.RoleService;
+import com.mok.ddd.infrastructure.log.annotation.OperLog;
+import com.mok.ddd.infrastructure.log.enums.BusinessType;
 import com.mok.ddd.web.common.RestResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,8 +25,8 @@ public class RoleController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('role:list')")
-    public RestResponse<Page<RoleDTO>> findPage(RoleQuery query, Pageable pageable) {
-        Page<RoleDTO> page = roleService.findPage(query.toPredicate(), pageable);
+    public RestResponse<Page<@NonNull RoleDTO>> findPage(RoleQuery query, Pageable pageable) {
+        Page<@NonNull RoleDTO> page = roleService.findPage(query.toPredicate(), pageable);
         return RestResponse.success(page);
     }
 
@@ -36,6 +39,7 @@ public class RoleController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('role:create')")
+    @OperLog(title = "角色管理", businessType = BusinessType.INSERT)
     public RestResponse<RoleDTO> save(@RequestBody @Valid RoleSaveDTO roleSaveDTO) {
         RoleDTO savedRole = roleService.createRole(roleSaveDTO);
         return RestResponse.success(savedRole);
@@ -43,6 +47,7 @@ public class RoleController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('role:update')")
+    @OperLog(title = "角色管理", businessType = BusinessType.UPDATE)
     public RestResponse<RoleDTO> update(@PathVariable Long id, @RequestBody @Valid RoleSaveDTO roleSaveDTO) {
         roleSaveDTO.setId(id);
         RoleDTO updatedRole = roleService.updateRole(roleSaveDTO);
@@ -51,6 +56,7 @@ public class RoleController {
 
     @PutMapping("/{id}/state")
     @PreAuthorize("hasAuthority('role:update')")
+    @OperLog(title = "角色管理", businessType = BusinessType.UPDATE)
     public RestResponse<RoleDTO> updateState(@PathVariable Long id, @Valid @NotNull @RequestParam Boolean state) {
         RoleDTO dto = roleService.updateState(id, state);
         return RestResponse.success(dto);
@@ -58,6 +64,7 @@ public class RoleController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('role:delete')")
+    @OperLog(title = "角色管理", businessType = BusinessType.DELETE)
     public RestResponse<Void> deleteById(@PathVariable Long id) {
         roleService.deleteRoleBeforeValidation(id);
         return RestResponse.success();
@@ -65,6 +72,7 @@ public class RoleController {
 
     @PostMapping("/{id}/grant")
     @PreAuthorize("hasAuthority('role:update')")
+    @OperLog(title = "角色管理", businessType = BusinessType.GRANT)
     public RestResponse<Void> grant(@PathVariable Long id, @RequestBody RoleGrantDTO grantDTO) {
         roleService.grant(id, grantDTO);
         return RestResponse.success();

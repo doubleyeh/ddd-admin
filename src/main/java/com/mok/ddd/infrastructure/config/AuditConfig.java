@@ -1,6 +1,7 @@
 package com.mok.ddd.infrastructure.config;
 
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
+import org.jspecify.annotations.NonNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
@@ -12,7 +13,7 @@ import java.util.Optional;
 @EnableJpaAuditing(auditorAwareRef = "auditorAware")
 public class AuditConfig {
     @Bean
-    public AuditorAware<String> auditorAware() {
+    public AuditorAware<@NonNull String> auditorAware() {
         return () -> Optional.ofNullable(TenantContextHolder.getUsername());
     }
 }

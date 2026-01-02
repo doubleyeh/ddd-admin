@@ -5,6 +5,8 @@ import com.mok.ddd.application.sys.dto.auth.SelfPasswordUpdateDTO;
 import com.mok.ddd.application.sys.dto.user.UserDTO;
 import com.mok.ddd.application.sys.dto.user.UserPasswordDTO;
 import com.mok.ddd.application.sys.service.UserService;
+import com.mok.ddd.infrastructure.log.annotation.OperLog;
+import com.mok.ddd.infrastructure.log.enums.BusinessType;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import com.mok.ddd.web.common.RestResponse;
 import jakarta.validation.Valid;
@@ -24,6 +26,7 @@ public class AccountController {
     private final UserService userService;
 
     @PutMapping("/password")
+    @OperLog(title = "个人信息", businessType = BusinessType.UPDATE)
     public RestResponse<Boolean> changeMyPassword(@RequestBody @Valid SelfPasswordUpdateDTO dto) {
         UserDTO user = userService.findByUsername(TenantContextHolder.getUsername());
 

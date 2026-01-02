@@ -16,7 +16,7 @@ import tools.jackson.databind.json.JsonMapper;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class LogAspect {
+public class LoginLogAspect {
 
     private final JsonMapper jsonMapper;
 

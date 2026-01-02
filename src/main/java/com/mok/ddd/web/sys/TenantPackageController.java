@@ -2,6 +2,8 @@ package com.mok.ddd.web.sys;
 
 import com.mok.ddd.application.sys.dto.tenantPackage.*;
 import com.mok.ddd.application.sys.service.TenantPackageService;
+import com.mok.ddd.infrastructure.log.annotation.OperLog;
+import com.mok.ddd.infrastructure.log.enums.BusinessType;
 import com.mok.ddd.web.common.RestResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -36,6 +38,7 @@ public class TenantPackageController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('tenantPackage:create')")
+    @OperLog(title = "套餐管理", businessType = BusinessType.INSERT)
     public RestResponse<Void> create(@RequestBody TenantPackageSaveDTO dto) {
         packageService.createPackage(dto);
         return RestResponse.success();
@@ -43,6 +46,7 @@ public class TenantPackageController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('tenantPackage:update')")
+    @OperLog(title = "套餐管理", businessType = BusinessType.UPDATE)
     public RestResponse<Void> update(@PathVariable Long id, @RequestBody TenantPackageSaveDTO dto) {
         packageService.updatePackage(id, dto);
         return RestResponse.success();
@@ -50,6 +54,7 @@ public class TenantPackageController {
 
     @PutMapping("/{id}/grant")
     @PreAuthorize("hasAuthority('tenantPackage:update')")
+    @OperLog(title = "套餐管理", businessType = BusinessType.GRANT)
     public RestResponse<Void> grant(@PathVariable Long id, @RequestBody TenantPackageGrantDTO dto) {
         packageService.grant(id, dto);
         return RestResponse.success();
@@ -57,6 +62,7 @@ public class TenantPackageController {
 
     @PutMapping("/{id}/state")
     @PreAuthorize("hasAuthority('tenantPackage:update')")
+    @OperLog(title = "套餐管理", businessType = BusinessType.UPDATE)
     public RestResponse<TenantPackageDTO> updateState(@PathVariable Long id, @Valid @NotNull @RequestParam Boolean state) {
         TenantPackageDTO updatedTenant = packageService.updateTenantState(id, state);
         return RestResponse.success(updatedTenant);
@@ -64,6 +70,7 @@ public class TenantPackageController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('tenantPackage:delete')")
+    @OperLog(title = "套餐管理", businessType = BusinessType.DELETE)
     public RestResponse<Void> deleteById(@PathVariable Long id) {
         packageService.deleteByVerify(id);
         return RestResponse.success();
