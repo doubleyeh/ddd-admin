@@ -1,5 +1,6 @@
 package com.mok.ddd.domain.common.model;
 
+import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import com.mok.ddd.infrastructure.util.SnowFlakeIdGenerator;
 import jakarta.persistence.*;
 import org.springframework.data.annotation.CreatedBy;
@@ -12,24 +13,18 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @MappedSuperclass
-@EntityListeners(AuditingEntityListener.class)
+//@EntityListeners(AuditingEntityListener.class)
 public abstract class BaseEntity implements Serializable {
 
     @Id
     private Long id;
 
-    @CreatedDate
-    @Column(updatable = false)
     private LocalDateTime createTime;
 
-    @LastModifiedDate
     private LocalDateTime updateTime;
 
-    @CreatedBy
-    @Column(updatable = false)
     private String createBy;
 
-    @LastModifiedBy
     private String updateBy;
 
     @PrePersist
@@ -37,12 +32,26 @@ public abstract class BaseEntity implements Serializable {
         if (this.id == null) {
             this.id = SnowFlakeIdGenerator.nextId();
         }
+        String username = TenantContextHolder.getUsername();
+        if (username != null) {
+            if(this.createBy == null) {
+                this.createBy = username;
+            }
+            if(this.updateBy == null) {
+                this.updateBy = username;
+            }
+        }
         this.createTime = LocalDateTime.now();
         this.updateTime = LocalDateTime.now();
     }
 
+    @PreUpdate
     public void preUpdate() {
         this.updateTime = LocalDateTime.now();
+        String username = TenantContextHolder.getUsername();
+        if (username != null && this.updateBy == null) {
+            this.updateBy = username;
+        }
     }
 
     public Long getId() {

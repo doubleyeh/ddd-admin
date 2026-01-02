@@ -9,11 +9,11 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 import java.util.Optional;
 
-@Configuration
-@EnableJpaAuditing(auditorAwareRef = "auditorAware")
+//@Configuration
+//@EnableJpaAuditing(auditorAwareRef = "auditorAware")
 public class AuditConfig {
-    @Bean
-    public AuditorAware<@NonNull String> auditorAware() {
-        return () -> Optional.ofNullable(TenantContextHolder.getUsername());
-    }
+    //@Bean
+    //public AuditorAware<@NonNull String> auditorAware() {
+    //    return () -> Optional.ofNullable(TenantContextHolder.getUsername());
+    //}
 }
