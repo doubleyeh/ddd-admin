@@ -20,6 +20,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,6 +28,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.nio.file.attribute.UserPrincipalNotFoundException;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -120,7 +122,7 @@ class AuthControllerTest {
         req.setTenantId("tenantA");
 
         given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .willThrow(new BadCredentialsException("Invalid username or password"));
+                .willThrow(new UsernameNotFoundException("用户名或密码错误"));
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

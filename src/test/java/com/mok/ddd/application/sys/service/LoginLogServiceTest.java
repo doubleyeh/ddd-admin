@@ -11,6 +11,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.List;
 
@@ -23,6 +25,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("LoginLogService 单元测试")
+@MockitoSettings(strictness = Strictness.LENIENT)
 class LoginLogServiceTest {
 
     @InjectMocks
@@ -43,6 +46,9 @@ class LoginLogServiceTest {
             query.setUsername("root");
             com.querydsl.core.types.Predicate predicate = query.toPredicate();
             org.springframework.data.domain.Pageable pageable = mock(org.springframework.data.domain.Pageable.class);
+            when(pageable.getPageNumber()).thenReturn(0);
+            when(pageable.getPageSize()).thenReturn(10);
+            when(pageable.getSort()).thenReturn(org.springframework.data.domain.Sort.unsorted());
 
             com.querydsl.jpa.impl.JPAQueryFactory queryFactory = mock(com.querydsl.jpa.impl.JPAQueryFactory.class);
             com.querydsl.jpa.impl.JPAQuery jpaQuery = mock(com.querydsl.jpa.impl.JPAQuery.class);

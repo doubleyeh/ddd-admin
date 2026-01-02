@@ -18,7 +18,7 @@ public final class QuerydslUtils {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static Pageable convertToQSortPageable(Pageable pageable, Class<?> entityClass, String alias) {
-        if (pageable.getSort().isUnsorted() || Objects.isNull(entityClass) || !StringUtils.hasLength(alias)) {
+        if (Objects.isNull(pageable.getSort()) || pageable.getSort().isUnsorted() || Objects.isNull(entityClass) || !StringUtils.hasLength(alias)) {
             return pageable;
         }
 

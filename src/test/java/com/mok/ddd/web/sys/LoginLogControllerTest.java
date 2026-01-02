@@ -77,7 +77,7 @@ class LoginLogControllerTest {
         logDTO.setUsername("testuser");
         logDTO.setStatus("SUCCESS");
         logDTO.setIpAddress("127.0.0.1");
-        logDTO.setCreatedTime(LocalDateTime.now());
+        logDTO.setCreateTime(LocalDateTime.now());
 
         Page<LoginLogDTO> logPage = new PageImpl<>(Collections.singletonList(logDTO));
 
