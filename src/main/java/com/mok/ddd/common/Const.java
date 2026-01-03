@@ -22,4 +22,9 @@ public interface Const {
         
         public static final String DICT_DATA = "sys:dict:";
     }
+
+    class UserState {
+        public static final Integer NORMAL = 1;
+        public static final Integer DISABLED = 0;
+    }
 }
