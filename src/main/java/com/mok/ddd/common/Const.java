@@ -19,5 +19,7 @@ public interface Const {
 
         public static final String AUTH_TOKEN = "auth:token:";
         public static final String USER_TOKENS = "user:tokens:";
+        
+        public static final String DICT_DATA = "sys:dict:";
     }
 }
