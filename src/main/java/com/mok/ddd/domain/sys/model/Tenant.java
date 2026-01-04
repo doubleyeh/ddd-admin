@@ -1,20 +1,32 @@
 package com.mok.ddd.domain.sys.model;
 
 import com.mok.ddd.domain.common.model.BaseEntity;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
 @Entity
 @Table(name = "sys_tenant")
+@Getter
+@Setter
 public class Tenant extends BaseEntity {
+
+    @Column(unique = true, nullable = false)
     private String tenantId;
+
+    @Column(nullable = false)
     private String name;
+
     private String contactPerson;
+
     private String contactPhone;
-    private Boolean enabled;
+
+    /**
+     * 状态 (1:正常, 0:禁用)
+     */
+    private Integer state;
+
     private Long packageId;
 }

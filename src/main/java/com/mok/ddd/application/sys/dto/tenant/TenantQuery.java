@@ -6,22 +6,26 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Predicate;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.util.StringUtils;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class TenantQuery extends BaseQuery {
     private String tenantId;
     private String name;
+    private Integer state;
 
     public Predicate toPredicate() {
-        TenantQuery query = this;
         QTenant tenant = QTenant.tenant;
         BooleanBuilder builder = new BooleanBuilder();
-        if (query.getTenantId() != null && !query.getTenantId().isEmpty()) {
-            builder.and(tenant.tenantId.containsIgnoreCase(query.getTenantId()));
+        if (StringUtils.hasText(tenantId)) {
+            builder.and(tenant.tenantId.containsIgnoreCase(tenantId));
         }
-        if (query.getName() != null && !query.getName().isEmpty()) {
-            builder.and(tenant.name.containsIgnoreCase(query.getName()));
+        if (StringUtils.hasText(name)) {
+            builder.and(tenant.name.containsIgnoreCase(name));
+        }
+        if (state != null) {
+            builder.and(tenant.state.eq(state));
         }
         return builder;
     }

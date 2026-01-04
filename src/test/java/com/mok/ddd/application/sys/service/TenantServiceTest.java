@@ -82,7 +82,7 @@ class TenantServiceTest {
             mockTenant.setName(validDto.getName());
             mockTenant.setContactPerson(validDto.getContactPerson());
             mockTenant.setContactPhone(validDto.getContactPhone());
-            mockTenant.setEnabled(true);
+            mockTenant.setState(Const.TenantState.NORMAL);
         }
 
         @Test
@@ -105,6 +105,7 @@ class TenantServiceTest {
             UserPostDTO capturedUserDTO = userCaptor.getValue();
             assertEquals(Const.DEFAULT_ADMIN_USERNAME, capturedUserDTO.getUsername());
             assertEquals(MOCK_PASSWORD, capturedUserDTO.getPassword());
+            assertEquals(Const.UserState.NORMAL, capturedUserDTO.getState());
 
             assertNotNull(result);
             assertEquals(mockTenant.getId(), result.getId());
@@ -158,10 +159,10 @@ class TenantServiceTest {
         @DisplayName("更新租户状态成功")
         void updateTenantState_Success() {
             Long id = 1L;
-            Boolean newState = false;
+            Integer newState = Const.TenantState.DISABLED;
             Tenant tenant = new Tenant();
             tenant.setId(id);
-            tenant.setEnabled(true);
+            tenant.setState(Const.TenantState.NORMAL);
             tenant.setTenantId("TEST_001");
 
             when(tenantRepository.findById(id)).thenReturn(Optional.of(tenant));
@@ -171,7 +172,7 @@ class TenantServiceTest {
             tenantService.updateTenantState(id, newState);
 
             verify(tenantRepository).save(tenant);
-            assertFalse(tenant.getEnabled());
+            assertEquals(newState, tenant.getState());
         }
 
         @Test

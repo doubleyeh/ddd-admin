@@ -13,6 +13,6 @@ public class TenantSaveDTO {
     private String name;
     private String contactPerson;
     private String contactPhone;
-    private Boolean enabled;
+    private Integer state;
     private Long packageId;
 }

@@ -49,27 +49,28 @@ VALUES
 (99901, 999, '在线用户查询', 'admin:online-user', NULL, NULL, '查看在线登录用户列表', NOW(), NOW()),
 (99902, 999, '在线用户强退', 'admin:online-user:kickout', NULL, NULL, '强制下线指定用户', NOW(), NOW());
 
--- 1. 插入字典类型: 用户状态 (ID: 100)
 INSERT INTO sys_dict_type (id, create_by, create_time, update_by, update_time, name, code, sort, remark, is_system)
 VALUES (100, 'root', NOW(), 'root', NOW(), '用户状态', 'sys_user_status', 1, '用户账号状态列表', TRUE);
--- 2. 插入字典数据: 正常 (ID: 1001)
 INSERT INTO sys_dict_data (id, create_by, create_time, update_by, update_time, type_code, label, value, sort, list_class, is_default, remark)
 VALUES (1001, 'root', NOW(), 'root', NOW(), 'sys_user_status', '正常', '1', 1, 'success', TRUE, '账号正常使用');
--- 3. 插入字典数据: 禁用 (ID: 1002)
 INSERT INTO sys_dict_data (id, create_by, create_time, update_by, update_time, type_code, label, value, sort, list_class, is_default, remark)
 VALUES (1002, 'root', NOW(), 'root', NOW(), 'sys_user_status', '禁用', '0', 2, 'danger', FALSE, '账号已被封禁');
 
--- 4. 插入字典类型: 角色状态 (ID: 101)
 INSERT INTO sys_dict_type (id, create_by, create_time, update_by, update_time, name, code, sort, remark, is_system)
 VALUES (101, 'root', NOW(), 'root', NOW(), '角色状态', 'sys_role_status', 2, '角色状态列表', TRUE);
--- 5. 插入字典数据: 正常 (ID: 1003)
 INSERT INTO sys_dict_data (id, create_by, create_time, update_by, update_time, type_code, label, value, sort, list_class, is_default, remark)
 VALUES (1003, 'root', NOW(), 'root', NOW(), 'sys_role_status', '正常', '1', 1, 'success', TRUE, '角色正常使用');
--- 6. 插入字典数据: 禁用 (ID: 1004)
 INSERT INTO sys_dict_data (id, create_by, create_time, update_by, update_time, type_code, label, value, sort, list_class, is_default, remark)
 VALUES (1004, 'root', NOW(), 'root', NOW(), 'sys_role_status', '禁用', '0', 2, 'danger', FALSE, '角色已被禁用');
 
-INSERT INTO `sys_tenant` (`id`, `create_by`, `create_time`, `update_by`, `update_time`, `contact_person`, `contact_phone`, `enabled`, `name`, `tenant_id`) VALUES (1, 'root', '2025-11-29 16:45:25.000000', 'root', '2025-11-29 16:45:30.000000', 'root', '1', b'1', 'root', '000000');
+INSERT INTO sys_dict_type (id, create_by, create_time, update_by, update_time, name, code, sort, remark, is_system)
+VALUES (102, 'root', NOW(), 'root', NOW(), '租户状态', 'sys_tenant_status', 3, '租户状态列表', TRUE);
+INSERT INTO sys_dict_data (id, create_by, create_time, update_by, update_time, type_code, label, value, sort, list_class, is_default, remark)
+VALUES (1005, 'root', NOW(), 'root', NOW(), 'sys_tenant_status', '正常', '1', 1, 'success', TRUE, '租户正常使用');
+INSERT INTO sys_dict_data (id, create_by, create_time, update_by, update_time, type_code, label, value, sort, list_class, is_default, remark)
+VALUES (1006, 'root', NOW(), 'root', NOW(), 'sys_tenant_status', '禁用', '0', 2, 'danger', FALSE, '租户已被禁用');
 
--- 用户增加 is_tenant_admin 字段，root 用户为 0 (false)
+
+INSERT INTO `sys_tenant` (`id`, `create_by`, `create_time`, `update_by`, `update_time`, `contact_person`, `contact_phone`, `state`, `name`, `tenant_id`) VALUES (1, 'root', '2025-11-29 16:45:25.000000', 'root', '2025-11-29 16:45:30.000000', 'root', '1', 1, 'root', '000000');
+
 INSERT INTO `sys_user` (`id`, `create_by`, `create_time`, `update_by`, `update_time`, `tenant_id`, `nickname`, `password`, `state`, `username`, `is_tenant_admin`) VALUES (1, 'root', '2025-11-30 07:52:38.000000', 'root', '2025-11-30 07:52:44.000000', '000000', 'Root', '$2a$10$3UzFSpn1EaTqUhU5tN/n/e3lZQUkXf0zCIAbefLrbuzNIEXKmECUG', 1, 'root', 0);

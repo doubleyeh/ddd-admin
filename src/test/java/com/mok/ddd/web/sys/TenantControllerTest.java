@@ -166,15 +166,15 @@ class TenantControllerTest {
         Long id = 1L;
         TenantDTO updated = new TenantDTO();
         updated.setId(id);
-        updated.setEnabled(false);
+        updated.setState(0);
 
-        given(tenantService.updateTenantState(id, false)).willReturn(updated);
+        given(tenantService.updateTenantState(id, 0)).willReturn(updated);
 
         mockMvc.perform(put("/api/tenants/{id}/state", id)
-                        .param("state", "false")
+                        .param("state", "0")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.enabled").value(false));
+                .andExpect(jsonPath("$.data.state").value(0));
     }
 
     @Test

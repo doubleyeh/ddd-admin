@@ -82,7 +82,7 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
                         tenant.name,
                         tenant.contactPerson,
                         tenant.contactPhone,
-                        tenant.enabled,
+                        tenant.state,
                         tenant.packageId,
                         tenantPackage.name.as("packageName")
                 ))
@@ -111,6 +111,9 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
         }
 
         Tenant tenant = tenantMapper.toEntity(dto);
+        if (tenant.getState() == null) {
+            tenant.setState(Const.TenantState.NORMAL);
+        }
 
         int maxRetry = 5;
         int attempt = 0;
@@ -140,7 +143,7 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
         userPostDTO.setUsername(Const.DEFAULT_ADMIN_USERNAME);
         userPostDTO.setNickname(tenant.getName() + "管理员");
         userPostDTO.setPassword(rawPassword);
-        userPostDTO.setState(1);
+        userPostDTO.setState(Const.UserState.NORMAL);
 
         userService.createForTenant(userPostDTO, tenant.getTenantId());
 
@@ -150,7 +153,7 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
         result.setName(tenant.getName());
         result.setContactPerson(tenant.getContactPerson());
         result.setContactPhone(tenant.getContactPhone());
-        result.setEnabled(tenant.getEnabled());
+        result.setState(tenant.getState());
         result.setInitialAdminPassword(rawPassword);
 
         return result;
@@ -175,12 +178,12 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
     }
 
     @Transactional
-    public TenantDTO updateTenantState(@NonNull Long id, @NonNull Boolean state) {
+    public TenantDTO updateTenantState(@NonNull Long id, @NonNull Integer state) {
         Tenant existingTenant = tenantRepository.findById(id).orElseThrow(() -> new BizException("租户不存在"));
         if (SysUtil.isSuperTenant(existingTenant.getTenantId())) {
             throw new BizException("无法对该租户进行操作");
         }
-        existingTenant.setEnabled(state);
+        existingTenant.setState(state);
         TenantDTO res = tenantMapper.toDto(tenantRepository.save(existingTenant));
         redisTemplate.delete(Const.CacheKey.TENANT + existingTenant.getTenantId());
         return res;
@@ -208,7 +211,7 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
         if (StringUtils.hasText(name)) {
             builder.and(tenant.name.containsIgnoreCase(name));
         }
-        builder.and(tenant.enabled.eq(true));
+        builder.and(tenant.state.eq(Const.TenantState.NORMAL));
         List<TenantDTO> list = findAll(builder);
         return tenantMapper.dtoToOptionsDto(list);
     }

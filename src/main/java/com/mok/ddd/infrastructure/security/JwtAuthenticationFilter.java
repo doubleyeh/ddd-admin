@@ -47,7 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (session != null) {
                 String tenantId = session.getTenantId();
                 TenantDTO tenantDTO = tenantService.findByTenantId(tenantId);
-                if(Objects.isNull(tenantDTO) || !tenantDTO.getEnabled()){
+                if(Objects.isNull(tenantDTO) || !tenantDTO.isEnabled()){
                     throw new AuthorizationDeniedException("租户不存在或已被禁用");
                 }
 

@@ -12,7 +12,6 @@ import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.context.annotation.Primary;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -42,7 +41,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         }
 
         TenantDTO tenant = tenantCacheService.findByTenantId(tenantId);
-        if (tenant == null || !tenant.getEnabled()) {
+        if (tenant == null || !tenant.isEnabled()) {
             throw new UsernameNotFoundException("租户不存在或已被禁用");
         }
 
