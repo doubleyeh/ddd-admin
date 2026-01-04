@@ -17,6 +17,7 @@ import com.mok.ddd.domain.sys.repository.MenuRepository;
 import com.mok.ddd.domain.sys.repository.PermissionRepository;
 import com.mok.ddd.domain.sys.repository.RoleRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
+import com.mok.ddd.infrastructure.util.QuerydslUtils;
 import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.JPQLQuery;
@@ -69,6 +70,8 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
         QRole role = QRole.role;
         QTenant tenant = QTenant.tenant;
 
+        Pageable qSortPageable = QuerydslUtils.convertToQSortPageable(pageable, Role.class, "role");
+
         JPAQuery<RoleDTO> query = roleRepository.getJPAQueryFactory()
                 .select(Projections.bean(RoleDTO.class,
                         role.id,
@@ -76,16 +79,17 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
                         role.code,
                         role.description,
                         role.sort,
-                        role.enabled,
+                        role.state,
                         role.tenantId,
-                        tenant.name.as("tenantName")
+                        tenant.name.as("tenantName"),
+                        role.createTime.as("createTime")
                 ))
                 .from(role)
                 .leftJoin(tenant).on(role.tenantId.eq(tenant.tenantId))
                 .where(predicate);
 
         roleRepository.applyTenantFilter(query, role);
-        JPQLQuery<RoleDTO> paginatedQuery = roleRepository.getQuerydsl().applyPagination(pageable, query);
+        JPQLQuery<RoleDTO> paginatedQuery = roleRepository.getQuerydsl().applyPagination(qSortPageable, query);
 
         return PageableExecutionUtils.getPage(paginatedQuery.fetch(), pageable, () -> {
             JPAQuery<Long> countQuery = roleRepository.getJPAQueryFactory()
@@ -116,6 +120,9 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
     @Transactional
     public RoleDTO createRole(@NonNull RoleSaveDTO dto) {
         Role entity = roleMapper.toEntity(dto);
+        if (entity.getState() == null) {
+            entity.setState(Const.RoleState.NORMAL);
+        }
         return roleMapper.toDto(roleRepository.save(entity));
     }
 
@@ -127,9 +134,9 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
     }
 
     @Transactional
-    public RoleDTO updateState(Long id, Boolean enabled) {
+    public RoleDTO updateState(Long id, Integer state) {
         Role role = roleRepository.findById(id).orElseThrow(NotFoundException::new);
-        role.setEnabled(enabled);
+        role.setState(state);
         return this.toDto(roleRepository.save(role));
     }
 
@@ -176,7 +183,7 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
                 .from(role)
                 .leftJoin(tenant).on(role.tenantId.eq(tenant.tenantId))
                 .where(roleQuery.toPredicate(),
-                        role.enabled.eq(true));
+                        role.state.eq(Const.RoleState.NORMAL));
 
         roleRepository.applyTenantFilter(query, role);
         return query.fetch();

@@ -9,8 +9,6 @@ import java.util.Set;
 public class RoleSaveDTO {
     private Long id;
 
-    private String tenantId;
-
     @NotBlank(message = "角色名称不能为空")
     private String name;
 
@@ -19,8 +17,8 @@ public class RoleSaveDTO {
 
     private String description;
     private Integer sort;
-    private Boolean enabled;
+    private Integer state;
 
-    private Set<Long> permissionIds;
     private Set<Long> menuIds;
+    private Set<Long> permissionIds;
 }

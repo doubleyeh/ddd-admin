@@ -16,7 +16,11 @@ public class Role extends TenantBaseEntity {
     private String code;
     private String description;
     private Integer sort;
-    private Boolean enabled;
+    
+    /**
+     * 状态 (1:正常, 0:禁用)
+     */
+    private Integer state;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

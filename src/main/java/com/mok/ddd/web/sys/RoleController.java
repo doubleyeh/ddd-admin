@@ -57,7 +57,7 @@ public class RoleController {
     @PutMapping("/{id}/state")
     @PreAuthorize("hasAuthority('role:update')")
     @OperLog(title = "角色管理", businessType = BusinessType.UPDATE)
-    public RestResponse<RoleDTO> updateState(@PathVariable Long id, @Valid @NotNull @RequestParam Boolean state) {
+    public RestResponse<RoleDTO> updateState(@PathVariable Long id, @Valid @NotNull @RequestParam Integer state) {
         RoleDTO dto = roleService.updateState(id, state);
         return RestResponse.success(dto);
     }

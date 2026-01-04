@@ -10,6 +10,7 @@ import com.mok.ddd.application.sys.dto.role.RoleSaveDTO;
 import com.mok.ddd.application.sys.mapper.MenuMapper;
 import com.mok.ddd.application.sys.mapper.PermissionMapper;
 import com.mok.ddd.application.sys.mapper.RoleMapper;
+import com.mok.ddd.common.Const;
 import com.mok.ddd.domain.sys.model.Menu;
 import com.mok.ddd.domain.sys.model.Permission;
 import com.mok.ddd.domain.sys.model.Role;
@@ -66,33 +67,18 @@ class RoleServiceTest {
         @DisplayName("成功创建角色")
         void createRole_Success() {
             RoleSaveDTO dto = new RoleSaveDTO();
-            // dto.setPermissionIds(Set.of(1L, 2L));
-            // dto.setMenuIds(Set.of(10L, 20L));
-
             Role newRole = new Role();
             Role savedRole = new Role();
             savedRole.setId(5L);
 
-            // Permission p1 = new Permission();
-            // Permission p2 = new Permission();
-            // Menu m1 = new Menu();
-            // Menu m2 = new Menu();
-
             when(roleMapper.toEntity(dto)).thenReturn(newRole);
-            // when(permissionRepository.findAllById(dto.getPermissionIds())).thenReturn(List.of(p1, p2));
-            // when(menuRepository.findAllById(dto.getMenuIds())).thenReturn(List.of(m1, m2));
             when(roleRepository.save(newRole)).thenReturn(savedRole);
             when(roleMapper.toDto(savedRole)).thenReturn(new RoleDTO());
 
             RoleDTO result = roleService.createRole(dto);
 
-            // verify(permissionRepository, times(1)).findAllById(dto.getPermissionIds());
-            // verify(menuRepository, times(1)).findAllById(dto.getMenuIds());
             verify(roleRepository, times(1)).save(newRole);
             verify(roleMapper, times(1)).toDto(savedRole);
-
-            // assertTrue(newRole.getPermissions().containsAll(Set.of(p1, p2)));
-            // assertTrue(newRole.getMenus().containsAll(Set.of(m1, m2)));
             assertNotNull(result);
         }
     }
@@ -108,21 +94,12 @@ class RoleServiceTest {
         void updateRole_Success() {
             RoleSaveDTO dto = new RoleSaveDTO();
             dto.setId(existingId);
-            // dto.setPermissionIds(Set.of(3L, 4L));
-            // dto.setMenuIds(Set.of(30L, 40L));
 
             Role existingRole = new Role();
             existingRole.setId(existingId);
 
-            // Permission p3 = new Permission();
-            // Permission p4 = new Permission();
-            // Menu m3 = new Menu();
-            // Menu m4 = new Menu();
-
             when(roleRepository.findById(existingId)).thenReturn(Optional.of(existingRole));
             doNothing().when(roleMapper).updateEntityFromDto(dto, existingRole);
-            //when(permissionRepository.findAllById(dto.getPermissionIds())).thenReturn(List.of(p3, p4));
-            //when(menuRepository.findAllById(dto.getMenuIds())).thenReturn(List.of(m3, m4));
             when(roleRepository.save(existingRole)).thenReturn(existingRole);
             when(roleMapper.toDto(existingRole)).thenReturn(new RoleDTO());
 
@@ -131,9 +108,6 @@ class RoleServiceTest {
             verify(roleRepository, times(1)).findById(existingId);
             verify(roleMapper, times(1)).updateEntityFromDto(any(RoleSaveDTO.class), any(Role.class));
             verify(roleRepository, times(1)).save(existingRole);
-
-            //assertTrue(existingRole.getPermissions().containsAll(Set.of(p3, p4)));
-            //assertTrue(existingRole.getMenus().containsAll(Set.of(m3, m4)));
             assertNotNull(result);
         }
 
@@ -287,7 +261,7 @@ class RoleServiceTest {
         @DisplayName("更新角色状态成功")
         void updateState_Success() {
             Long id = 1L;
-            Boolean enabled = true;
+            Integer state = Const.RoleState.DISABLED;
             Role role = new Role();
             role.setId(id);
             RoleDTO roleDTO = new RoleDTO();
@@ -296,9 +270,9 @@ class RoleServiceTest {
             when(roleRepository.save(role)).thenReturn(role);
             when(roleMapper.toDto(role)).thenReturn(roleDTO);
 
-            RoleDTO result = roleService.updateState(id, enabled);
+            RoleDTO result = roleService.updateState(id, state);
 
-            assertTrue(role.getEnabled());
+            assertEquals(state, role.getState());
             assertEquals(roleDTO, result);
         }
     }
@@ -352,7 +326,6 @@ class RoleServiceTest {
             doReturn(jpaQuery).when(jpaQuery).leftJoin(any(com.querydsl.core.types.EntityPath.class));
 
             doReturn(jpaQuery).when(jpaQuery).on(any(com.querydsl.core.types.Predicate.class));
-            // 使用 any() 匹配变长参数
             doReturn(jpaQuery).when(jpaQuery).where(any(com.querydsl.core.types.Predicate.class), any(com.querydsl.core.types.Predicate.class));
 
             when(jpaQuery.fetch()).thenReturn(options);

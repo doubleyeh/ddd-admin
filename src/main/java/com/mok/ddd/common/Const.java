@@ -27,4 +27,9 @@ public interface Const {
         public static final Integer NORMAL = 1;
         public static final Integer DISABLED = 0;
     }
+
+    class RoleState {
+        public static final Integer NORMAL = 1;
+        public static final Integer DISABLED = 0;
+    }
 }
