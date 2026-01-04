@@ -1,27 +1,24 @@
 package com.mok.ddd.application.sys.dto.tenantPackage;
 
-import com.mok.ddd.application.common.dto.BaseQuery;
 import com.mok.ddd.domain.sys.model.QTenantPackage;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Predicate;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
+import org.springframework.util.StringUtils;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
-public class TenantPackageQuery extends BaseQuery {
-    private Boolean enabled;
+public class TenantPackageQuery {
     private String name;
+    private Integer state;
 
     public Predicate toPredicate() {
-        TenantPackageQuery query = this;
-        QTenantPackage tp = QTenantPackage.tenantPackage;
+        QTenantPackage qTenantPackage = QTenantPackage.tenantPackage;
         BooleanBuilder builder = new BooleanBuilder();
-        if (query.getName() != null && !query.getName().isEmpty()) {
-            builder.and(tp.name.containsIgnoreCase(query.getName()));
+        if (StringUtils.hasText(name)) {
+            builder.and(qTenantPackage.name.containsIgnoreCase(name));
         }
-        if (query.getEnabled() != null) {
-            builder.and(tp.enabled.eq(query.getEnabled()));
+        if (state != null) {
+            builder.and(qTenantPackage.state.eq(state));
         }
         return builder;
     }

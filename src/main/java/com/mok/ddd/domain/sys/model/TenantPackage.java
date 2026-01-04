@@ -14,7 +14,7 @@ import java.util.Set;
 public class TenantPackage extends BaseEntity {
     private String name;
     private String description;
-    private Boolean enabled;
+    private Integer state;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

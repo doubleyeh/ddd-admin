@@ -147,12 +147,12 @@ class TenantPackageControllerTest {
     void updateState_ReturnUpdatedDTO() throws Exception {
         Long id = 1L;
         TenantPackageDTO updated = new TenantPackageDTO();
-        updated.setEnabled(true);
-        given(packageService.updateTenantState(id, true)).willReturn(updated);
+        updated.setState(1);
+        given(packageService.updateTenantState(id, 1)).willReturn(updated);
 
-        mockMvc.perform(put("/api/tenant-packages/{id}/state", id).param("state", "true"))
+        mockMvc.perform(put("/api/tenant-packages/{id}/state", id).param("state", "1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.enabled").value(true));
+                .andExpect(jsonPath("$.data.state").value(1));
     }
 
     @Test

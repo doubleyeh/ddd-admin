@@ -70,6 +70,13 @@ VALUES (1005, 'root', NOW(), 'root', NOW(), 'sys_tenant_status', '正常', '1', 
 INSERT INTO sys_dict_data (id, create_by, create_time, update_by, update_time, type_code, label, value, sort, list_class, is_default, remark)
 VALUES (1006, 'root', NOW(), 'root', NOW(), 'sys_tenant_status', '禁用', '0', 2, 'danger', FALSE, '租户已被禁用');
 
+INSERT INTO sys_dict_type (id, create_by, create_time, update_by, update_time, name, code, sort, remark, is_system)
+VALUES (103, 'root', NOW(), 'root', NOW(), '套餐状态', 'sys_tenant_package_status', 4, '套餐状态列表', TRUE);
+INSERT INTO sys_dict_data (id, create_by, create_time, update_by, update_time, type_code, label, value, sort, list_class, is_default, remark)
+VALUES (1007, 'root', NOW(), 'root', NOW(), 'sys_tenant_package_status', '正常', '1', 1, 'success', TRUE, '套餐正常使用');
+INSERT INTO sys_dict_data (id, create_by, create_time, update_by, update_time, type_code, label, value, sort, list_class, is_default, remark)
+VALUES (1008, 'root', NOW(), 'root', NOW(), 'sys_tenant_package_status', '禁用', '0', 2, 'danger', FALSE, '套餐已被禁用');
+
 
 INSERT INTO `sys_tenant` (`id`, `create_by`, `create_time`, `update_by`, `update_time`, `contact_person`, `contact_phone`, `state`, `name`, `tenant_id`) VALUES (1, 'root', '2025-11-29 16:45:25.000000', 'root', '2025-11-29 16:45:30.000000', 'root', '1', 1, 'root', '000000');
 

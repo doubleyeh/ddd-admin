@@ -63,7 +63,7 @@ public class TenantPackageController {
     @PutMapping("/{id}/state")
     @PreAuthorize("hasAuthority('tenantPackage:update')")
     @OperLog(title = "套餐管理", businessType = BusinessType.UPDATE)
-    public RestResponse<TenantPackageDTO> updateState(@PathVariable Long id, @Valid @NotNull @RequestParam Boolean state) {
+    public RestResponse<TenantPackageDTO> updateState(@PathVariable Long id, @Valid @NotNull @RequestParam Integer state) {
         TenantPackageDTO updatedTenant = packageService.updateTenantState(id, state);
         return RestResponse.success(updatedTenant);
     }

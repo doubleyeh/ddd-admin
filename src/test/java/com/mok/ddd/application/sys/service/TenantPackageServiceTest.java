@@ -5,6 +5,7 @@ import com.mok.ddd.application.sys.dto.tenantPackage.*;
 import com.mok.ddd.application.sys.mapper.MenuMapper;
 import com.mok.ddd.application.sys.mapper.PermissionMapper;
 import com.mok.ddd.application.sys.mapper.TenantPackageMapper;
+import com.mok.ddd.common.Const;
 import com.mok.ddd.domain.sys.model.TenantPackage;
 import com.mok.ddd.domain.sys.repository.MenuRepository;
 import com.mok.ddd.domain.sys.repository.PermissionRepository;
@@ -106,10 +107,10 @@ class TenantPackageServiceTest {
 
             when(packageMapper.toEntity(saveDto)).thenReturn(entity);
             when(packageRepository.save(entity)).thenReturn(entity);
-            //when(packageMapper.toDto(entity)).thenReturn(new TenantPackageDTO());
 
             tenantPackageService.createPackage(saveDto);
 
+            assertEquals(Const.TenantPackageState.NORMAL, entity.getState());
             verify(packageRepository).save(entity);
         }
 
@@ -153,15 +154,16 @@ class TenantPackageServiceTest {
         @Test
         void updateTenantState_Success() {
             Long id = 1L;
+            Integer newState = Const.TenantPackageState.DISABLED;
             TenantPackage entity = new TenantPackage();
             when(packageRepository.findById(id)).thenReturn(Optional.of(entity));
             when(packageRepository.save(entity)).thenReturn(entity);
             when(packageMapper.toDto(entity)).thenReturn(new TenantPackageDTO());
 
-            tenantPackageService.updateTenantState(id, true);
+            tenantPackageService.updateTenantState(id, newState);
 
             verify(packageRepository).save(entity);
-            assertTrue(entity.getEnabled());
+            assertEquals(newState, entity.getState());
         }
     }
 

@@ -49,6 +49,9 @@ public class TenantPackageService extends BaseServiceImpl<TenantPackage, Long, T
     @Transactional
     public void createPackage(TenantPackageSaveDTO dto) {
         TenantPackage entity = packageMapper.toEntity(dto);
+        if (entity.getState() == null) {
+            entity.setState(Const.TenantPackageState.NORMAL);
+        }
         packageRepository.save(entity);
     }
 
@@ -82,9 +85,9 @@ public class TenantPackageService extends BaseServiceImpl<TenantPackage, Long, T
     }
 
     @Transactional
-    public TenantPackageDTO updateTenantState(@NonNull Long id, @NonNull Boolean state) {
+    public TenantPackageDTO updateTenantState(@NonNull Long id, @NonNull Integer state) {
         TenantPackage existingTenant = packageRepository.findById(id).orElseThrow(() -> new BizException("套餐不存在"));
-        existingTenant.setEnabled(state);
+        existingTenant.setState(state);
         return packageMapper.toDto(packageRepository.save(existingTenant));
     }
 
@@ -105,7 +108,7 @@ public class TenantPackageService extends BaseServiceImpl<TenantPackage, Long, T
         if (StringUtils.hasText(name)) {
             builder.and(tenantPackage.name.containsIgnoreCase(name));
         }
-        builder.and(tenantPackage.enabled.eq(true));
+        builder.and(tenantPackage.state.eq(Const.TenantPackageState.NORMAL));
         List<TenantPackageDTO> list = findAll(builder);
         return packageMapper.dtoToOptionsDto(list);
     }
