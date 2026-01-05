@@ -33,6 +33,7 @@ com.mok.ddd
 ├── infrastructure      // 基础设施层: 提供通用技术能力
 │   ├── common          // 通用基础设施组件 (如 AOP 切面)
 │   ├── config          // - Spring Boot 配置类
+│   ├── file            // - 文件服务实现 (Local)
 │   ├── limiter         // - 接口限流实现
 │   ├── repository      // - 仓库通用实现 (CustomRepositoryImpl)
 │   ├── security        // - Spring Security 通用配置
@@ -62,14 +63,14 @@ com.mok.ddd
     - [x] 接入登录日志，记录用户登录行为及IP。
 
 2.  **数据字典**
-    - [ ] 实现数据字典管理，支持动态配置系统参数。
+    - [x] 实现数据字典管理，支持动态配置系统参数。
 
 3.  **代码生成器**
     - [ ] 开发基于 DDD 架构的代码生成插件或工具，自动生成 Controller, Service, Repository, Entity, DTO。
 
 4.  **文件服务**
-    - [ ] 封装统一文件服务接口。
-    - [ ] 支持本地存储、MinIO、阿里云 OSS 等多种存储策略。
+    - [x] 封装统一文件服务接口。
+    - [ ] 支持本地存储、RustFS等多种存储策略。
 
 5.  **定时任务**
     - [ ] 集成 Quartz 或 Spring Task，实现任务的可视化管理（暂停、恢复、立即执行）。

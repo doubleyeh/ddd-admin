@@ -6,3 +6,11 @@ spring:
   threads:
     virtual:
       enabled: true
+
+file:
+  storage:
+    type: local # local
+    local:
+      path: ./uploads
+      domain: http://localhost:8080
+      prefix: /files
