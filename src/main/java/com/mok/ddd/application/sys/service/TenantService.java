@@ -28,7 +28,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -56,7 +55,7 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
 
     @Override
     protected Tenant toEntity(@NonNull TenantDTO dto) {
-        return tenantMapper.toEntity(dto);
+        throw new UnsupportedOperationException("不支持从DTO创建或更新实体，请从Repository获取实体并使用其业务方法进行更新。");
     }
 
     @Override
@@ -106,35 +105,7 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
 
     @Transactional
     public TenantCreateResultDTO createTenant(@NonNull TenantSaveDTO dto) {
-        if (dto.getPackageId() == null) {
-            throw new BizException("套餐不能为空");
-        }
-
-        Tenant tenant = tenantMapper.toEntity(dto);
-        if (tenant.getState() == null) {
-            tenant.setState(Const.TenantState.NORMAL);
-        }
-
-        int maxRetry = 5;
-        int attempt = 0;
-        String tenantId;
-        final String ALPHANUMERIC_UPPER = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ";
-        java.util.concurrent.ThreadLocalRandom random = java.util.concurrent.ThreadLocalRandom.current();
-
-        do {
-            if (attempt++ >= maxRetry) {
-                throw new BizException("生成唯一租户编码失败，请重试");
-            }
-
-            StringBuilder sb = new StringBuilder(6);
-            for (int i = 0; i < 6; i++) {
-                sb.append(ALPHANUMERIC_UPPER.charAt(random.nextInt(ALPHANUMERIC_UPPER.length())));
-            }
-            tenantId = sb.toString();
-
-        } while (tenantRepository.findByTenantId(tenantId).isPresent());
-
-        tenant.setTenantId(tenantId);
+        Tenant tenant = Tenant.create(dto, tenantRepository);
         tenant = tenantRepository.save(tenant);
 
         String rawPassword = PasswordGenerator.generateRandomPassword();
@@ -167,26 +138,29 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
             throw new BizException("租户编码不可修改");
         }
 
-        if (!SysUtil.isSuperTenant(existingTenant.getTenantId()) && dto.getPackageId() == null) {
-            throw new BizException("套餐不能为空");
-        }
+        existingTenant.updateInfo(dto.getName(), dto.getContactPerson(), dto.getContactPhone());
+        existingTenant.changePackage(dto.getPackageId());
 
-        tenantMapper.updateEntityFromDto(dto, existingTenant);
-        TenantDTO res = tenantMapper.toDto(tenantRepository.save(existingTenant));
-        redisTemplate.delete(Const.CacheKey.TENANT + existingTenant.getTenantId());
-        return res;
+        Tenant savedTenant = tenantRepository.save(existingTenant);
+        redisTemplate.delete(Const.CacheKey.TENANT + savedTenant.getTenantId());
+        return tenantMapper.toDto(savedTenant);
     }
 
     @Transactional
     public TenantDTO updateTenantState(@NonNull Long id, @NonNull Integer state) {
         Tenant existingTenant = tenantRepository.findById(id).orElseThrow(() -> new BizException("租户不存在"));
-        if (SysUtil.isSuperTenant(existingTenant.getTenantId())) {
-            throw new BizException("无法对该租户进行操作");
+
+        if (Objects.equals(state, Const.TenantState.NORMAL)) {
+            existingTenant.enable();
+        } else if (Objects.equals(state, Const.TenantState.DISABLED)) {
+            existingTenant.disable();
+        } else {
+            throw new BizException("无效的状态值: " + state);
         }
-        existingTenant.setState(state);
-        TenantDTO res = tenantMapper.toDto(tenantRepository.save(existingTenant));
-        redisTemplate.delete(Const.CacheKey.TENANT + existingTenant.getTenantId());
-        return res;
+
+        Tenant savedTenant = tenantRepository.save(existingTenant);
+        redisTemplate.delete(Const.CacheKey.TENANT + savedTenant.getTenantId());
+        return tenantMapper.toDto(savedTenant);
     }
 
     @Transactional

@@ -3,7 +3,6 @@ package com.mok.ddd.application.sys.mapper;
 import com.mok.ddd.application.sys.dto.tenant.TenantCreateResultDTO;
 import com.mok.ddd.application.sys.dto.tenant.TenantDTO;
 import com.mok.ddd.application.sys.dto.tenant.TenantOptionDTO;
-import com.mok.ddd.application.sys.dto.tenant.TenantSaveDTO;
 import com.mok.ddd.domain.sys.model.Tenant;
 import org.mapstruct.*;
 
@@ -13,14 +12,6 @@ import java.util.List;
 public interface TenantMapper {
 
     TenantDTO toDto(Tenant entity);
-
-    Tenant toEntity(TenantDTO dto);
-
-    Tenant toEntity(TenantSaveDTO dto);
-
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "packageId", source = "packageId")
-    void updateEntityFromDto(TenantSaveDTO dto, @MappingTarget Tenant entity);
 
     void updateEntityFromDto(Tenant entity, @MappingTarget TenantCreateResultDTO dto);
 

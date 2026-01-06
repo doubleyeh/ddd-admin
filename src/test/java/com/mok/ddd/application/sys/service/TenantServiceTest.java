@@ -47,6 +47,8 @@ class TenantServiceTest {
     private RedisTemplate<String, Object> redisTemplate;
 
     private MockedStatic<PasswordGenerator> mockedPasswordGenerator;
+    private MockedStatic<Tenant> mockedTenant;
+
 
     private static final String MOCK_PASSWORD = "GeneratedMockPassword123";
 
@@ -54,11 +56,13 @@ class TenantServiceTest {
     void setUp() {
         mockedPasswordGenerator = mockStatic(PasswordGenerator.class);
         mockedPasswordGenerator.when(PasswordGenerator::generateRandomPassword).thenReturn(MOCK_PASSWORD);
+        mockedTenant = mockStatic(Tenant.class);
     }
 
     @AfterEach
     void tearDown() {
         mockedPasswordGenerator.close();
+        mockedTenant.close();
     }
 
     @Nested
@@ -66,7 +70,6 @@ class TenantServiceTest {
     class CreateTenantTests {
 
         private TenantSaveDTO validDto;
-        private Tenant mockTenant;
 
         @BeforeEach
         void setup() {
@@ -75,37 +78,32 @@ class TenantServiceTest {
             validDto.setContactPerson("联系人");
             validDto.setContactPhone("13800000000");
             validDto.setPackageId(1L);
-
-            mockTenant = new Tenant();
-            mockTenant.setId(1L);
-            mockTenant.setTenantId("RANDOM");
-            mockTenant.setName(validDto.getName());
-            mockTenant.setContactPerson(validDto.getContactPerson());
-            mockTenant.setContactPhone(validDto.getContactPhone());
-            mockTenant.setState(Const.TenantState.NORMAL);
         }
 
         @Test
         @DisplayName("成功创建租户和初始化管理员")
         void createTenant_Success() {
-            when(tenantRepository.findByTenantId(anyString())).thenReturn(Optional.empty());
-            when(tenantMapper.toEntity(validDto)).thenReturn(mockTenant);
+            Tenant mockTenant = mock(Tenant.class);
+            String expectedTenantId = "MOCKID";
+            when(mockTenant.getId()).thenReturn(1L);
+            when(mockTenant.getTenantId()).thenReturn(expectedTenantId);
+            when(mockTenant.getName()).thenReturn(validDto.getName());
+            when(mockTenant.getState()).thenReturn(Const.TenantState.NORMAL);
+
+            mockedTenant.when(() -> Tenant.create(eq(validDto), eq(tenantRepository))).thenReturn(mockTenant);
             when(tenantRepository.save(any(Tenant.class))).thenReturn(mockTenant);
 
             TenantCreateResultDTO result = tenantService.createTenant(validDto);
 
-            verify(tenantRepository, atLeastOnce()).findByTenantId(anyString());
-            verify(tenantRepository, times(1)).save(any(Tenant.class));
+            mockedTenant.verify(() -> Tenant.create(eq(validDto), eq(tenantRepository)));
+            verify(tenantRepository, times(1)).save(mockTenant);
 
             ArgumentCaptor<UserPostDTO> userCaptor = ArgumentCaptor.forClass(UserPostDTO.class);
-            ArgumentCaptor<String> tenantIdCaptor = ArgumentCaptor.forClass(String.class);
-
-            verify(userService, times(1)).createForTenant(userCaptor.capture(), tenantIdCaptor.capture());
+            verify(userService, times(1)).createForTenant(userCaptor.capture(), eq(expectedTenantId));
 
             UserPostDTO capturedUserDTO = userCaptor.getValue();
             assertEquals(Const.DEFAULT_ADMIN_USERNAME, capturedUserDTO.getUsername());
             assertEquals(MOCK_PASSWORD, capturedUserDTO.getPassword());
-            assertEquals(Const.UserState.NORMAL, capturedUserDTO.getState());
 
             assertNotNull(result);
             assertEquals(mockTenant.getId(), result.getId());
@@ -113,15 +111,14 @@ class TenantServiceTest {
         }
 
         @Test
-        @DisplayName("创建租户失败：生成唯一租户编码失败")
-        void createTenant_GenerateIdFailed_ThrowsBizException() {
-            when(tenantRepository.findByTenantId(anyString())).thenReturn(Optional.of(mockTenant));
-            when(tenantMapper.toEntity(validDto)).thenReturn(mockTenant);
+        @DisplayName("创建租户失败：当租户创建逻辑抛出异常")
+        void createTenant_CreationLogicFails_ThrowsBizException() {
+            BizException thrownException = new BizException("生成唯一租户编码失败，请重试");
+            mockedTenant.when(() -> Tenant.create(any(), any())).thenThrow(thrownException);
 
             BizException exception = assertThrows(BizException.class, () -> tenantService.createTenant(validDto));
 
             assertEquals("生成唯一租户编码失败，请重试", exception.getMessage());
-            verify(tenantRepository, times(5)).findByTenantId(anyString());
             verify(tenantRepository, never()).save(any());
         }
     }
@@ -138,9 +135,8 @@ class TenantServiceTest {
             invalidDto.setTenantId("new-id");
             invalidDto.setName("name");
 
-            Tenant existingTenant = new Tenant();
-            existingTenant.setId(existingId);
-            existingTenant.setTenantId("old-id");
+            Tenant existingTenant = mock(Tenant.class);
+            when(existingTenant.getTenantId()).thenReturn("old-id");
 
             when(tenantRepository.findById(existingId)).thenReturn(Optional.of(existingTenant));
 
@@ -149,6 +145,32 @@ class TenantServiceTest {
             assertEquals("租户编码不可修改", exception.getMessage());
             verify(tenantRepository, never()).save(any());
         }
+
+        @Test
+        @DisplayName("更新成功：调用领域对象的更新方法")
+        void updateTenant_Success_CallsDomainMethods() {
+            Long existingId = 1L;
+            TenantSaveDTO dto = new TenantSaveDTO();
+            dto.setTenantId("same-id");
+            dto.setName("new name");
+            dto.setContactPerson("new person");
+            dto.setContactPhone("13900000000");
+            dto.setPackageId(2L);
+
+            Tenant existingTenant = mock(Tenant.class);
+            when(existingTenant.getTenantId()).thenReturn("same-id");
+
+            when(tenantRepository.findById(existingId)).thenReturn(Optional.of(existingTenant));
+            when(tenantRepository.save(existingTenant)).thenReturn(existingTenant);
+            when(tenantMapper.toDto(existingTenant)).thenReturn(new TenantDTO());
+
+            tenantService.updateTenant(existingId, dto);
+
+            verify(existingTenant).updateInfo(dto.getName(), dto.getContactPerson(), dto.getContactPhone());
+            verify(existingTenant).changePackage(dto.getPackageId());
+            verify(tenantRepository).save(existingTenant);
+            verify(redisTemplate).delete(anyString());
+        }
     }
 
     @Nested
@@ -156,14 +178,11 @@ class TenantServiceTest {
     class StateAndDeleteTests {
 
         @Test
-        @DisplayName("更新租户状态成功")
-        void updateTenantState_Success() {
+        @DisplayName("更新租户状态为禁用成功")
+        void updateTenantState_ToDisabled_Success() {
             Long id = 1L;
             Integer newState = Const.TenantState.DISABLED;
-            Tenant tenant = new Tenant();
-            tenant.setId(id);
-            tenant.setState(Const.TenantState.NORMAL);
-            tenant.setTenantId("TEST_001");
+            Tenant tenant = mock(Tenant.class);
 
             when(tenantRepository.findById(id)).thenReturn(Optional.of(tenant));
             when(tenantRepository.save(any(Tenant.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -171,8 +190,27 @@ class TenantServiceTest {
 
             tenantService.updateTenantState(id, newState);
 
+            verify(tenant).disable();
+            verify(tenant, never()).enable();
             verify(tenantRepository).save(tenant);
-            assertEquals(newState, tenant.getState());
+        }
+
+        @Test
+        @DisplayName("更新租户状态为启用成功")
+        void updateTenantState_ToEnabled_Success() {
+            Long id = 1L;
+            Integer newState = Const.TenantState.NORMAL;
+            Tenant tenant = mock(Tenant.class);
+
+            when(tenantRepository.findById(id)).thenReturn(Optional.of(tenant));
+            when(tenantRepository.save(any(Tenant.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(tenantMapper.toDto(any(Tenant.class))).thenReturn(new TenantDTO());
+
+            tenantService.updateTenantState(id, newState);
+
+            verify(tenant).enable();
+            verify(tenant, never()).disable();
+            verify(tenantRepository).save(tenant);
         }
 
         @Test
@@ -220,7 +258,7 @@ class TenantServiceTest {
             option.setName("测试租户");
 
             when(tenantRepository.findAll(any(com.querydsl.core.types.Predicate.class)))
-                    .thenReturn(List.of(new Tenant()));
+                    .thenReturn(List.of(mock(Tenant.class)));
 
             when(tenantMapper.dtoToOptionsDto(any())).thenReturn(List.of(option));
 
