@@ -10,11 +10,7 @@ import com.mok.ddd.application.sys.mapper.MenuMapper;
 import com.mok.ddd.application.sys.mapper.PermissionMapper;
 import com.mok.ddd.application.sys.mapper.RoleMapper;
 import com.mok.ddd.common.Const;
-import com.mok.ddd.domain.sys.model.Menu;
-import com.mok.ddd.domain.sys.model.Permission;
-import com.mok.ddd.domain.sys.model.QRole;
-import com.mok.ddd.domain.sys.model.QTenant;
-import com.mok.ddd.domain.sys.model.Role;
+import com.mok.ddd.domain.sys.model.*;
 import com.mok.ddd.domain.sys.repository.MenuRepository;
 import com.mok.ddd.domain.sys.repository.PermissionRepository;
 import com.mok.ddd.domain.sys.repository.RoleRepository;
@@ -33,11 +29,7 @@ import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -122,7 +114,7 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
 
     @Transactional
     public RoleDTO createRole(@NonNull RoleSaveDTO dto) {
-        Role entity = Role.create(dto);
+        Role entity = Role.create(dto.getName(), dto.getCode(), dto.getDescription(), dto.getSort());
         return roleMapper.toDto(roleRepository.save(entity));
     }
 

@@ -1,7 +1,6 @@
 package com.mok.ddd.domain.sys.model;
 
 import com.mok.ddd.application.exception.BizException;
-import com.mok.ddd.application.sys.dto.tenant.TenantSaveDTO;
 import com.mok.ddd.common.Const;
 import com.mok.ddd.common.SysUtil;
 import com.mok.ddd.domain.common.model.BaseEntity;
@@ -37,16 +36,16 @@ public class Tenant extends BaseEntity {
 
     private Long packageId;
 
-    public static Tenant create(@NonNull TenantSaveDTO dto, @NonNull TenantRepository tenantRepository) {
-        if (dto.getPackageId() == null) {
+    public static Tenant create(@NonNull String name, String contactPerson, String contactPhone, @NonNull Long packageId, @NonNull TenantRepository tenantRepository) {
+        if (packageId == null) {
             throw new BizException("套餐不能为空");
         }
 
         Tenant tenant = new Tenant();
-        tenant.name = dto.getName();
-        tenant.contactPerson = dto.getContactPerson();
-        tenant.contactPhone = dto.getContactPhone();
-        tenant.packageId = dto.getPackageId();
+        tenant.name = name;
+        tenant.contactPerson = contactPerson;
+        tenant.contactPhone = contactPhone;
+        tenant.packageId = packageId;
         tenant.state = Const.TenantState.NORMAL;
 
         int maxRetry = 5;

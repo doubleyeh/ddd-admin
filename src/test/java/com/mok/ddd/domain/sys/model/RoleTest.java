@@ -1,6 +1,5 @@
 package com.mok.ddd.domain.sys.model;
 
-import com.mok.ddd.application.sys.dto.role.RoleSaveDTO;
 import com.mok.ddd.common.Const;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -38,13 +37,7 @@ class RoleTest {
     class CreateTests {
         @Test
         void create_Success() {
-            RoleSaveDTO dto = new RoleSaveDTO();
-            dto.setName("Test Role");
-            dto.setCode("test_role");
-            dto.setDescription("A test role");
-            dto.setSort(1);
-
-            Role role = Role.create(dto);
+            Role role = Role.create("Test Role", "test_role", "A test role", 1);
 
             assertNotNull(role);
             assertEquals("Test Role", role.getName());

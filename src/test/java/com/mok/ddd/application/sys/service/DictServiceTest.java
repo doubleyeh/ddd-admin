@@ -1,7 +1,6 @@
 package com.mok.ddd.application.sys.service;
 
 import com.mok.ddd.application.exception.BizException;
-import com.mok.ddd.application.exception.NotFoundException;
 import com.mok.ddd.application.sys.dto.dict.DictDataDTO;
 import com.mok.ddd.application.sys.dto.dict.DictDataSaveDTO;
 import com.mok.ddd.application.sys.dto.dict.DictTypeDTO;
@@ -74,18 +73,22 @@ class DictServiceTest {
         void createType_Success() {
             DictTypeSaveDTO dto = new DictTypeSaveDTO();
             dto.setCode("test_code");
+            dto.setName("Test Dict");
+            dto.setSort(1);
+            dto.setRemark("Remark");
+
             DictType mockEntity = mock(DictType.class);
             DictTypeDTO mockDto = new DictTypeDTO();
 
             when(dictTypeRepository.existsByCode("test_code")).thenReturn(false);
-            mockedDictType.when(() -> DictType.create(dto)).thenReturn(mockEntity);
+            mockedDictType.when(() -> DictType.create(dto.getName(), dto.getCode(), dto.getSort(), dto.getRemark())).thenReturn(mockEntity);
             when(dictTypeRepository.save(mockEntity)).thenReturn(mockEntity);
             when(dictTypeMapper.toDto(mockEntity)).thenReturn(mockDto);
 
             DictTypeDTO result = dictService.createType(dto);
 
             assertSame(mockDto, result);
-            mockedDictType.verify(() -> DictType.create(dto));
+            mockedDictType.verify(() -> DictType.create(dto.getName(), dto.getCode(), dto.getSort(), dto.getRemark()));
             verify(dictTypeRepository).save(mockEntity);
         }
 
@@ -101,6 +104,10 @@ class DictServiceTest {
         void updateType_Success() {
             DictTypeSaveDTO dto = new DictTypeSaveDTO();
             dto.setId(1L);
+            dto.setName("New Name");
+            dto.setSort(10);
+            dto.setRemark("New Remark");
+
             DictType mockEntity = mock(DictType.class);
             when(mockEntity.getIsSystem()).thenReturn(false);
             when(dictTypeRepository.findById(1L)).thenReturn(Optional.of(mockEntity));
@@ -108,7 +115,7 @@ class DictServiceTest {
 
             dictService.updateType(dto);
 
-            verify(mockEntity).updateInfo(dto);
+            verify(mockEntity).updateInfo(dto.getName(), dto.getSort(), dto.getRemark());
             verify(dictTypeRepository).save(mockEntity);
         }
 
@@ -167,13 +174,21 @@ class DictServiceTest {
         void createData_Success() {
             DictDataSaveDTO dto = new DictDataSaveDTO();
             dto.setTypeCode("test_code");
+            dto.setLabel("Label");
+            dto.setValue("Value");
+            dto.setSort(1);
+            dto.setCssClass("css");
+            dto.setListClass("list");
+            dto.setIsDefault(true);
+            dto.setRemark("remark");
+
             DictType mockType = mock(DictType.class);
             when(mockType.getIsSystem()).thenReturn(false);
             DictData mockEntity = mock(DictData.class);
             DictDataDTO mockDto = new DictDataDTO();
 
             when(dictTypeRepository.findByCode("test_code")).thenReturn(Optional.of(mockType));
-            mockedDictData.when(() -> DictData.create(dto)).thenReturn(mockEntity);
+            mockedDictData.when(() -> DictData.create(dto.getTypeCode(), dto.getLabel(), dto.getValue(), dto.getSort(), dto.getCssClass(), dto.getListClass(), dto.getIsDefault(), dto.getRemark())).thenReturn(mockEntity);
             when(dictDataRepository.save(mockEntity)).thenReturn(mockEntity);
             when(dictDataMapper.toDto(mockEntity)).thenReturn(mockDto);
 
@@ -198,6 +213,14 @@ class DictServiceTest {
             DictDataSaveDTO dto = new DictDataSaveDTO();
             dto.setId(1L);
             dto.setTypeCode("new_code");
+            dto.setLabel("New Label");
+            dto.setValue("new_value");
+            dto.setSort(10);
+            dto.setCssClass("new_css");
+            dto.setListClass("new_list");
+            dto.setIsDefault(false);
+            dto.setRemark("new_remark");
+
             DictData mockEntity = mock(DictData.class);
             DictType mockType = mock(DictType.class);
 
@@ -210,7 +233,7 @@ class DictServiceTest {
 
             dictService.updateData(dto);
 
-            verify(mockEntity).updateInfo(dto);
+            verify(mockEntity).updateInfo(dto.getLabel(), dto.getValue(), dto.getSort(), dto.getCssClass(), dto.getListClass(), dto.getIsDefault(), dto.getRemark());
             verify(redisTemplate).delete(Const.CacheKey.DICT_DATA + "old_code");
             verify(redisTemplate).delete(Const.CacheKey.DICT_DATA + "new_code");
         }

@@ -90,12 +90,24 @@ class TenantServiceTest {
             when(mockTenant.getName()).thenReturn(validDto.getName());
             when(mockTenant.getState()).thenReturn(Const.TenantState.NORMAL);
 
-            mockedTenant.when(() -> Tenant.create(eq(validDto), eq(tenantRepository))).thenReturn(mockTenant);
+            mockedTenant.when(() -> Tenant.create(
+                    validDto.getName(),
+                    validDto.getContactPerson(),
+                    validDto.getContactPhone(),
+                    validDto.getPackageId(),
+                    tenantRepository
+            )).thenReturn(mockTenant);
             when(tenantRepository.save(any(Tenant.class))).thenReturn(mockTenant);
 
             TenantCreateResultDTO result = tenantService.createTenant(validDto);
 
-            mockedTenant.verify(() -> Tenant.create(eq(validDto), eq(tenantRepository)));
+            mockedTenant.verify(() -> Tenant.create(
+                    validDto.getName(),
+                    validDto.getContactPerson(),
+                    validDto.getContactPhone(),
+                    validDto.getPackageId(),
+                    tenantRepository
+            ));
             verify(tenantRepository, times(1)).save(mockTenant);
 
             ArgumentCaptor<UserPostDTO> userCaptor = ArgumentCaptor.forClass(UserPostDTO.class);
@@ -114,7 +126,7 @@ class TenantServiceTest {
         @DisplayName("创建租户失败：当租户创建逻辑抛出异常")
         void createTenant_CreationLogicFails_ThrowsBizException() {
             BizException thrownException = new BizException("生成唯一租户编码失败，请重试");
-            mockedTenant.when(() -> Tenant.create(any(), any())).thenThrow(thrownException);
+            mockedTenant.when(() -> Tenant.create(any(), any(), any(), any(), any())).thenThrow(thrownException);
 
             BizException exception = assertThrows(BizException.class, () -> tenantService.createTenant(validDto));
 

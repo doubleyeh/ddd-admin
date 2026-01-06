@@ -1,6 +1,5 @@
 package com.mok.ddd.domain.sys.model;
 
-import com.mok.ddd.application.sys.dto.dict.DictTypeSaveDTO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -36,13 +35,7 @@ class DictTypeTest {
     class CreateTests {
         @Test
         void create_Success() {
-            DictTypeSaveDTO dto = new DictTypeSaveDTO();
-            dto.setName("Test Type");
-            dto.setCode("test_type");
-            dto.setSort(1);
-            dto.setRemark("Remark");
-
-            DictType dictType = DictType.create(dto);
+            DictType dictType = DictType.create("Test Type", "test_type", 1, "Remark");
 
             assertNotNull(dictType);
             assertEquals("Test Type", dictType.getName());
@@ -59,13 +52,7 @@ class DictTypeTest {
         @Test
         void updateInfo_ShouldUpdateFields() {
             DictType dictType = createTestDictType("Old Name", "old_code", false);
-
-            DictTypeSaveDTO dto = new DictTypeSaveDTO();
-            dto.setName("New Name");
-            dto.setSort(10);
-            dto.setRemark("New Remark");
-
-            dictType.updateInfo(dto);
+            dictType.updateInfo("New Name", 10, "New Remark");
 
             assertEquals("New Name", dictType.getName());
             assertEquals("old_code", dictType.getCode());

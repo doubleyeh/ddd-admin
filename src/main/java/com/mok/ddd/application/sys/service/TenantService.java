@@ -105,7 +105,7 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
 
     @Transactional
     public TenantCreateResultDTO createTenant(@NonNull TenantSaveDTO dto) {
-        Tenant tenant = Tenant.create(dto, tenantRepository);
+        Tenant tenant = Tenant.create(dto.getName(), dto.getContactPerson(), dto.getContactPhone(), dto.getPackageId(), tenantRepository);
         tenant = tenantRepository.save(tenant);
 
         String rawPassword = PasswordGenerator.generateRandomPassword();

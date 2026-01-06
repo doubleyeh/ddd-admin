@@ -1,6 +1,5 @@
 package com.mok.ddd.domain.sys.model;
 
-import com.mok.ddd.application.sys.dto.role.RoleSaveDTO;
 import com.mok.ddd.common.Const;
 import com.mok.ddd.domain.common.model.TenantBaseEntity;
 import jakarta.persistence.*;
@@ -42,12 +41,12 @@ public class Role extends TenantBaseEntity {
     )
     private Set<Menu> menus;
 
-    public static Role create(@NonNull RoleSaveDTO dto) {
+    public static Role create(@NonNull String name, @NonNull String code, String description, Integer sort) {
         Role role = new Role();
-        role.name = dto.getName();
-        role.code = dto.getCode();
-        role.description = dto.getDescription();
-        role.sort = dto.getSort();
+        role.name = name;
+        role.code = code;
+        role.description = description;
+        role.sort = sort;
         role.state = Const.RoleState.NORMAL;
         return role;
     }

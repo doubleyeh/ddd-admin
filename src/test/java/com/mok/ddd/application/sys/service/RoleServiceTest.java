@@ -94,16 +94,21 @@ class RoleServiceTest {
         @Test
         void createRole_Success() {
             RoleSaveDTO dto = new RoleSaveDTO();
+            dto.setName("Test Role");
+            dto.setCode("test_role");
+            dto.setDescription("A test role");
+            dto.setSort(1);
+
             Role mockRole = mock(Role.class);
             RoleDTO mockRoleDTO = new RoleDTO();
 
-            mockedRole.when(() -> Role.create(dto)).thenReturn(mockRole);
+            mockedRole.when(() -> Role.create(dto.getName(), dto.getCode(), dto.getDescription(), dto.getSort())).thenReturn(mockRole);
             when(roleRepository.save(mockRole)).thenReturn(mockRole);
             when(roleMapper.toDto(mockRole)).thenReturn(mockRoleDTO);
 
             RoleDTO result = roleService.createRole(dto);
 
-            mockedRole.verify(() -> Role.create(dto));
+            mockedRole.verify(() -> Role.create(dto.getName(), dto.getCode(), dto.getDescription(), dto.getSort()));
             verify(roleRepository).save(mockRole);
             assertSame(mockRoleDTO, result);
         }

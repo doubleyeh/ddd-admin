@@ -46,7 +46,7 @@ public class OperLogAspect {
 
     protected void handleLog(final ProceedingJoinPoint joinPoint, com.mok.ddd.infrastructure.log.annotation.OperLog controllerLog, final Exception e, Object jsonResult, long costTime) {
         try {
-            Integer status = 1;
+            int status = 1;
             String errorMsg = null;
             if (e != null) {
                 status = 0;

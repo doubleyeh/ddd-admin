@@ -1,7 +1,6 @@
 package com.mok.ddd.domain.sys.model;
 
 import com.mok.ddd.application.exception.BizException;
-import com.mok.ddd.application.sys.dto.tenant.TenantSaveDTO;
 import com.mok.ddd.common.Const;
 import com.mok.ddd.common.SysUtil;
 import com.mok.ddd.domain.sys.repository.TenantRepository;
@@ -49,13 +48,7 @@ class TenantTest {
             TenantRepository mockRepo = mock(TenantRepository.class);
             when(mockRepo.findByTenantId(anyString())).thenReturn(Optional.empty());
 
-            TenantSaveDTO dto = new TenantSaveDTO();
-            dto.setName("Test Tenant");
-            dto.setPackageId(1L);
-            dto.setContactPerson("CP");
-            dto.setContactPhone("123");
-
-            Tenant tenant = Tenant.create(dto, mockRepo);
+            Tenant tenant = Tenant.create("Test Tenant", "CP", "123", 1L, mockRepo);
 
             assertNotNull(tenant);
             assertEquals("Test Tenant", tenant.getName());
@@ -68,11 +61,7 @@ class TenantTest {
         @Test
         void create_FailsWhenPackageIdIsNull() {
             TenantRepository mockRepo = mock(TenantRepository.class);
-            TenantSaveDTO dto = new TenantSaveDTO();
-            dto.setName("Test Tenant");
-            dto.setPackageId(null);
-
-            BizException exception = assertThrows(BizException.class, () -> Tenant.create(dto, mockRepo));
+            BizException exception = assertThrows(BizException.class, () -> Tenant.create("Test", "CP", "123", null, mockRepo));
             assertEquals("套餐不能为空", exception.getMessage());
         }
 
@@ -81,11 +70,7 @@ class TenantTest {
             TenantRepository mockRepo = mock(TenantRepository.class);
             when(mockRepo.findByTenantId(anyString())).thenReturn(Optional.of(mock(Tenant.class)));
 
-            TenantSaveDTO dto = new TenantSaveDTO();
-            dto.setName("Test Tenant");
-            dto.setPackageId(1L);
-
-            BizException exception = assertThrows(BizException.class, () -> Tenant.create(dto, mockRepo));
+            BizException exception = assertThrows(BizException.class, () -> Tenant.create("Test", "CP", "123", 1L, mockRepo));
             assertEquals("生成唯一租户编码失败，请重试", exception.getMessage());
             verify(mockRepo, times(5)).findByTenantId(anyString());
         }

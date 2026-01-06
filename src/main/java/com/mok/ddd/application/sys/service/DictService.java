@@ -62,7 +62,7 @@ public class DictService extends BaseServiceImpl<DictType, Long, DictTypeDTO> {
         if (dictTypeRepository.existsByCode(dto.getCode())) {
             throw new BizException("字典类型编码已存在");
         }
-        DictType entity = DictType.create(dto);
+        DictType entity = DictType.create(dto.getName(), dto.getCode(), dto.getSort(), dto.getRemark());
         return dictTypeMapper.toDto(dictTypeRepository.save(entity));
     }
 
@@ -71,11 +71,13 @@ public class DictService extends BaseServiceImpl<DictType, Long, DictTypeDTO> {
         DictType entity = dictTypeRepository.findById(dto.getId())
                 .orElseThrow(NotFoundException::new);
 
-        if (Boolean.TRUE.equals(entity.getIsSystem()) && !entity.getCode().equals(dto.getCode())) {
-            throw new BizException("系统内置字典禁止修改编码");
+        if (Boolean.TRUE.equals(entity.getIsSystem())) {
+            if (!entity.getCode().equals(dto.getCode())) {
+                throw new BizException("系统内置字典禁止修改编码");
+            }
         }
 
-        entity.updateInfo(dto);
+        entity.updateInfo(dto.getName(), dto.getSort(), dto.getRemark());
         return dictTypeMapper.toDto(dictTypeRepository.save(entity));
     }
 
@@ -104,7 +106,7 @@ public class DictService extends BaseServiceImpl<DictType, Long, DictTypeDTO> {
     @Transactional
     public DictDataDTO createData(DictDataSaveDTO dto) {
         checkSystemDict(dto.getTypeCode());
-        DictData entity = DictData.create(dto);
+        DictData entity = DictData.create(dto.getTypeCode(), dto.getLabel(), dto.getValue(), dto.getSort(), dto.getCssClass(), dto.getListClass(), dto.getIsDefault(), dto.getRemark());
         DictData saved = dictDataRepository.save(entity);
         redisTemplate.delete(Const.CacheKey.DICT_DATA + dto.getTypeCode());
         return dictDataMapper.toDto(saved);
@@ -117,7 +119,7 @@ public class DictService extends BaseServiceImpl<DictType, Long, DictTypeDTO> {
         checkSystemDict(entity.getTypeCode());
 
         String oldTypeCode = entity.getTypeCode();
-        entity.updateInfo(dto);
+        entity.updateInfo(dto.getLabel(), dto.getValue(), dto.getSort(), dto.getCssClass(), dto.getListClass(), dto.getIsDefault(), dto.getRemark());
         DictData saved = dictDataRepository.save(entity);
 
         redisTemplate.delete(Const.CacheKey.DICT_DATA + oldTypeCode);

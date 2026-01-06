@@ -1,6 +1,5 @@
 package com.mok.ddd.domain.sys.model;
 
-import com.mok.ddd.application.sys.dto.dict.DictDataSaveDTO;
 import com.mok.ddd.domain.common.model.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -63,26 +62,26 @@ public class DictData extends BaseEntity {
      */
     private String remark;
 
-    public static DictData create(@NonNull DictDataSaveDTO dto) {
+    public static DictData create(@NonNull String typeCode, @NonNull String label, @NonNull String value, Integer sort, String cssClass, String listClass, Boolean isDefault, String remark) {
         DictData dictData = new DictData();
-        dictData.typeCode = dto.getTypeCode();
-        dictData.label = dto.getLabel();
-        dictData.value = dto.getValue();
-        dictData.sort = dto.getSort();
-        dictData.cssClass = dto.getCssClass();
-        dictData.listClass = dto.getListClass();
-        dictData.isDefault = dto.getIsDefault();
-        dictData.remark = dto.getRemark();
+        dictData.typeCode = typeCode;
+        dictData.label = label;
+        dictData.value = value;
+        dictData.sort = sort;
+        dictData.cssClass = cssClass;
+        dictData.listClass = listClass;
+        dictData.isDefault = isDefault;
+        dictData.remark = remark;
         return dictData;
     }
 
-    public void updateInfo(@NonNull DictDataSaveDTO dto) {
-        this.label = dto.getLabel();
-        this.value = dto.getValue();
-        this.sort = dto.getSort();
-        this.cssClass = dto.getCssClass();
-        this.listClass = dto.getListClass();
-        this.isDefault = dto.getIsDefault();
-        this.remark = dto.getRemark();
+    public void updateInfo(@NonNull String label, @NonNull String value, Integer sort, String cssClass, String listClass, Boolean isDefault, String remark) {
+        this.label = label;
+        this.value = value;
+        this.sort = sort;
+        this.cssClass = cssClass;
+        this.listClass = listClass;
+        this.isDefault = isDefault;
+        this.remark = remark;
     }
 }

@@ -1,6 +1,5 @@
 package com.mok.ddd.domain.sys.model;
 
-import com.mok.ddd.application.sys.dto.dict.DictTypeSaveDTO;
 import com.mok.ddd.domain.common.model.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,19 +43,19 @@ public class DictType extends BaseEntity {
     @Column(name = "is_system")
     private Boolean isSystem;
 
-    public static DictType create(@NonNull DictTypeSaveDTO dto) {
+    public static DictType create(@NonNull String name, @NonNull String code, Integer sort, String remark) {
         DictType dictType = new DictType();
-        dictType.name = dto.getName();
-        dictType.code = dto.getCode();
-        dictType.sort = dto.getSort();
-        dictType.remark = dto.getRemark();
+        dictType.name = name;
+        dictType.code = code;
+        dictType.sort = sort;
+        dictType.remark = remark;
         dictType.isSystem = false;
         return dictType;
     }
 
-    public void updateInfo(@NonNull DictTypeSaveDTO dto) {
-        this.name = dto.getName();
-        this.sort = dto.getSort();
-        this.remark = dto.getRemark();
+    public void updateInfo(@NonNull String name, Integer sort, String remark) {
+        this.name = name;
+        this.sort = sort;
+        this.remark = remark;
     }
 }

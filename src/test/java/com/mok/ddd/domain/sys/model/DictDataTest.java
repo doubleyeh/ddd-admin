@@ -1,6 +1,5 @@
 package com.mok.ddd.domain.sys.model;
 
-import com.mok.ddd.application.sys.dto.dict.DictDataSaveDTO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -35,14 +34,7 @@ class DictDataTest {
     class CreateTests {
         @Test
         void create_Success() {
-            DictDataSaveDTO dto = new DictDataSaveDTO();
-            dto.setTypeCode("test_type");
-            dto.setLabel("Label");
-            dto.setValue("Value");
-            dto.setSort(1);
-            dto.setIsDefault(true);
-
-            DictData dictData = DictData.create(dto);
+            DictData dictData = DictData.create("test_type", "Label", "Value", 1, "css", "list", true, "remark");
 
             assertNotNull(dictData);
             assertEquals("test_type", dictData.getTypeCode());
@@ -59,13 +51,7 @@ class DictDataTest {
         @Test
         void updateInfo_ShouldUpdateFields() {
             DictData dictData = createTestDictData("Old Label", "old_value");
-
-            DictDataSaveDTO dto = new DictDataSaveDTO();
-            dto.setLabel("New Label");
-            dto.setValue("new_value");
-            dto.setSort(10);
-
-            dictData.updateInfo(dto);
+            dictData.updateInfo("New Label", "new_value", 10, "css", "list", false, "remark");
 
             assertEquals("New Label", dictData.getLabel());
             assertEquals("new_value", dictData.getValue());
