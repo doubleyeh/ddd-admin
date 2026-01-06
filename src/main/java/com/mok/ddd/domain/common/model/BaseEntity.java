@@ -3,17 +3,13 @@ package com.mok.ddd.domain.common.model;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import com.mok.ddd.infrastructure.util.SnowFlakeIdGenerator;
 import jakarta.persistence.*;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.Getter;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+@Getter
 @MappedSuperclass
-//@EntityListeners(AuditingEntityListener.class)
 public abstract class BaseEntity implements Serializable {
 
     @Id
@@ -27,8 +23,11 @@ public abstract class BaseEntity implements Serializable {
 
     private String updateBy;
 
+    protected BaseEntity() {
+    }
+
     @PrePersist
-    public void prePersist() {
+    protected void prePersist() {
         if (this.id == null) {
             this.id = SnowFlakeIdGenerator.nextId();
         }
@@ -46,7 +45,7 @@ public abstract class BaseEntity implements Serializable {
     }
 
     @PreUpdate
-    public void preUpdate() {
+    protected void preUpdate() {
         this.updateTime = LocalDateTime.now();
         String username = TenantContextHolder.getUsername();
         if (username != null && this.updateBy == null) {
@@ -54,43 +53,11 @@ public abstract class BaseEntity implements Serializable {
         }
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public LocalDateTime getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(LocalDateTime createTime) {
-        this.createTime = createTime;
-    }
-
-    public LocalDateTime getUpdateTime() {
-        return updateTime;
-    }
-
-    public void setUpdateTime(LocalDateTime updateTime) {
-        this.updateTime = updateTime;
-    }
-
-    public String getCreateBy() {
-        return createBy;
-    }
-
-    public void setCreateBy(String createBy) {
+    protected void setCreateBy(String createBy) {
         this.createBy = createBy;
     }
 
-    public String getUpdateBy() {
-        return updateBy;
-    }
-
-    public void setUpdateBy(String updateBy) {
+    protected void setUpdateBy(String updateBy) {
         this.updateBy = updateBy;
     }
 }

@@ -29,7 +29,7 @@ public class AuthenticationEventListener {
         String ipAddress = getIpAddress();
 
         LoginLog loginLog = LoginLog.create(username, ipAddress, "SUCCESS", "Login successful");
-        loginLog.setTenantId(tenantId);
+        loginLog.assignTenant(tenantId);
         loginLogService.createLoginLog(loginLog);
     }
 
@@ -46,7 +46,7 @@ public class AuthenticationEventListener {
         }
 
         LoginLog loginLog = LoginLog.create(username, ipAddress, "FAILURE", message);
-        loginLog.setTenantId(tenantId);
+        loginLog.assignTenant(tenantId);
         loginLogService.createLoginLog(loginLog);
     }
 

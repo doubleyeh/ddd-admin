@@ -97,4 +97,19 @@ public class OperLog extends TenantBaseEntity {
         log.costTime = costTime;
         return log;
     }
+
+    public void assignTenant(String tenantId) {
+        if (this.getTenantId() == null) {
+            this.setTenantId(tenantId);
+        }
+    }
+
+    public void assignCreator(String username) {
+        if (this.getCreateBy() == null) {
+            this.setCreateBy(username);
+        }
+        if (this.getUpdateBy() == null) {
+            this.setUpdateBy(username);
+        }
+    }
 }

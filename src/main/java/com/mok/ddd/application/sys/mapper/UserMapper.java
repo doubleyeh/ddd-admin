@@ -1,10 +1,10 @@
 package com.mok.ddd.application.sys.mapper;
 
 import com.mok.ddd.application.sys.dto.user.UserDTO;
-import com.mok.ddd.application.sys.dto.user.UserPostDTO;
-import com.mok.ddd.application.sys.dto.user.UserPutDTO;
 import com.mok.ddd.domain.sys.model.User;
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = { RoleMapper.class })
 public interface UserMapper {
@@ -12,17 +12,4 @@ public interface UserMapper {
     @Mapping(target = "createTime", source = "createTime")
     @Mapping(target = "roles", source = "roles")
     UserDTO toDto(User entity);
-
-    @Mapping(target = "roles", ignore = true)
-    User toEntity(UserDTO dto);
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "roles", ignore = true)
-    User postToEntity(UserPostDTO dto);
-
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "password", ignore = true)
-    @Mapping(target = "roles", ignore = true)
-    void putToEntity(UserPutDTO dto, @MappingTarget User entity);
 }

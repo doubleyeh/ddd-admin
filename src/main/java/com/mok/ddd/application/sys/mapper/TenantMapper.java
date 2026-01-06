@@ -4,7 +4,9 @@ import com.mok.ddd.application.sys.dto.tenant.TenantCreateResultDTO;
 import com.mok.ddd.application.sys.dto.tenant.TenantDTO;
 import com.mok.ddd.application.sys.dto.tenant.TenantOptionDTO;
 import com.mok.ddd.domain.sys.model.Tenant;
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
 

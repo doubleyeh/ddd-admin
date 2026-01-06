@@ -92,14 +92,12 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
         if (userRepository.findByTenantIdAndUsername(dto.getTenantId(), dto.getUsername()).isPresent()) {
             throw new BizException("用户名已存在");
         }
-        User entity = userMapper.postToEntity(dto);
-        entity.setPassword(passwordEncoder.encode(dto.getPassword()));
-        // 普通创建的用户不是租户管理员
-        entity.setIsTenantAdmin(false);
+        String encodedPassword = passwordEncoder.encode(dto.getPassword());
+        User entity = User.create(dto.getUsername(), encodedPassword, dto.getNickname(), false);
 
         if (dto.getRoleIds() != null) {
-            List<Role> roles = roleRepository.findAllById(dto.getRoleIds());
-            entity.setRoles(new HashSet<>(roles));
+            Set<Role> roles = new HashSet<>(roleRepository.findAllById(dto.getRoleIds()));
+            entity.changeRoles(roles);
         }
 
         return this.toDto(userRepository.save(entity));
@@ -111,15 +109,12 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
         if (userRepository.findByTenantIdAndUsername(tenantId, dto.getUsername()).isPresent()) {
             throw new BizException("用户名已存在");
         }
-        User entity = userMapper.postToEntity(dto);
-        entity.setPassword(passwordEncoder.encode(dto.getPassword()));
-        entity.setTenantId(tenantId);
-        // 租户创建时初始化的用户是租户管理员
-        entity.setIsTenantAdmin(true);
+        String encodedPassword = passwordEncoder.encode(dto.getPassword());
+        User entity = User.create(dto.getUsername(), encodedPassword, dto.getNickname(), true);
 
         if (dto.getRoleIds() != null) {
-            List<Role> roles = roleRepository.findAllById(dto.getRoleIds());
-            entity.setRoles(new HashSet<>(roles));
+            Set<Role> roles = new HashSet<>(roleRepository.findAllById(dto.getRoleIds()));
+            entity.changeRoles(roles);
         }
 
         return this.toDto(userRepository.save(entity));
@@ -130,19 +125,22 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
         User entity = userRepository.findById(dto.getId())
                 .orElseThrow(() -> new NotFoundException(Const.NOT_FOUND_MESSAGE));
 
-        userMapper.putToEntity(dto, entity);
+        Set<Role> roles = null;
         if (dto.getRoleIds() != null) {
-            List<Role> roles = roleRepository.findAllById(dto.getRoleIds());
-            entity.setRoles(new HashSet<>(roles));
+            roles = new HashSet<>(roleRepository.findAllById(dto.getRoleIds()));
         }
+        entity.updateInfo(dto.getNickname(), roles);
         return this.toDto(userRepository.save(entity));
     }
 
     @Transactional
     public UserDTO updateUserState(@NonNull Long id, @NonNull Integer state){
-
         User entity = userRepository.findById(id).orElseThrow(() -> new NotFoundException(Const.NOT_FOUND_MESSAGE));
-        entity.setState(state);
+        if (Objects.equals(state, Const.UserState.NORMAL)) {
+            entity.enable();
+        } else {
+            entity.disable();
+        }
         return this.toDto(userRepository.save(entity));
     }
 
@@ -150,7 +148,8 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
     public void updatePassword(@NonNull UserPasswordDTO dto) {
         User user = userRepository.findById(dto.getId())
                 .orElseThrow(() -> new NotFoundException(Const.NOT_FOUND_MESSAGE));
-        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        String encodedPassword = passwordEncoder.encode(dto.getPassword());
+        user.changePassword(encodedPassword);
         userRepository.save(user);
     }
 
@@ -242,7 +241,7 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
 
     @Override
     protected User toEntity(@NonNull UserDTO dto) {
-        return userMapper.toEntity(dto);
+        throw new UnsupportedOperationException("不支持从DTO创建或更新实体。");
     }
 
     @Override

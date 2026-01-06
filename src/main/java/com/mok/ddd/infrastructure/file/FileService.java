@@ -1,6 +1,7 @@
 package com.mok.ddd.infrastructure.file;
 
 import org.springframework.web.multipart.MultipartFile;
+
 import java.io.InputStream;
 
 public interface FileService {

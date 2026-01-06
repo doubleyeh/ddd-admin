@@ -1,6 +1,7 @@
 package com.mok.ddd.application.sys.dto.log;
 
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
 @Data

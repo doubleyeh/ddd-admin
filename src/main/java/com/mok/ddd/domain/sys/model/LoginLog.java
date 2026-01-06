@@ -29,4 +29,10 @@ public class LoginLog extends TenantBaseEntity {
         log.message = message;
         return log;
     }
+
+    public void assignTenant(String tenantId) {
+        if (this.getTenantId() == null) {
+            this.setTenantId(tenantId);
+        }
+    }
 }

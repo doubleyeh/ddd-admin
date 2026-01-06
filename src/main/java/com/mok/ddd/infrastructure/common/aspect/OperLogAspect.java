@@ -46,7 +46,7 @@ public class OperLogAspect {
 
     protected void handleLog(final ProceedingJoinPoint joinPoint, com.mok.ddd.infrastructure.log.annotation.OperLog controllerLog, final Exception e, Object jsonResult, long costTime) {
         try {
-            int status = 1;
+            Integer status = 1;
             String errorMsg = null;
             if (e != null) {
                 status = 0;
@@ -92,9 +92,8 @@ public class OperLogAspect {
             }
 
             OperLog operLog = OperLog.create(title, businessType, method, requestMethod, username, operUrl, ip, operParam, resultJson, status, errorMsg, costTime);
-            operLog.setTenantId(tenantId);
-            operLog.setCreateBy(username);
-            operLog.setUpdateBy(username);
+            operLog.assignTenant(tenantId);
+            operLog.assignCreator(username);
 
             applicationEventPublisher.publishEvent(new OperLogEvent(operLog));
         } catch (Exception exp) {

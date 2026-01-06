@@ -1,7 +1,6 @@
 package com.mok.ddd.application.sys.service;
 
 import com.mok.ddd.application.sys.dto.log.LoginLogDTO;
-import com.mok.ddd.application.sys.dto.tenant.TenantDTO;
 import com.mok.ddd.domain.sys.model.LoginLog;
 import com.mok.ddd.domain.sys.model.QLoginLog;
 import com.mok.ddd.domain.sys.model.QTenant;
@@ -16,7 +15,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

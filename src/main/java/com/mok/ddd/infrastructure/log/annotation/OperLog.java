@@ -1,6 +1,7 @@
 package com.mok.ddd.infrastructure.log.annotation;
 
 import com.mok.ddd.infrastructure.log.enums.BusinessType;
+
 import java.lang.annotation.*;
 
 @Target({ ElementType.PARAMETER, ElementType.METHOD })

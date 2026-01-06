@@ -1,6 +1,9 @@
 package com.mok.ddd.web.sys;
 
-import com.mok.ddd.application.sys.dto.dict.*;
+import com.mok.ddd.application.sys.dto.dict.DictDataDTO;
+import com.mok.ddd.application.sys.dto.dict.DictDataSaveDTO;
+import com.mok.ddd.application.sys.dto.dict.DictTypeDTO;
+import com.mok.ddd.application.sys.dto.dict.DictTypeSaveDTO;
 import com.mok.ddd.application.sys.service.DictService;
 import com.mok.ddd.infrastructure.security.JwtAuthenticationFilter;
 import com.mok.ddd.infrastructure.security.JwtTokenProvider;

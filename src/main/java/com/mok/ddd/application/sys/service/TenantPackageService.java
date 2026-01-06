@@ -27,10 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,10 +45,7 @@ public class TenantPackageService extends BaseServiceImpl<TenantPackage, Long, T
 
     @Transactional
     public void createPackage(TenantPackageSaveDTO dto) {
-        TenantPackage entity = packageMapper.toEntity(dto);
-        if (entity.getState() == null) {
-            entity.setState(Const.TenantPackageState.NORMAL);
-        }
+        TenantPackage entity = TenantPackage.create(dto.getName(), dto.getDescription());
         packageRepository.save(entity);
     }
 
@@ -59,7 +53,7 @@ public class TenantPackageService extends BaseServiceImpl<TenantPackage, Long, T
     public void updatePackage(Long id, TenantPackageSaveDTO dto) {
         TenantPackage entity = packageRepository.findById(id)
                 .orElseThrow(() -> new BizException("套餐不存在"));
-        packageMapper.updateEntityFromDto(dto, entity);
+        entity.updateInfo(dto.getName(), dto.getDescription());
         packageRepository.save(entity);
     }
 
@@ -69,10 +63,12 @@ public class TenantPackageService extends BaseServiceImpl<TenantPackage, Long, T
                 .orElseThrow(() -> new BizException("套餐不存在"));
 
         if (dto.getMenuIds() != null) {
-            entity.setMenus(new HashSet<>(menuRepository.findAllById(dto.getMenuIds())));
+            Set<Menu> menus = new HashSet<>(menuRepository.findAllById(dto.getMenuIds()));
+            entity.changeMenus(menus);
         }
         if (dto.getPermissionIds() != null) {
-            entity.setPermissions(new HashSet<>(permissionRepository.findAllById(dto.getPermissionIds())));
+            Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(dto.getPermissionIds()));
+            entity.changePermissions(permissions);
         }
         packageRepository.save(entity);
 
@@ -87,7 +83,11 @@ public class TenantPackageService extends BaseServiceImpl<TenantPackage, Long, T
     @Transactional
     public TenantPackageDTO updateTenantState(@NonNull Long id, @NonNull Integer state) {
         TenantPackage existingTenant = packageRepository.findById(id).orElseThrow(() -> new BizException("套餐不存在"));
-        existingTenant.setState(state);
+        if (Objects.equals(state, Const.TenantPackageState.NORMAL)) {
+            existingTenant.enable();
+        } else {
+            existingTenant.disable();
+        }
         return packageMapper.toDto(packageRepository.save(existingTenant));
     }
 
@@ -179,7 +179,7 @@ public class TenantPackageService extends BaseServiceImpl<TenantPackage, Long, T
 
     @Override
     protected TenantPackage toEntity(@NonNull TenantPackageDTO tenantPackageDTO) {
-        return packageMapper.toEntity(tenantPackageDTO);
+        throw new UnsupportedOperationException("不支持从DTO创建或更新实体。");
     }
 
     @Override

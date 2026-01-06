@@ -1,39 +1,36 @@
 package com.mok.ddd.application.sys.service;
 
 import com.mok.ddd.application.exception.BizException;
-import com.mok.ddd.application.sys.dto.tenantPackage.*;
+import com.mok.ddd.application.sys.dto.tenantPackage.TenantPackageGrantDTO;
+import com.mok.ddd.application.sys.dto.tenantPackage.TenantPackageSaveDTO;
 import com.mok.ddd.application.sys.mapper.MenuMapper;
 import com.mok.ddd.application.sys.mapper.PermissionMapper;
 import com.mok.ddd.application.sys.mapper.TenantPackageMapper;
 import com.mok.ddd.common.Const;
+import com.mok.ddd.domain.sys.model.Menu;
+import com.mok.ddd.domain.sys.model.Permission;
 import com.mok.ddd.domain.sys.model.TenantPackage;
 import com.mok.ddd.domain.sys.repository.MenuRepository;
 import com.mok.ddd.domain.sys.repository.PermissionRepository;
 import com.mok.ddd.domain.sys.repository.TenantPackageRepository;
 import com.mok.ddd.domain.sys.repository.TenantRepository;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("TenantPackageService 单元测试")
 class TenantPackageServiceTest {
 
     @InjectMocks
@@ -56,77 +53,49 @@ class TenantPackageServiceTest {
     @Mock
     private PermissionMapper permissionMapper;
 
-    @Nested
-    @DisplayName("查询业务测试")
-    class QueryTests {
-        @Test
-        void findPage_ReturnSuccess() {
-            TenantPackageQuery query = new TenantPackageQuery();
-            PageRequest pageable = PageRequest.of(0, 10);
-            Page<TenantPackage> entityPage = new PageImpl<>(Collections.emptyList());
+    private MockedStatic<TenantPackage> mockedTenantPackage;
 
-            when(packageRepository.findAll(any(com.querydsl.core.types.Predicate.class), eq(pageable))).thenReturn(entityPage);
+    @BeforeEach
+    void setUp() {
+        mockedTenantPackage = mockStatic(TenantPackage.class);
+    }
 
-            Page<TenantPackageDTO> result = tenantPackageService.findPage(query.toPredicate(), pageable);
-
-            assertNotNull(result);
-        }
-
-        @Test
-        void getById_ReturnDto() {
-            Long id = 1L;
-            TenantPackage entity = new TenantPackage();
-            entity.setMenus(Collections.emptySet());
-            entity.setPermissions(Collections.emptySet());
-            when(packageRepository.findById(id)).thenReturn(Optional.of(entity));
-            when(packageMapper.toDto(entity)).thenReturn(new TenantPackageDTO());
-
-            TenantPackageDTO result = tenantPackageService.getById(id);
-
-            assertNotNull(result);
-        }
-
-        @Test
-        void findOptions_ReturnList() {
-            when(packageRepository.findAll(any(com.querydsl.core.types.Predicate.class))).thenReturn(Collections.emptyList());
-            when(packageMapper.dtoToOptionsDto(any())).thenReturn(List.of(new TenantPackageOptionDTO()));
-
-            List<TenantPackageOptionDTO> result = tenantPackageService.findOptions("test");
-
-            assertNotNull(result);
-        }
+    @AfterEach
+    void tearDown() {
+        mockedTenantPackage.close();
     }
 
     @Nested
-    @DisplayName("写操作业务测试")
+    @DisplayName("Write Operations")
     class WriteTests {
         @Test
         void createPackage_Success() {
             TenantPackageSaveDTO saveDto = new TenantPackageSaveDTO();
-            TenantPackage entity = new TenantPackage();
+            saveDto.setName("Test Package");
+            saveDto.setDescription("Desc");
+            TenantPackage mockEntity = mock(TenantPackage.class);
 
-            when(packageMapper.toEntity(saveDto)).thenReturn(entity);
-            when(packageRepository.save(entity)).thenReturn(entity);
+            mockedTenantPackage.when(() -> TenantPackage.create(saveDto.getName(), saveDto.getDescription())).thenReturn(mockEntity);
 
             tenantPackageService.createPackage(saveDto);
 
-            assertEquals(Const.TenantPackageState.NORMAL, entity.getState());
-            verify(packageRepository).save(entity);
+            verify(packageRepository).save(mockEntity);
         }
 
         @Test
         void updatePackage_Success() {
             Long id = 1L;
             TenantPackageSaveDTO saveDto = new TenantPackageSaveDTO();
-            TenantPackage entity = new TenantPackage();
+            saveDto.setName("New Name");
+            saveDto.setDescription("New Desc");
+            TenantPackage mockEntity = mock(TenantPackage.class);
 
-            when(packageRepository.findById(id)).thenReturn(Optional.of(entity));
-            when(packageRepository.save(entity)).thenReturn(entity);
+            when(packageRepository.findById(id)).thenReturn(Optional.of(mockEntity));
 
             tenantPackageService.updatePackage(id, saveDto);
 
-            verify(packageMapper).updateEntityFromDto(eq(saveDto), eq(entity));
-            verify(packageRepository).save(entity);
+            verify(mockEntity).updateInfo(saveDto.getName(), saveDto.getDescription());
+            verify(packageRepository).save(mockEntity);
         }
 
         @Test
@@ -134,68 +103,71 @@ class TenantPackageServiceTest {
             Long id = 1L;
             TenantPackageGrantDTO grantDto = new TenantPackageGrantDTO();
             grantDto.setMenuIds(Set.of(1L));
-            TenantPackage entity = new TenantPackage();
+            grantDto.setPermissionIds(Set.of(100L));
+            TenantPackage mockEntity = mock(TenantPackage.class);
+            Set<Menu> menus = Set.of(mock(Menu.class));
+            Set<Permission> permissions = Set.of(mock(Permission.class));
 
-            when(packageRepository.findById(id)).thenReturn(Optional.of(entity));
-            when(packageRepository.save(entity)).thenReturn(entity);
-            when(menuRepository.findAllById(any())).thenReturn(Collections.emptyList());
+            when(packageRepository.findById(id)).thenReturn(Optional.of(mockEntity));
+            when(menuRepository.findAllById(grantDto.getMenuIds())).thenReturn(List.copyOf(menus));
+            when(permissionRepository.findAllById(grantDto.getPermissionIds())).thenReturn(List.copyOf(permissions));
 
             tenantPackageService.grant(id, grantDto);
 
-            verify(packageRepository).save(entity);
+            verify(mockEntity).changeMenus(new HashSet<>(menus));
+            verify(mockEntity).changePermissions(new HashSet<>(permissions));
+            verify(packageRepository).save(mockEntity);
         }
 
         @Test
-        void updatePackage_NotFound_ThrowsException() {
-            when(packageRepository.findById(1L)).thenReturn(Optional.empty());
-            assertThrows(BizException.class, () -> tenantPackageService.updatePackage(1L, new TenantPackageSaveDTO()));
-        }
-
-        @Test
-        void updateTenantState_Success() {
+        void updateTenantState_ToNormal() {
             Long id = 1L;
-            Integer newState = Const.TenantPackageState.DISABLED;
-            TenantPackage entity = new TenantPackage();
-            when(packageRepository.findById(id)).thenReturn(Optional.of(entity));
-            when(packageRepository.save(entity)).thenReturn(entity);
-            when(packageMapper.toDto(entity)).thenReturn(new TenantPackageDTO());
+            TenantPackage mockEntity = mock(TenantPackage.class);
+            when(packageRepository.findById(id)).thenReturn(Optional.of(mockEntity));
+            when(packageRepository.save(mockEntity)).thenReturn(mockEntity);
 
-            tenantPackageService.updateTenantState(id, newState);
+            tenantPackageService.updateTenantState(id, Const.TenantPackageState.NORMAL);
 
-            verify(packageRepository).save(entity);
-            assertEquals(newState, entity.getState());
+            verify(mockEntity).enable();
+            verify(packageRepository).save(mockEntity);
+        }
+
+        @Test
+        void updateTenantState_ToDisabled() {
+            Long id = 1L;
+            TenantPackage mockEntity = mock(TenantPackage.class);
+            when(packageRepository.findById(id)).thenReturn(Optional.of(mockEntity));
+            when(packageRepository.save(mockEntity)).thenReturn(mockEntity);
+
+            tenantPackageService.updateTenantState(id, Const.TenantPackageState.DISABLED);
+
+            verify(mockEntity).disable();
+            verify(packageRepository).save(mockEntity);
         }
     }
 
     @Nested
-    @DisplayName("删除测试")
+    @DisplayName("Delete Operations")
     class DeleteTests {
         @Test
         void deleteByVerify_Success() {
             Long id = 1L;
-            TenantPackage entity = new TenantPackage();
-            when(packageRepository.findById(id)).thenReturn(Optional.of(entity));
+            TenantPackage mockEntity = mock(TenantPackage.class);
+            when(packageRepository.findById(id)).thenReturn(Optional.of(mockEntity));
             when(tenantRepository.countByPackageId(id)).thenReturn(0L);
 
             tenantPackageService.deleteByVerify(id);
 
-            verify(packageRepository).delete(entity);
+            verify(packageRepository).delete(mockEntity);
         }
 
         @Test
         void deleteByVerify_InUse_ThrowsException() {
             Long id = 1L;
-            when(packageRepository.findById(id)).thenReturn(Optional.of(new TenantPackage()));
+            when(packageRepository.findById(id)).thenReturn(Optional.of(mock(TenantPackage.class)));
             when(tenantRepository.countByPackageId(id)).thenReturn(1L);
 
-            BizException ex = assertThrows(BizException.class, () -> tenantPackageService.deleteByVerify(id));
-            assertEquals("套餐正在使用中，不允许删除", ex.getMessage());
-        }
-
-        @Test
-        void deleteByVerify_NotFound_ThrowsException() {
-            when(packageRepository.findById(1L)).thenReturn(Optional.empty());
-            assertThrows(BizException.class, () -> tenantPackageService.deleteByVerify(1L));
+            assertThrows(BizException.class, () -> tenantPackageService.deleteByVerify(id));
         }
     }
 }

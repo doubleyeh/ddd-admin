@@ -1,65 +1,27 @@
 package com.mok.ddd.infrastructure.config;
 
+import com.mok.ddd.common.Const;
 import com.mok.ddd.domain.sys.model.User;
 import com.mok.ddd.domain.sys.repository.UserRepository;
-import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-import org.springframework.core.io.ResourceLoader;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 
-@Configuration
-@Profile("debug")
-public class UserInitializer {
+@Component
+@RequiredArgsConstructor
+public class UserInitializer implements CommandLineRunner {
 
-    private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
-    private final ResourceLoader resourceLoader;
-    private final JdbcTemplate jdbcTemplate;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserInitializer(PasswordEncoder passwordEncoder, UserRepository userRepository,
-                           ResourceLoader resourceLoader, JdbcTemplate jdbcTemplate) {
-        this.passwordEncoder = passwordEncoder;
-        this.userRepository = userRepository;
-        this.resourceLoader = resourceLoader;
-        this.jdbcTemplate = jdbcTemplate;
-    }
-
-    @Bean
-    public CommandLineRunner initDatabase() {
-        return args -> {
-
-            executeSqlScript("classpath:init.sql");
-
-            String defaultTenantId = "000000";
-            String rootUsername = "root";
-            String rawPassword = "123456";
-
-            ScopedValue.where(TenantContextHolder.TENANT_ID, defaultTenantId)
-                    .run(() -> {
-                        if (userRepository.findByUsername(rootUsername).isEmpty()) {
-                            User rootUser = new User();
-                            rootUser.setUsername(rootUsername);
-                            rootUser.setPassword(passwordEncoder.encode(rawPassword));
-                            rootUser.setTenantId(defaultTenantId);
-                            rootUser.setNickname(rootUsername);
-                            rootUser.setState(1);
-
-                            userRepository.save(rootUser);
-                        }
-                    });
-        };
-    }
-
-    private void executeSqlScript(String resourcePath) {
-        ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
-        populator.addScript(resourceLoader.getResource(resourcePath));
-        populator.setSeparator(";");
-        assert jdbcTemplate.getDataSource() != null;
-        populator.execute(jdbcTemplate.getDataSource());
+    @Override
+    public void run(String... args) {
+        if (userRepository.count() == 0) {
+            String encodedPassword = passwordEncoder.encode("123456");
+            User rootUser = User.create(Const.SUPER_ADMIN_USERNAME, encodedPassword, "超级管理员", true);
+            rootUser.assignTenant(Const.DEFAULT_TENANT_ID);
+            userRepository.save(rootUser);
+        }
     }
 }
