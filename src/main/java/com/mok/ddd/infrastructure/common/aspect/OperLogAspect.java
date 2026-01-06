@@ -46,39 +46,55 @@ public class OperLogAspect {
 
     protected void handleLog(final ProceedingJoinPoint joinPoint, com.mok.ddd.infrastructure.log.annotation.OperLog controllerLog, final Exception e, Object jsonResult, long costTime) {
         try {
-            OperLog operLog = new OperLog();
-            operLog.setStatus(1);
-            operLog.setCostTime(costTime);
-            
+            Integer status = 1;
+            String errorMsg = null;
+            if (e != null) {
+                status = 0;
+                errorMsg = e.getMessage();
+            }
+
+            String operUrl = "";
+            String requestMethod = "";
             String ip = "127.0.0.1";
             try {
                 ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
                 if (attributes != null) {
                     HttpServletRequest request = attributes.getRequest();
                     ip = SysUtil.getIpAddress(request);
-                    operLog.setOperUrl(request.getRequestURI());
-                    operLog.setRequestMethod(request.getMethod());
+                    operUrl = request.getRequestURI();
+                    requestMethod = request.getMethod();
                 }
             } catch (Exception ignored) {
             }
 
-            operLog.setOperIp(ip);
             String username = TenantContextHolder.getUsername();
-            operLog.setOperName(username);
-            operLog.setCreateBy(username);
-            operLog.setUpdateBy(username);
-            operLog.setTenantId(TenantContextHolder.getTenantId());
-
-            if (e != null) {
-                operLog.setStatus(0);
-                operLog.setErrorMsg(e.getMessage());
-            }
+            String tenantId = TenantContextHolder.getTenantId();
 
             String className = joinPoint.getTarget().getClass().getName();
             String methodName = joinPoint.getSignature().getName();
-            operLog.setMethod(className + "." + methodName + "()");
+            String method = className + "." + methodName + "()";
 
-            getControllerMethodDescription(joinPoint, controllerLog, operLog, jsonResult);
+            String title = controllerLog.title();
+            Integer businessType = controllerLog.businessType().ordinal();
+
+            String operParam = null;
+            if (controllerLog.isSaveRequestData()) {
+                operParam = getRequestValue(joinPoint);
+            }
+
+            String resultJson = null;
+            if (controllerLog.isSaveResponseData() && jsonResult != null) {
+                try {
+                    resultJson = jsonMapper.writeValueAsString(jsonResult);
+                } catch (Exception ex) {
+                    resultJson = "error serializing result";
+                }
+            }
+
+            OperLog operLog = OperLog.create(title, businessType, method, requestMethod, username, operUrl, ip, operParam, resultJson, status, errorMsg, costTime);
+            operLog.setTenantId(tenantId);
+            operLog.setCreateBy(username);
+            operLog.setUpdateBy(username);
 
             applicationEventPublisher.publishEvent(new OperLogEvent(operLog));
         } catch (Exception exp) {
@@ -87,27 +103,10 @@ public class OperLogAspect {
         }
     }
 
-    public void getControllerMethodDescription(ProceedingJoinPoint joinPoint, com.mok.ddd.infrastructure.log.annotation.OperLog log, OperLog operLog, Object jsonResult) throws Exception {
-        operLog.setBusinessType(log.businessType().ordinal());
-        operLog.setTitle(log.title());
-
-        if (log.isSaveRequestData()) {
-            setRequestValue(joinPoint, operLog);
-        }
-
-        if (log.isSaveResponseData() && jsonResult != null) {
-            try {
-                operLog.setJsonResult(jsonMapper.writeValueAsString(jsonResult));
-            } catch (Exception e) {
-                operLog.setJsonResult("error serializing result");
-            }
-        }
-    }
-
-    private void setRequestValue(ProceedingJoinPoint joinPoint, OperLog operLog) throws Exception {
+    private String getRequestValue(ProceedingJoinPoint joinPoint) {
         Object[] args = joinPoint.getArgs();
         if (args == null || args.length == 0) {
-            return;
+            return null;
         }
 
         Object[] arguments = new Object[args.length];
@@ -117,15 +116,15 @@ public class OperLogAspect {
             }
             arguments[i] = args[i];
         }
-        
+
         try {
             String params = jsonMapper.writeValueAsString(arguments);
             if (params.length() > 2000) {
-                params = params.substring(0, 2000) + "...";
+                return params.substring(0, 2000) + "...";
             }
-            operLog.setOperParam(params);
+            return params;
         } catch (Exception e) {
-            operLog.setOperParam("error serializing args");
+            return "error serializing args";
         }
     }
 }

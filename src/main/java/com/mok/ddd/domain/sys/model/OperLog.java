@@ -5,13 +5,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "sys_oper_log")
 public class OperLog extends TenantBaseEntity {
@@ -81,4 +80,21 @@ public class OperLog extends TenantBaseEntity {
      * 操作耗时(毫秒)
      */
     private Long costTime;
+
+    public static OperLog create(String title, Integer businessType, String method, String requestMethod, String operName, String operUrl, String operIp, String operParam, String jsonResult, Integer status, String errorMsg, Long costTime) {
+        OperLog log = new OperLog();
+        log.title = title;
+        log.businessType = businessType;
+        log.method = method;
+        log.requestMethod = requestMethod;
+        log.operName = operName;
+        log.operUrl = operUrl;
+        log.operIp = operIp;
+        log.operParam = operParam;
+        log.jsonResult = jsonResult;
+        log.status = status;
+        log.errorMsg = errorMsg;
+        log.costTime = costTime;
+        return log;
+    }
 }

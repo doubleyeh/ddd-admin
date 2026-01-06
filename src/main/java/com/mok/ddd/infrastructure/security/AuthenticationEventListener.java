@@ -28,12 +28,7 @@ public class AuthenticationEventListener {
         String tenantId = TenantContextHolder.getTenantId();
         String ipAddress = getIpAddress();
 
-        LoginLog loginLog = LoginLog.builder()
-                .username(username)
-                .ipAddress(ipAddress)
-                .status("SUCCESS")
-                .message("Login successful")
-                .build();
+        LoginLog loginLog = LoginLog.create(username, ipAddress, "SUCCESS", "Login successful");
         loginLog.setTenantId(tenantId);
         loginLogService.createLoginLog(loginLog);
     }
@@ -50,12 +45,7 @@ public class AuthenticationEventListener {
             message = ex.getCause().getMessage();
         }
 
-        LoginLog loginLog = LoginLog.builder()
-                .username(username)
-                .ipAddress(ipAddress)
-                .status("FAILURE")
-                .message(message)
-                .build();
+        LoginLog loginLog = LoginLog.create(username, ipAddress, "FAILURE", message);
         loginLog.setTenantId(tenantId);
         loginLogService.createLoginLog(loginLog);
     }
