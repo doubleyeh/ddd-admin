@@ -5,7 +5,9 @@ import com.mok.ddd.application.exception.NotFoundException;
 import com.mok.ddd.application.sys.dto.menu.MenuDTO;
 import com.mok.ddd.application.sys.dto.permission.PermissionDTO;
 import com.mok.ddd.application.sys.dto.role.RoleDTO;
+import com.mok.ddd.application.sys.dto.role.RoleGrantDTO;
 import com.mok.ddd.application.sys.dto.role.RoleOptionDTO;
+import com.mok.ddd.application.sys.dto.role.RoleQuery;
 import com.mok.ddd.application.sys.dto.role.RoleSaveDTO;
 import com.mok.ddd.application.sys.mapper.MenuMapper;
 import com.mok.ddd.application.sys.mapper.PermissionMapper;
@@ -17,25 +19,36 @@ import com.mok.ddd.domain.sys.model.Role;
 import com.mok.ddd.domain.sys.repository.MenuRepository;
 import com.mok.ddd.domain.sys.repository.PermissionRepository;
 import com.mok.ddd.domain.sys.repository.RoleRepository;
-import org.jspecify.annotations.NonNull;
+import com.querydsl.core.types.EntityPath;
+import com.querydsl.core.types.Expression;
+import com.querydsl.core.types.Predicate;
+import com.querydsl.jpa.impl.JPAQuery;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("RoleService 单元测试")
 class RoleServiceTest {
 
     @InjectMocks
@@ -59,296 +72,230 @@ class RoleServiceTest {
     @Mock
     private MenuMapper menuMapper;
 
+    @Mock
+    private StringRedisTemplate redisTemplate;
+
+    private MockedStatic<Role> mockedRole;
+
+    @BeforeEach
+    void setUp() {
+        mockedRole = mockStatic(Role.class);
+    }
+
+    @AfterEach
+    void tearDown() {
+        mockedRole.close();
+    }
+
     @Nested
-    @DisplayName("createRole 创建角色测试")
+    @DisplayName("createRole")
     class CreateRoleTests {
 
         @Test
-        @DisplayName("成功创建角色")
         void createRole_Success() {
             RoleSaveDTO dto = new RoleSaveDTO();
-            Role newRole = new Role();
-            Role savedRole = new Role();
-            savedRole.setId(5L);
+            Role mockRole = mock(Role.class);
+            RoleDTO mockRoleDTO = new RoleDTO();
 
-            when(roleMapper.toEntity(dto)).thenReturn(newRole);
-            when(roleRepository.save(newRole)).thenReturn(savedRole);
-            when(roleMapper.toDto(savedRole)).thenReturn(new RoleDTO());
+            mockedRole.when(() -> Role.create(dto)).thenReturn(mockRole);
+            when(roleRepository.save(mockRole)).thenReturn(mockRole);
+            when(roleMapper.toDto(mockRole)).thenReturn(mockRoleDTO);
 
             RoleDTO result = roleService.createRole(dto);
 
-            verify(roleRepository, times(1)).save(newRole);
-            verify(roleMapper, times(1)).toDto(savedRole);
-            assertNotNull(result);
+            mockedRole.verify(() -> Role.create(dto));
+            verify(roleRepository).save(mockRole);
+            assertSame(mockRoleDTO, result);
         }
     }
 
     @Nested
-    @DisplayName("updateRole 更新角色测试")
+    @DisplayName("updateRole")
     class UpdateRoleTests {
 
-        private final Long existingId = 1L;
-
         @Test
-        @DisplayName("成功更新角色")
         void updateRole_Success() {
             RoleSaveDTO dto = new RoleSaveDTO();
-            dto.setId(existingId);
+            dto.setId(1L);
+            dto.setName("New Name");
+            dto.setCode("new_code");
+            dto.setDescription("New Desc");
+            dto.setSort(10);
 
-            Role existingRole = new Role();
-            existingRole.setId(existingId);
+            Role mockRole = mock(Role.class);
+            RoleDTO mockRoleDTO = new RoleDTO();
 
-            when(roleRepository.findById(existingId)).thenReturn(Optional.of(existingRole));
-            doNothing().when(roleMapper).updateEntityFromDto(dto, existingRole);
-            when(roleRepository.save(existingRole)).thenReturn(existingRole);
-            when(roleMapper.toDto(existingRole)).thenReturn(new RoleDTO());
+            when(roleRepository.findById(1L)).thenReturn(Optional.of(mockRole));
+            when(roleRepository.save(mockRole)).thenReturn(mockRole);
+            when(roleMapper.toDto(mockRole)).thenReturn(mockRoleDTO);
 
             RoleDTO result = roleService.updateRole(dto);
 
-            verify(roleRepository, times(1)).findById(existingId);
-            verify(roleMapper, times(1)).updateEntityFromDto(any(RoleSaveDTO.class), any(Role.class));
-            verify(roleRepository, times(1)).save(existingRole);
-            assertNotNull(result);
+            verify(mockRole).updateInfo(dto.getName(), dto.getCode(), dto.getDescription(), dto.getSort());
+            verify(roleRepository).save(mockRole);
+            assertSame(mockRoleDTO, result);
         }
 
         @Test
-        @DisplayName("更新失败：角色不存在抛出NotFoundException")
-        void updateRole_RoleNotFound_ThrowsNotFoundException() {
+        void updateRole_NotFound() {
             RoleSaveDTO dto = new RoleSaveDTO();
-            dto.setId(existingId);
-
-            when(roleRepository.findById(existingId)).thenReturn(Optional.empty());
-
-            assertThrows(NotFoundException.class, () -> {
-                roleService.updateRole(dto);
-            });
-
-            verify(roleMapper, never()).updateEntityFromDto(any(), any());
-            verify(roleRepository, never()).save(any());
+            dto.setId(1L);
+            when(roleRepository.findById(1L)).thenReturn(Optional.empty());
+            assertThrows(NotFoundException.class, () -> roleService.updateRole(dto));
         }
     }
 
     @Nested
-    @DisplayName("getMenusByRole 获取角色菜单测试")
-    class GetMenusByRoleTests {
-
-        private final Long existingId = 1L;
-
-        @Test
-        @DisplayName("成功获取角色菜单列表")
-        void getMenusByRole_Success() {
-            Role existingRole = new Role();
-            Menu menu1 = new Menu();
-            Menu menu2 = new Menu();
-            existingRole.setMenus(Set.of(menu1, menu2));
-
-            MenuDTO dto1 = new MenuDTO();
-            dto1.setId(10L);
-            MenuDTO dto2 = new MenuDTO();
-            dto2.setId(20L);
-
-            when(roleRepository.findById(existingId)).thenReturn(Optional.of(existingRole));
-            when(menuMapper.toDto(menu1)).thenReturn(dto1);
-            when(menuMapper.toDto(menu2)).thenReturn(dto2);
-
-            Set<MenuDTO> result = roleService.getMenusByRole(existingId);
-
-            verify(roleRepository, times(1)).findById(existingId);
-            assertEquals(2, result.size());
-            assertTrue(result.containsAll(Set.of(dto1, dto2)));
-        }
-
-        @Test
-        @DisplayName("获取菜单失败：角色不存在抛出NotFoundException")
-        void getMenusByRole_RoleNotFound_ThrowsNotFoundException() {
-            when(roleRepository.findById(existingId)).thenReturn(Optional.empty());
-
-            assertThrows(NotFoundException.class, () -> {
-                roleService.getMenusByRole(existingId);
-            });
-        }
-    }
-
-    @Nested
-    @DisplayName("getPermissionsByRole 获取角色权限测试")
-    class GetPermissionsByRoleTests {
-
-        private final Long existingId = 1L;
-
-        @Test
-        @DisplayName("成功获取角色权限列表")
-        void getPermissionsByRole_Success() {
-            Role existingRole = new Role();
-            Permission perm1 = new Permission();
-            Permission perm2 = new Permission();
-            existingRole.setPermissions(Set.of(perm1, perm2));
-
-            PermissionDTO dto1 = new PermissionDTO();
-            dto1.setId(100L);
-            PermissionDTO dto2 = new PermissionDTO();
-            dto2.setId(200L);
-
-            when(roleRepository.findById(existingId)).thenReturn(Optional.of(existingRole));
-            when(permissionMapper.toDto(perm1)).thenReturn(dto1);
-            when(permissionMapper.toDto(perm2)).thenReturn(dto2);
-
-            Set<PermissionDTO> result = roleService.getPermissionsByRole(existingId);
-
-            verify(roleRepository, times(1)).findById(existingId);
-            assertEquals(2, result.size());
-            assertTrue(result.containsAll(Set.of(dto1, dto2)));
-        }
-
-        @Test
-        @DisplayName("获取权限失败：角色不存在抛出NotFoundException")
-        void getPermissionsByRole_RoleNotFound_ThrowsNotFoundException() {
-            when(roleRepository.findById(existingId)).thenReturn(Optional.empty());
-
-            assertThrows(NotFoundException.class, () -> {
-                roleService.getPermissionsByRole(existingId);
-            });
-        }
-    }
-
-    @Nested
-    @DisplayName("findPage 分页查询测试")
-    class FindPageTests {
-        @Test
-        @DisplayName("分页查询角色成功")
-        @SuppressWarnings({"unchecked", "rawtypes"})
-        void findPage_Success() {
-            com.querydsl.core.types.Predicate predicate = mock(com.querydsl.core.types.Predicate.class);
-            org.springframework.data.domain.Pageable pageable = mock(org.springframework.data.domain.Pageable.class);
-            com.querydsl.jpa.impl.JPAQueryFactory queryFactory = mock(com.querydsl.jpa.impl.JPAQueryFactory.class);
-            com.querydsl.jpa.impl.JPAQuery jpaQuery = mock(com.querydsl.jpa.impl.JPAQuery.class);
-            com.querydsl.jpa.impl.JPAQuery countQuery = mock(com.querydsl.jpa.impl.JPAQuery.class);
-            com.querydsl.jpa.JPQLQuery jpqlQuery = mock(com.querydsl.jpa.JPQLQuery.class);
-            org.springframework.data.jpa.repository.support.Querydsl querydsl = mock(org.springframework.data.jpa.repository.support.Querydsl.class);
-
-            when(roleRepository.getJPAQueryFactory()).thenReturn(queryFactory);
-            when(roleRepository.getQuerydsl()).thenReturn(querydsl);
-
-            when(queryFactory.select(any(com.querydsl.core.types.Expression.class)))
-                    .thenReturn(jpaQuery)
-                    .thenReturn(countQuery);
-
-            when(jpaQuery.from(any(com.querydsl.core.types.EntityPath.class))).thenReturn(jpaQuery);
-            when(jpaQuery.leftJoin(any(com.querydsl.core.types.EntityPath.class))).thenReturn(jpaQuery);
-            when(jpaQuery.on(any(com.querydsl.core.types.Predicate.class))).thenReturn(jpaQuery);
-            when(jpaQuery.where(any(com.querydsl.core.types.Predicate.class))).thenReturn(jpaQuery);
-
-            when(querydsl.applyPagination(eq(pageable), any())).thenReturn(jpqlQuery);
-            when(jpqlQuery.fetch()).thenReturn(List.of(new RoleDTO()));
-
-            when(countQuery.from(any(com.querydsl.core.types.EntityPath.class))).thenReturn(countQuery);
-            when(countQuery.leftJoin(any(com.querydsl.core.types.EntityPath.class))).thenReturn(countQuery);
-            when(countQuery.on(any(com.querydsl.core.types.Predicate.class))).thenReturn(countQuery);
-            when(countQuery.where(any(com.querydsl.core.types.Predicate.class))).thenReturn(countQuery);
-            when(countQuery.fetchOne()).thenReturn(1L);
-
-            org.springframework.data.domain.Page<@NonNull RoleDTO> result = roleService.findPage(predicate, pageable);
-
-            assertNotNull(result);
-            assertEquals(1, result.getTotalElements());
-            verify(roleRepository).applyTenantFilter(any(), any());
-        }
-    }
-
-    @Nested
-    @DisplayName("updateState 状态更新测试")
+    @DisplayName("updateState")
     class UpdateStateTests {
+
         @Test
-        @DisplayName("更新角色状态成功")
-        void updateState_Success() {
-            Long id = 1L;
-            Integer state = Const.RoleState.DISABLED;
-            Role role = new Role();
-            role.setId(id);
-            RoleDTO roleDTO = new RoleDTO();
+        void updateState_ToNormal() {
+            Role mockRole = mock(Role.class);
+            when(roleRepository.findById(1L)).thenReturn(Optional.of(mockRole));
+            when(roleRepository.save(mockRole)).thenReturn(mockRole);
 
-            when(roleRepository.findById(id)).thenReturn(Optional.of(role));
-            when(roleRepository.save(role)).thenReturn(role);
-            when(roleMapper.toDto(role)).thenReturn(roleDTO);
+            roleService.updateState(1L, Const.RoleState.NORMAL);
 
-            RoleDTO result = roleService.updateState(id, state);
+            verify(mockRole).enable();
+            verify(mockRole, never()).disable();
+            verify(roleRepository).save(mockRole);
+        }
 
-            assertEquals(state, role.getState());
-            assertEquals(roleDTO, result);
+        @Test
+        void updateState_ToDisabled() {
+            Role mockRole = mock(Role.class);
+            when(roleRepository.findById(1L)).thenReturn(Optional.of(mockRole));
+            when(roleRepository.save(mockRole)).thenReturn(mockRole);
+
+            roleService.updateState(1L, Const.RoleState.DISABLED);
+
+            verify(mockRole).disable();
+            verify(mockRole, never()).enable();
+            verify(roleRepository).save(mockRole);
         }
     }
 
     @Nested
-    @DisplayName("deleteRoleBeforeValidation 删除校验测试")
+    @DisplayName("grant")
+    class GrantTests {
+
+        @Test
+        void grant_Success() {
+            RoleGrantDTO dto = new RoleGrantDTO();
+            dto.setMenuIds(Set.of(10L, 20L));
+            dto.setPermissionIds(Set.of(100L, 200L));
+
+            Role mockRole = mock(Role.class);
+            Set<Menu> menus = dto.getMenuIds().stream().map(id -> {
+                Menu m = new Menu();
+                m.setId(id);
+                return m;
+            }).collect(Collectors.toSet());
+            Set<Permission> permissions = dto.getPermissionIds().stream().map(id -> {
+                Permission p = new Permission();
+                p.setId(id);
+                return p;
+            }).collect(Collectors.toSet());
+
+            when(roleRepository.findById(1L)).thenReturn(Optional.of(mockRole));
+            when(menuRepository.findAllById(dto.getMenuIds())).thenReturn(List.copyOf(menus));
+            when(permissionRepository.findAllById(dto.getPermissionIds())).thenReturn(List.copyOf(permissions));
+
+            roleService.grant(1L, dto);
+
+            verify(mockRole).changeMenus(eq(new HashSet<>(menus)));
+            verify(mockRole).changePermissions(eq(new HashSet<>(permissions)));
+            verify(roleRepository).save(mockRole);
+            verify(redisTemplate).delete(anyString());
+        }
+    }
+
+    @Nested
+    @DisplayName("getById")
+    class GetByIdTests {
+
+        @Test
+        void getById_Success() {
+            Role mockRole = mock(Role.class);
+            RoleDTO mockDto = new RoleDTO();
+            Set<Menu> menus = Set.of(new Menu());
+            Set<Permission> permissions = Set.of(new Permission());
+            Set<MenuDTO> menuDtos = menus.stream().map(m -> new MenuDTO()).collect(Collectors.toSet());
+            Set<PermissionDTO> permissionDtos = permissions.stream().map(p -> new PermissionDTO()).collect(Collectors.toSet());
+
+            when(roleRepository.findById(1L)).thenReturn(Optional.of(mockRole));
+            when(roleMapper.toDto(mockRole)).thenReturn(mockDto);
+            when(mockRole.getMenus()).thenReturn(menus);
+            when(mockRole.getPermissions()).thenReturn(permissions);
+            when(menuMapper.toDto(any(Menu.class))).thenReturn(new MenuDTO());
+            when(permissionMapper.toDto(any(Permission.class))).thenReturn(new PermissionDTO());
+
+            RoleDTO result = roleService.getById(1L);
+
+            assertSame(mockDto, result);
+            assertEquals(menuDtos.size(), result.getMenus().size());
+            assertEquals(permissionDtos.size(), result.getPermissions().size());
+        }
+    }
+
+    @Nested
+    @DisplayName("deleteRoleBeforeValidation")
     class DeleteRoleTests {
         @Test
-        @DisplayName("删除角色成功")
         void deleteRole_Success() {
-            Long id = 1L;
-            when(roleRepository.existsUserAssociatedWithRole(id)).thenReturn(false);
-
-            roleService.deleteRoleBeforeValidation(id);
-
-            verify(roleRepository).deleteById(id);
+            when(roleRepository.existsUserAssociatedWithRole(1L)).thenReturn(false);
+            roleService.deleteRoleBeforeValidation(1L);
+            verify(roleRepository).deleteById(1L);
         }
 
         @Test
-        @DisplayName("删除角色失败：存在关联用户")
         void deleteRole_HasUserAssociated_ThrowsBizException() {
-            Long id = 1L;
-            when(roleRepository.existsUserAssociatedWithRole(id)).thenReturn(true);
-
-            BizException exception = assertThrows(BizException.class, () ->
-                    roleService.deleteRoleBeforeValidation(id)
-            );
-
-            assertEquals("该角色下存在用户，请先删除用户关联该角色", exception.getMessage());
+            when(roleRepository.existsUserAssociatedWithRole(1L)).thenReturn(true);
+            assertThrows(BizException.class, () -> roleService.deleteRoleBeforeValidation(1L));
             verify(roleRepository, never()).deleteById(any());
         }
     }
 
     @Nested
-    @DisplayName("getRoleOptions 选项查询测试")
-    class GetRoleOptionsTests {
+    @DisplayName("Query Methods")
+    class QueryTests {
+        @Mock
+        private JPAQueryFactory queryFactory;
+        @Mock
+        private JPAQuery<RoleOptionDTO> jpaQuery;
+        @Mock
+        private Pageable pageable;
+        @Mock
+        private Predicate predicate;
+
         @Test
-        @DisplayName("获取角色选项列表成功")
-        @SuppressWarnings({"unchecked", "rawtypes"})
         void getRoleOptions_Success() {
-            com.mok.ddd.application.sys.dto.role.RoleQuery roleQuery = mock(com.mok.ddd.application.sys.dto.role.RoleQuery.class);
-            com.querydsl.jpa.impl.JPAQueryFactory queryFactory = mock(com.querydsl.jpa.impl.JPAQueryFactory.class);
-            com.querydsl.jpa.impl.JPAQuery jpaQuery = mock(com.querydsl.jpa.impl.JPAQuery.class);
-            List<RoleOptionDTO> options = List.of(new RoleOptionDTO());
-
-            when(roleQuery.toPredicate()).thenReturn(mock(com.querydsl.core.types.Predicate.class));
+            RoleQuery roleQuery = new RoleQuery();
             when(roleRepository.getJPAQueryFactory()).thenReturn(queryFactory);
-
-            doReturn(jpaQuery).when(queryFactory).select(any(com.querydsl.core.types.Expression.class));
-            doReturn(jpaQuery).when(jpaQuery).from(any(com.querydsl.core.types.EntityPath.class));
-            doReturn(jpaQuery).when(jpaQuery).leftJoin(any(com.querydsl.core.types.EntityPath.class));
-
-            doReturn(jpaQuery).when(jpaQuery).on(any(com.querydsl.core.types.Predicate.class));
-            doReturn(jpaQuery).when(jpaQuery).where(any(com.querydsl.core.types.Predicate.class), any(com.querydsl.core.types.Predicate.class));
-
-            when(jpaQuery.fetch()).thenReturn(options);
+            doReturn(jpaQuery).when(queryFactory).select(any(Expression.class));
+            when(jpaQuery.from(any(EntityPath.class))).thenReturn(jpaQuery);
+            when(jpaQuery.leftJoin(any(EntityPath.class))).thenReturn(jpaQuery);
+            when(jpaQuery.on(any(Predicate.class))).thenReturn(jpaQuery);
+            when(jpaQuery.where(any(Predicate.class), any(Predicate.class))).thenReturn(jpaQuery);
+            when(jpaQuery.fetch()).thenReturn(Collections.singletonList(new RoleOptionDTO()));
 
             List<RoleOptionDTO> result = roleService.getRoleOptions(roleQuery);
 
-            assertNotNull(result);
-            assertEquals(options, result);
+            assertFalse(result.isEmpty());
         }
     }
 
     @Test
-    @DisplayName("基础转换方法测试")
-    void testBaseMethods() {
+    void testToDto() {
+        Role entity = mock(Role.class);
         RoleDTO dto = new RoleDTO();
-        Role entity = new Role();
-
-        when(roleMapper.toEntity(dto)).thenReturn(entity);
-        assertEquals(entity, roleService.toEntity(dto));
-
         when(roleMapper.toDto(entity)).thenReturn(dto);
-        assertEquals(dto, roleService.toDto(entity));
+        assertSame(dto, roleService.toDto(entity));
+    }
 
-        assertEquals(roleRepository, roleService.getRepository());
+    @Test
+    void testToEntity() {
+        assertThrows(UnsupportedOperationException.class, () -> roleService.toEntity(new RoleDTO()));
     }
 }

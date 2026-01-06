@@ -10,6 +10,8 @@ import com.mok.ddd.application.sys.mapper.MenuMapper;
 import com.mok.ddd.application.sys.mapper.PermissionMapper;
 import com.mok.ddd.application.sys.mapper.RoleMapper;
 import com.mok.ddd.common.Const;
+import com.mok.ddd.domain.sys.model.Menu;
+import com.mok.ddd.domain.sys.model.Permission;
 import com.mok.ddd.domain.sys.model.QRole;
 import com.mok.ddd.domain.sys.model.QTenant;
 import com.mok.ddd.domain.sys.model.Role;
@@ -33,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -56,7 +59,7 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
 
     @Override
     protected Role toEntity(@NonNull RoleDTO dto) {
-        return roleMapper.toEntity(dto);
+        throw new UnsupportedOperationException("不支持从DTO创建或更新实体，请从Repository获取实体并使用其业务方法进行更新。");
     }
 
     @Override
@@ -119,24 +122,25 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
 
     @Transactional
     public RoleDTO createRole(@NonNull RoleSaveDTO dto) {
-        Role entity = roleMapper.toEntity(dto);
-        if (entity.getState() == null) {
-            entity.setState(Const.RoleState.NORMAL);
-        }
+        Role entity = Role.create(dto);
         return roleMapper.toDto(roleRepository.save(entity));
     }
 
     @Transactional
     public RoleDTO updateRole(@NonNull RoleSaveDTO dto) {
         Role existingRole = roleRepository.findById(dto.getId()).orElseThrow(NotFoundException::new);
-        roleMapper.updateEntityFromDto(dto, existingRole);
+        existingRole.updateInfo(dto.getName(), dto.getCode(), dto.getDescription(), dto.getSort());
         return roleMapper.toDto(roleRepository.save(existingRole));
     }
 
     @Transactional
     public RoleDTO updateState(Long id, Integer state) {
         Role role = roleRepository.findById(id).orElseThrow(NotFoundException::new);
-        role.setState(state);
+        if (Objects.equals(state, Const.RoleState.NORMAL)) {
+            role.enable();
+        } else if (Objects.equals(state, Const.RoleState.DISABLED)) {
+            role.disable();
+        }
         return this.toDto(roleRepository.save(role));
     }
 
@@ -156,11 +160,13 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
         Role role = roleRepository.findById(roleId).orElseThrow(NotFoundException::new);
 
         if (dto.getMenuIds() != null) {
-            role.setMenus(new HashSet<>(menuRepository.findAllById(dto.getMenuIds())));
+            Set<Menu> menus = new HashSet<>(menuRepository.findAllById(dto.getMenuIds()));
+            role.changeMenus(menus);
         }
 
         if (dto.getPermissionIds() != null) {
-            role.setPermissions(new HashSet<>(permissionRepository.findAllById(dto.getPermissionIds())));
+            Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(dto.getPermissionIds()));
+            role.changePermissions(permissions);
         }
 
         roleRepository.save(role);

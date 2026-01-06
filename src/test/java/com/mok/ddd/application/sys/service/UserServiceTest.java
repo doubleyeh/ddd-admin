@@ -378,12 +378,14 @@ class UserServiceTest {
                 Permission p2 = new Permission();
                 p2.setCode("R_P2");
 
-                Role r1 = new Role();
-                r1.setMenus(Set.of(m1));
-                r1.setPermissions(Set.of(p1));
-                Role r2 = new Role();
-                r2.setMenus(Set.of(m2));
-                r2.setPermissions(Set.of(p2));
+                Role r1 = mock(Role.class);
+                when(r1.getMenus()).thenReturn(Set.of(m1));
+                when(r1.getPermissions()).thenReturn(Set.of(p1));
+
+                Role r2 = mock(Role.class);
+                when(r2.getMenus()).thenReturn(Set.of(m2));
+                when(r2.getPermissions()).thenReturn(Set.of(p2));
+
                 user.setRoles(Set.of(r1, r2));
 
                 MenuDTO dto1 = new MenuDTO();
