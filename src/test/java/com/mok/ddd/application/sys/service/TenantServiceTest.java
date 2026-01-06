@@ -5,7 +5,7 @@ import com.mok.ddd.application.sys.dto.tenant.TenantCreateResultDTO;
 import com.mok.ddd.application.sys.dto.tenant.TenantDTO;
 import com.mok.ddd.application.sys.dto.tenant.TenantOptionDTO;
 import com.mok.ddd.application.sys.dto.tenant.TenantSaveDTO;
-import com.mok.ddd.application.sys.dto.user.UserPostDTO;
+import com.mok.ddd.application.sys.event.TenantCreatedEvent;
 import com.mok.ddd.application.sys.mapper.TenantMapper;
 import com.mok.ddd.common.Const;
 import com.mok.ddd.common.PasswordGenerator;
@@ -18,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.List;
@@ -41,7 +42,7 @@ class TenantServiceTest {
     private TenantMapper tenantMapper;
 
     @Mock
-    private UserService userService;
+    private ApplicationEventPublisher eventPublisher;
 
     @Mock
     private RedisTemplate<String, Object> redisTemplate;
@@ -81,7 +82,7 @@ class TenantServiceTest {
         }
 
         @Test
-        @DisplayName("成功创建租户和初始化管理员")
+        @DisplayName("成功创建租户并发布事件")
         void createTenant_Success() {
             Tenant mockTenant = mock(Tenant.class);
             String expectedTenantId = "MOCKID";
@@ -101,21 +102,12 @@ class TenantServiceTest {
 
             TenantCreateResultDTO result = tenantService.createTenant(validDto);
 
-            mockedTenant.verify(() -> Tenant.create(
-                    validDto.getName(),
-                    validDto.getContactPerson(),
-                    validDto.getContactPhone(),
-                    validDto.getPackageId(),
-                    tenantRepository
-            ));
-            verify(tenantRepository, times(1)).save(mockTenant);
+            ArgumentCaptor<TenantCreatedEvent> eventCaptor = ArgumentCaptor.forClass(TenantCreatedEvent.class);
+            verify(eventPublisher).publishEvent(eventCaptor.capture());
+            TenantCreatedEvent capturedEvent = eventCaptor.getValue();
 
-            ArgumentCaptor<UserPostDTO> userCaptor = ArgumentCaptor.forClass(UserPostDTO.class);
-            verify(userService, times(1)).createForTenant(userCaptor.capture(), eq(expectedTenantId));
-
-            UserPostDTO capturedUserDTO = userCaptor.getValue();
-            assertEquals(Const.DEFAULT_ADMIN_USERNAME, capturedUserDTO.getUsername());
-            assertEquals(MOCK_PASSWORD, capturedUserDTO.getPassword());
+            assertEquals(mockTenant, capturedEvent.getTenant());
+            assertEquals(MOCK_PASSWORD, capturedEvent.getRawPassword());
 
             assertNotNull(result);
             assertEquals(mockTenant.getId(), result.getId());
@@ -132,11 +124,12 @@ class TenantServiceTest {
 
             assertEquals("生成唯一租户编码失败，请重试", exception.getMessage());
             verify(tenantRepository, never()).save(any());
+            verify(eventPublisher, never()).publishEvent(any());
         }
     }
 
     @Nested
-    @DisplayName("updateTenant 租户更新测试")
+    @DisplayName("updateTenant")
     class UpdateTenantTests {
 
         @Test

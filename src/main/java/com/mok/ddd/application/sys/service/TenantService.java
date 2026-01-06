@@ -6,7 +6,7 @@ import com.mok.ddd.application.sys.dto.tenant.TenantCreateResultDTO;
 import com.mok.ddd.application.sys.dto.tenant.TenantDTO;
 import com.mok.ddd.application.sys.dto.tenant.TenantOptionDTO;
 import com.mok.ddd.application.sys.dto.tenant.TenantSaveDTO;
-import com.mok.ddd.application.sys.dto.user.UserPostDTO;
+import com.mok.ddd.application.sys.event.TenantCreatedEvent;
 import com.mok.ddd.application.sys.mapper.TenantMapper;
 import com.mok.ddd.common.Const;
 import com.mok.ddd.common.PasswordGenerator;
@@ -23,6 +23,7 @@ import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQuery;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -44,7 +45,7 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
 
     private final TenantRepository tenantRepository;
     private final TenantMapper tenantMapper;
-    private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
     private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
@@ -110,13 +111,7 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
 
         String rawPassword = PasswordGenerator.generateRandomPassword();
 
-        UserPostDTO userPostDTO = new UserPostDTO();
-        userPostDTO.setUsername(Const.DEFAULT_ADMIN_USERNAME);
-        userPostDTO.setNickname(tenant.getName() + "管理员");
-        userPostDTO.setPassword(rawPassword);
-        userPostDTO.setState(Const.UserState.NORMAL);
-
-        userService.createForTenant(userPostDTO, tenant.getTenantId());
+        eventPublisher.publishEvent(new TenantCreatedEvent(this, tenant, rawPassword));
 
         TenantCreateResultDTO result = new TenantCreateResultDTO();
         result.setId(tenant.getId());

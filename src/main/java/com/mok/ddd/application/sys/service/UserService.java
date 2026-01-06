@@ -105,12 +105,17 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
 
     @Transactional
     @TenantFilter(TenantFilter.TenantFilterPolicy.SKIP)
-    public UserDTO createForTenant(@NonNull UserPostDTO dto, String tenantId) {
+    public UserDTO createForTenant(@NonNull UserPostDTO dto) {
+        String tenantId = dto.getTenantId();
+        if (tenantId == null) {
+            throw new BizException("创建租户用户时，租户ID不能为空");
+        }
         if (userRepository.findByTenantIdAndUsername(tenantId, dto.getUsername()).isPresent()) {
             throw new BizException("用户名已存在");
         }
         String encodedPassword = passwordEncoder.encode(dto.getPassword());
         User entity = User.create(dto.getUsername(), encodedPassword, dto.getNickname(), true);
+        entity.assignTenant(tenantId);
 
         if (dto.getRoleIds() != null) {
             Set<Role> roles = new HashSet<>(roleRepository.findAllById(dto.getRoleIds()));

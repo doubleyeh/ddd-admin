@@ -110,6 +110,30 @@ class UserServiceTest {
             verify(mockUser).changeRoles(new HashSet<>(List.of(mockRole)));
             verify(userRepository).save(mockUser);
         }
+
+        @Test
+        void createForTenant_Success() {
+            UserPostDTO dto = new UserPostDTO();
+            dto.setUsername("testuser");
+            dto.setPassword("rawPassword");
+            dto.setTenantId("tenantA");
+            dto.setNickname("Tenant Admin");
+
+            when(userRepository.findByTenantIdAndUsername("tenantA", "testuser")).thenReturn(Optional.empty());
+            when(passwordEncoder.encode("rawPassword")).thenReturn(ENCODED_PASSWORD);
+
+            User mockUser = mock(User.class);
+            mockedUser.when(() -> User.create("testuser", ENCODED_PASSWORD, "Tenant Admin", true)).thenReturn(mockUser);
+
+            when(userRepository.save(mockUser)).thenReturn(mockUser);
+            when(userMapper.toDto(mockUser)).thenReturn(new UserDTO());
+
+            userService.createForTenant(dto);
+
+            mockedUser.verify(() -> User.create("testuser", ENCODED_PASSWORD, "Tenant Admin", true));
+            verify(mockUser).assignTenant("tenantA");
+            verify(userRepository).save(mockUser);
+        }
     }
 
     @Nested
