@@ -1,9 +1,5 @@
 package com.mok.ddd.application.sys.service;
 
-import com.mok.ddd.application.exception.BizException;
-import com.mok.ddd.application.exception.NotFoundException;
-import com.mok.ddd.application.sys.dto.auth.AccountInfoDTO;
-import com.mok.ddd.application.sys.dto.menu.MenuDTO;
 import com.mok.ddd.application.sys.dto.user.UserDTO;
 import com.mok.ddd.application.sys.dto.user.UserPasswordDTO;
 import com.mok.ddd.application.sys.dto.user.UserPostDTO;
@@ -12,17 +8,14 @@ import com.mok.ddd.application.sys.mapper.MenuMapper;
 import com.mok.ddd.application.sys.mapper.UserMapper;
 import com.mok.ddd.common.Const;
 import com.mok.ddd.common.SysUtil;
-import com.mok.ddd.domain.sys.model.*;
+import com.mok.ddd.domain.sys.model.Role;
+import com.mok.ddd.domain.sys.model.User;
 import com.mok.ddd.domain.sys.repository.RoleRepository;
 import com.mok.ddd.domain.sys.repository.TenantPackageRepository;
 import com.mok.ddd.domain.sys.repository.TenantRepository;
 import com.mok.ddd.domain.sys.repository.UserRepository;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -30,10 +23,10 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -210,6 +203,7 @@ class UserServiceTest {
             when(mockUser.getTenantId()).thenReturn("tenantA");
             when(mockUser.getUsername()).thenReturn("userA");
             when(mockUser.getIsTenantAdmin()).thenReturn(false);
+
             when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
             mockedSysUtil.when(() -> SysUtil.isSuperAdmin("tenantA", "userA")).thenReturn(false);
 

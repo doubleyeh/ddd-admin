@@ -93,6 +93,7 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
             throw new BizException("用户名已存在");
         }
         String encodedPassword = passwordEncoder.encode(dto.getPassword());
+        Objects.requireNonNull(encodedPassword, "密码加密失败");
         User entity = User.create(dto.getUsername(), encodedPassword, dto.getNickname(), false);
 
         if (dto.getRoleIds() != null) {
@@ -114,6 +115,7 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
             throw new BizException("用户名已存在");
         }
         String encodedPassword = passwordEncoder.encode(dto.getPassword());
+        Objects.requireNonNull(encodedPassword, "密码加密失败");
         User entity = User.create(dto.getUsername(), encodedPassword, dto.getNickname(), true);
         entity.assignTenant(tenantId);
 
@@ -139,6 +141,14 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
     }
 
     @Transactional
+    public void updateNickname(@NonNull Long id, String nickname) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(Const.NOT_FOUND_MESSAGE));
+        user.updateInfo(nickname, user.getRoles());
+        userRepository.save(user);
+    }
+
+    @Transactional
     public UserDTO updateUserState(@NonNull Long id, @NonNull Integer state){
         User entity = userRepository.findById(id).orElseThrow(() -> new NotFoundException(Const.NOT_FOUND_MESSAGE));
         if (Objects.equals(state, Const.UserState.NORMAL)) {
@@ -154,6 +164,7 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
         User user = userRepository.findById(dto.getId())
                 .orElseThrow(() -> new NotFoundException(Const.NOT_FOUND_MESSAGE));
         String encodedPassword = passwordEncoder.encode(dto.getPassword());
+        Objects.requireNonNull(encodedPassword, "密码加密失败");
         user.changePassword(encodedPassword);
         userRepository.save(user);
     }
@@ -242,11 +253,6 @@ public class UserService extends BaseServiceImpl<User, Long, UserDTO> {
     @Override
     protected CustomRepository<User, Long> getRepository() {
         return userRepository;
-    }
-
-    @Override
-    protected User toEntity(@NonNull UserDTO dto) {
-        throw new UnsupportedOperationException("不支持从DTO创建或更新实体。");
     }
 
     @Override

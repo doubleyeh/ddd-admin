@@ -31,6 +31,13 @@ public class PermissionController {
         return RestResponse.success(permissionService.createPermission(dto));
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public RestResponse<PermissionDTO> update(@PathVariable Long id, @RequestBody PermissionDTO dto) {
+        dto.setId(id);
+        return RestResponse.success(permissionService.updatePermission(dto));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public RestResponse<Void> delete(@PathVariable Long id) {

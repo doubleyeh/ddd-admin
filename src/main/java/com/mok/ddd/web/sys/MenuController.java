@@ -26,14 +26,14 @@ public class MenuController {
     @PostMapping
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public RestResponse<MenuDTO> save(@RequestBody MenuDTO dto) {
-        return RestResponse.success(menuService.save(dto));
+        return RestResponse.success(menuService.createMenu(dto));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public RestResponse<MenuDTO> update(@PathVariable Long id, @RequestBody MenuDTO dto) {
         dto.setId(id);
-        return RestResponse.success(menuService.save(dto));
+        return RestResponse.success(menuService.updateMenu(dto));
     }
 
     @DeleteMapping("/{id}")

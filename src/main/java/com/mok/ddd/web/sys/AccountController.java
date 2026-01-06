@@ -47,8 +47,7 @@ public class AccountController {
     public RestResponse<Boolean> updateNickname(@RequestBody @Valid NicknameUpdateDTO dto) {
         String username = TenantContextHolder.getUsername();
         UserDTO user = userService.findByUsername(username);
-        user.setNickname(dto.getNickname());
-        userService.save(user);
+        userService.updateNickname(user.getId(), dto.getNickname());
         return RestResponse.success(true);
     }
 

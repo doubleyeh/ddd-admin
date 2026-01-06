@@ -100,11 +100,6 @@ public class PermissionService extends BaseServiceImpl<Permission, Long, Permiss
     }
 
     @Override
-    protected Permission toEntity(@NonNull PermissionDTO permissionDTO) {
-        throw new UnsupportedOperationException("不支持从DTO创建或更新实体。");
-    }
-
-    @Override
     protected PermissionDTO toDto(@NonNull Permission entity) {
         return permissionMapper.toDto(entity);
     }

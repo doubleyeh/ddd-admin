@@ -5,6 +5,7 @@ import com.querydsl.core.types.Predicate;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -18,9 +19,8 @@ public interface BaseService<E extends BaseEntity, ID, DTO> {
 
     Page<@NonNull DTO> findPage(Predicate predicate, Pageable pageable);
 
-    DTO save(DTO dto);
-
-    DTO update(DTO dto);
+    @Transactional
+    E saveOrUpdate(E entity);
 
     void deleteById(ID id);
 

@@ -44,11 +44,6 @@ public class DictService extends BaseServiceImpl<DictType, Long, DictTypeDTO> {
     }
 
     @Override
-    protected DictType toEntity(@NonNull DictTypeDTO dto) {
-        throw new UnsupportedOperationException("不支持从DTO创建或更新实体。");
-    }
-
-    @Override
     protected DictTypeDTO toDto(@NonNull DictType entity) {
         return dictTypeMapper.toDto(entity);
     }

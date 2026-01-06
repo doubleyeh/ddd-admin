@@ -27,7 +27,6 @@ public abstract class BaseServiceImpl<E extends BaseEntity, ID, DTO> implements 
     }
     protected abstract CustomRepository<E, ID> getRepository();
 
-    protected abstract E toEntity(@NonNull DTO dto);
     protected abstract DTO toDto(@NonNull E entity);
 
     protected String getEntityAlias() {
@@ -70,18 +69,10 @@ public abstract class BaseServiceImpl<E extends BaseEntity, ID, DTO> implements 
         return new PageImpl<>(dtoList, entityPage.getPageable(), entityPage.getTotalElements());
     }
 
-    @Override
     @Transactional
-    public DTO save(@NonNull DTO dto) {
-        E entity = toEntity(dto);
-        return toDto(getRepository().save(entity));
-    }
-
     @Override
-    @Transactional
-    public DTO update(@NonNull DTO dto) {
-        E entity = toEntity(dto);
-        return toDto(getRepository().save(entity));
+    public E saveOrUpdate(E entity){
+        return getRepository().save(entity);
     }
 
     @Override

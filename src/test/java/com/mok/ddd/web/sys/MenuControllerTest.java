@@ -103,7 +103,7 @@ class MenuControllerTest {
     void save_ReturnSavedMenu() throws Exception {
         MenuDTO dto = new MenuDTO();
         dto.setName("新菜单");
-        given(menuService.save(any(MenuDTO.class))).willReturn(dto);
+        given(menuService.createMenu(any(MenuDTO.class))).willReturn(dto);
 
         mockMvc.perform(post("/api/menus")
                         .content(jsonMapper.writeValueAsString(dto))
@@ -119,7 +119,7 @@ class MenuControllerTest {
         MenuDTO dto = new MenuDTO();
         dto.setId(id);
         dto.setName("更新菜单");
-        given(menuService.save(any(MenuDTO.class))).willReturn(dto);
+        given(menuService.updateMenu(any(MenuDTO.class))).willReturn(dto);
 
         mockMvc.perform(put("/api/menus/{id}", id)
                         .content(jsonMapper.writeValueAsString(dto))

@@ -55,11 +55,6 @@ public class TenantService extends BaseServiceImpl<Tenant, Long, TenantDTO> {
     }
 
     @Override
-    protected Tenant toEntity(@NonNull TenantDTO dto) {
-        throw new UnsupportedOperationException("不支持从DTO创建或更新实体，请从Repository获取实体并使用其业务方法进行更新。");
-    }
-
-    @Override
     protected TenantDTO toDto(@NonNull Tenant entity) {
         return tenantMapper.toDto(entity);
     }

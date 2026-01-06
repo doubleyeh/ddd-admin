@@ -114,6 +114,7 @@ public class TenantPackageService extends BaseServiceImpl<TenantPackage, Long, T
     }
 
     @Transactional(readOnly = true)
+    @SuppressWarnings("unchecked")
     public Set<Long> getMenuIdsByPackage(Long id) {
         String cacheKey = Const.CacheKey.TENANT_PACKAGE_PERMS + ":menus:" + id;
         Object cached = redisTemplate.opsForValue().get(cacheKey);
@@ -131,6 +132,7 @@ public class TenantPackageService extends BaseServiceImpl<TenantPackage, Long, T
     }
 
     @Transactional(readOnly = true)
+    @SuppressWarnings("unchecked")
     public Set<Long> getPermissionIdsByPackage(Long id) {
         String cacheKey = Const.CacheKey.TENANT_PACKAGE_PERMS + ":permissions:" + id;
         Object cached = redisTemplate.opsForValue().get(cacheKey);
@@ -175,11 +177,6 @@ public class TenantPackageService extends BaseServiceImpl<TenantPackage, Long, T
     @Override
     protected CustomRepository<TenantPackage, Long> getRepository() {
         return packageRepository;
-    }
-
-    @Override
-    protected TenantPackage toEntity(@NonNull TenantPackageDTO tenantPackageDTO) {
-        throw new UnsupportedOperationException("不支持从DTO创建或更新实体。");
     }
 
     @Override

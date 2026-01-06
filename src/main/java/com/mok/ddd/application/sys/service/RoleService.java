@@ -50,11 +50,6 @@ public class RoleService extends BaseServiceImpl<Role, Long, RoleDTO> {
     }
 
     @Override
-    protected Role toEntity(@NonNull RoleDTO dto) {
-        throw new UnsupportedOperationException("不支持从DTO创建或更新实体，请从Repository获取实体并使用其业务方法进行更新。");
-    }
-
-    @Override
     protected RoleDTO toDto(@NonNull Role entity) {
         return roleMapper.toDto(entity);
     }

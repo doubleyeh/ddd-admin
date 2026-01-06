@@ -279,8 +279,4 @@ class RoleServiceTest {
         assertSame(dto, roleService.toDto(entity));
     }
 
-    @Test
-    void testToEntity() {
-        assertThrows(UnsupportedOperationException.class, () -> roleService.toEntity(new RoleDTO()));
-    }
 }

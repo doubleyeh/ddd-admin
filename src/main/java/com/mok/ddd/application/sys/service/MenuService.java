@@ -279,11 +279,6 @@ public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
     }
 
     @Override
-    protected Menu toEntity(@NonNull MenuDTO menuDTO) {
-        throw new UnsupportedOperationException("不支持从DTO创建或更新实体。");
-    }
-
-    @Override
     protected MenuDTO toDto(@NonNull Menu entity) {
         return menuMapper.toDto(entity);
     }
