@@ -1,16 +1,17 @@
 package com.mok.ddd.domain.sys.model;
 
+import com.mok.ddd.application.sys.dto.dict.DictTypeSaveDTO;
 import com.mok.ddd.domain.common.model.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.jspecify.annotations.NonNull;
 
-@Data
-@EqualsAndHashCode(callSuper = true)
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "sys_dict_type")
 public class DictType extends BaseEntity {
@@ -42,4 +43,20 @@ public class DictType extends BaseEntity {
      */
     @Column(name = "is_system")
     private Boolean isSystem;
+
+    public static DictType create(@NonNull DictTypeSaveDTO dto) {
+        DictType dictType = new DictType();
+        dictType.name = dto.getName();
+        dictType.code = dto.getCode();
+        dictType.sort = dto.getSort();
+        dictType.remark = dto.getRemark();
+        dictType.isSystem = false;
+        return dictType;
+    }
+
+    public void updateInfo(@NonNull DictTypeSaveDTO dto) {
+        this.name = dto.getName();
+        this.sort = dto.getSort();
+        this.remark = dto.getRemark();
+    }
 }

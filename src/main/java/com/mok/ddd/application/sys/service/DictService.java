@@ -42,7 +42,7 @@ public class DictService extends BaseServiceImpl<DictType, Long, DictTypeDTO> {
 
     @Override
     protected DictType toEntity(@NonNull DictTypeDTO dto) {
-        return null;
+        throw new UnsupportedOperationException("不支持从DTO创建或更新实体。");
     }
 
     @Override
@@ -62,8 +62,7 @@ public class DictService extends BaseServiceImpl<DictType, Long, DictTypeDTO> {
         if (dictTypeRepository.existsByCode(dto.getCode())) {
             throw new BizException("字典类型编码已存在");
         }
-        DictType entity = dictTypeMapper.toEntity(dto);
-        entity.setIsSystem(false);
+        DictType entity = DictType.create(dto);
         return dictTypeMapper.toDto(dictTypeRepository.save(entity));
     }
 
@@ -71,14 +70,12 @@ public class DictService extends BaseServiceImpl<DictType, Long, DictTypeDTO> {
     public DictTypeDTO updateType(DictTypeSaveDTO dto) {
         DictType entity = dictTypeRepository.findById(dto.getId())
                 .orElseThrow(NotFoundException::new);
-        
-        if (entity.getIsSystem()) {
-            if (!entity.getCode().equals(dto.getCode())) {
-                throw new BizException("系统内置字典禁止修改编码");
-            }
+
+        if (Boolean.TRUE.equals(entity.getIsSystem()) && !entity.getCode().equals(dto.getCode())) {
+            throw new BizException("系统内置字典禁止修改编码");
         }
 
-        dictTypeMapper.updateEntityFromDto(dto, entity);
+        entity.updateInfo(dto);
         return dictTypeMapper.toDto(dictTypeRepository.save(entity));
     }
 
@@ -86,14 +83,14 @@ public class DictService extends BaseServiceImpl<DictType, Long, DictTypeDTO> {
     public void deleteType(Long id) {
         DictType entity = dictTypeRepository.findById(id)
                 .orElseThrow(NotFoundException::new);
-        
-        if (entity.getIsSystem()) {
+
+        if (Boolean.TRUE.equals(entity.getIsSystem())) {
             throw new BizException("系统内置字典禁止删除");
         }
 
         dictDataRepository.deleteByTypeCode(entity.getCode());
         redisTemplate.delete(Const.CacheKey.DICT_DATA + entity.getCode());
-        
+
         dictTypeRepository.delete(entity);
     }
 
@@ -107,12 +104,9 @@ public class DictService extends BaseServiceImpl<DictType, Long, DictTypeDTO> {
     @Transactional
     public DictDataDTO createData(DictDataSaveDTO dto) {
         checkSystemDict(dto.getTypeCode());
-        
-        DictData entity = dictDataMapper.toEntity(dto);
+        DictData entity = DictData.create(dto);
         DictData saved = dictDataRepository.save(entity);
-        
         redisTemplate.delete(Const.CacheKey.DICT_DATA + dto.getTypeCode());
-        
         return dictDataMapper.toDto(saved);
     }
 
@@ -120,11 +114,10 @@ public class DictService extends BaseServiceImpl<DictType, Long, DictTypeDTO> {
     public DictDataDTO updateData(DictDataSaveDTO dto) {
         DictData entity = dictDataRepository.findById(dto.getId())
                 .orElseThrow(NotFoundException::new);
-        
         checkSystemDict(entity.getTypeCode());
 
         String oldTypeCode = entity.getTypeCode();
-        dictDataMapper.updateEntityFromDto(dto, entity);
+        entity.updateInfo(dto);
         DictData saved = dictDataRepository.save(entity);
 
         redisTemplate.delete(Const.CacheKey.DICT_DATA + oldTypeCode);
@@ -139,17 +132,14 @@ public class DictService extends BaseServiceImpl<DictType, Long, DictTypeDTO> {
     public void deleteData(Long id) {
         DictData entity = dictDataRepository.findById(id)
                 .orElseThrow(NotFoundException::new);
-        
         checkSystemDict(entity.getTypeCode());
-
         dictDataRepository.delete(entity);
-        
         redisTemplate.delete(Const.CacheKey.DICT_DATA + entity.getTypeCode());
     }
 
     private void checkSystemDict(String typeCode) {
         dictTypeRepository.findByCode(typeCode).ifPresent(type -> {
-            if (type.getIsSystem()) {
+            if (Boolean.TRUE.equals(type.getIsSystem())) {
                 throw new BizException("系统内置字典禁止修改数据");
             }
         });
