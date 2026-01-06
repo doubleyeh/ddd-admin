@@ -192,16 +192,8 @@ class RoleServiceTest {
             dto.setPermissionIds(Set.of(100L, 200L));
 
             Role mockRole = mock(Role.class);
-            Set<Menu> menus = dto.getMenuIds().stream().map(id -> {
-                Menu m = new Menu();
-                m.setId(id);
-                return m;
-            }).collect(Collectors.toSet());
-            Set<Permission> permissions = dto.getPermissionIds().stream().map(id -> {
-                Permission p = new Permission();
-                p.setId(id);
-                return p;
-            }).collect(Collectors.toSet());
+            Set<Menu> menus = dto.getMenuIds().stream().map(id -> mock(Menu.class)).collect(Collectors.toSet());
+            Set<Permission> permissions = dto.getPermissionIds().stream().map(id -> mock(Permission.class)).collect(Collectors.toSet());
 
             when(roleRepository.findById(1L)).thenReturn(Optional.of(mockRole));
             when(menuRepository.findAllById(dto.getMenuIds())).thenReturn(List.copyOf(menus));
@@ -224,8 +216,8 @@ class RoleServiceTest {
         void getById_Success() {
             Role mockRole = mock(Role.class);
             RoleDTO mockDto = new RoleDTO();
-            Set<Menu> menus = Set.of(new Menu());
-            Set<Permission> permissions = Set.of(new Permission());
+            Set<Menu> menus = Set.of(mock(Menu.class));
+            Set<Permission> permissions = Set.of(mock(Permission.class));
             Set<MenuDTO> menuDtos = menus.stream().map(m -> new MenuDTO()).collect(Collectors.toSet());
             Set<PermissionDTO> permissionDtos = permissions.stream().map(p -> new PermissionDTO()).collect(Collectors.toSet());
 

@@ -16,14 +16,10 @@ public interface PermissionMapper {
     @Mapping(source = "menu.id", target = "menuId")
     PermissionDTO toDto(Permission entity);
 
-    @Mapping(source = "menuId", target = "menu.id")
-    Permission toEntity(PermissionDTO dto);
-
     default List<PermissionDTO> toDtoList(Collection<Permission> list) {
         if (list == null) {
             return Collections.emptyList();
         }
-
         return list.stream().map(this::toDto).toList();
     }
 }

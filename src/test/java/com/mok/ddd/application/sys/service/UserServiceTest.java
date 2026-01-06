@@ -371,12 +371,12 @@ class UserServiceTest {
             try (MockedStatic<SysUtil> mockedSysUtil = mockStatic(SysUtil.class)) {
                 mockedSysUtil.when(() -> SysUtil.isSuperAdmin(anyString(), anyString())).thenReturn(false);
 
-                Menu m1 = new Menu();
-                Menu m2 = new Menu();
-                Permission p1 = new Permission();
-                p1.setCode("R_P1");
-                Permission p2 = new Permission();
-                p2.setCode("R_P2");
+                Menu m1 = mock(Menu.class);
+                Menu m2 = mock(Menu.class);
+                Permission p1 = mock(Permission.class);
+                when(p1.getCode()).thenReturn("R_P1");
+                Permission p2 = mock(Permission.class);
+                when(p2.getCode()).thenReturn("R_P2");
 
                 Role r1 = mock(Role.class);
                 when(r1.getMenus()).thenReturn(Set.of(m1));
@@ -385,7 +385,6 @@ class UserServiceTest {
                 Role r2 = mock(Role.class);
                 when(r2.getMenus()).thenReturn(Set.of(m2));
                 when(r2.getPermissions()).thenReturn(Set.of(p2));
-
                 user.setRoles(Set.of(r1, r2));
 
                 MenuDTO dto1 = new MenuDTO();

@@ -1,10 +1,13 @@
 package com.mok.ddd.application.sys.service;
 
 import com.mok.ddd.application.common.service.BaseServiceImpl;
+import com.mok.ddd.application.exception.NotFoundException;
 import com.mok.ddd.application.sys.dto.permission.PermissionDTO;
 import com.mok.ddd.application.sys.mapper.PermissionMapper;
 import com.mok.ddd.common.Const;
+import com.mok.ddd.domain.sys.model.Menu;
 import com.mok.ddd.domain.sys.model.Permission;
+import com.mok.ddd.domain.sys.repository.MenuRepository;
 import com.mok.ddd.domain.sys.repository.PermissionRepository;
 import com.mok.ddd.infrastructure.repository.CustomRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,8 +25,30 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class PermissionService extends BaseServiceImpl<Permission, Long, PermissionDTO> {
     private final PermissionRepository permissionRepository;
+    private final MenuRepository menuRepository;
     private final PermissionMapper permissionMapper;
     private final StringRedisTemplate redisTemplate;
+
+    @Transactional
+    public PermissionDTO createPermission(@NonNull PermissionDTO dto) {
+        Menu menu = null;
+        if (dto.getMenuId() != null) {
+            menu = menuRepository.findById(dto.getMenuId()).orElse(null);
+        }
+        Permission permission = Permission.create(dto.getName(), dto.getCode(), dto.getUrl(), dto.getMethod(), dto.getDescription(), menu);
+        return permissionMapper.toDto(permissionRepository.save(permission));
+    }
+
+    @Transactional
+    public PermissionDTO updatePermission(@NonNull PermissionDTO dto) {
+        Permission permission = permissionRepository.findById(dto.getId()).orElseThrow(NotFoundException::new);
+        Menu menu = null;
+        if (dto.getMenuId() != null) {
+            menu = menuRepository.findById(dto.getMenuId()).orElse(null);
+        }
+        permission.updateInfo(dto.getName(), dto.getCode(), dto.getUrl(), dto.getMethod(), dto.getDescription(), menu);
+        return permissionMapper.toDto(permissionRepository.save(permission));
+    }
 
     @Transactional(readOnly = true)
     public Set<String> getAllPermissionCodes() {
@@ -76,7 +101,7 @@ public class PermissionService extends BaseServiceImpl<Permission, Long, Permiss
 
     @Override
     protected Permission toEntity(@NonNull PermissionDTO permissionDTO) {
-        return permissionMapper.toEntity(permissionDTO);
+        throw new UnsupportedOperationException("不支持从DTO创建或更新实体。");
     }
 
     @Override

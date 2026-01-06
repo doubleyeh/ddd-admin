@@ -100,7 +100,7 @@ class PermissionControllerTest {
         dto.setUrl("");
         dto.setMethod("*");
 
-        given(permissionService.save(any(PermissionDTO.class))).willReturn(dto);
+        given(permissionService.createPermission(any(PermissionDTO.class))).willReturn(dto);
 
         mockMvc.perform(post("/api/permissions")
                         .content(jsonMapper.writeValueAsString(dto))

@@ -28,7 +28,7 @@ public class PermissionController {
     @PostMapping
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public RestResponse<PermissionDTO> save(@RequestBody PermissionDTO dto) {
-        return RestResponse.success(permissionService.save(dto));
+        return RestResponse.success(permissionService.createPermission(dto));
     }
 
     @DeleteMapping("/{id}")

@@ -2,13 +2,14 @@ package com.mok.ddd.domain.sys.model;
 
 import com.mok.ddd.domain.common.model.BaseEntity;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "sys_permission")
 @Getter
-@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Permission extends BaseEntity {
     private String name;
     private String code;
@@ -37,4 +38,28 @@ public class Permission extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "menu_id")
     private Menu menu;
+
+    public static Permission create(String name, String code, String url, String method, String description, Menu menu) {
+        Permission permission = new Permission();
+        permission.name = name;
+        permission.code = code;
+        permission.url = url;
+        permission.method = method;
+        permission.description = description;
+        permission.menu = menu;
+        return permission;
+    }
+
+    public void updateInfo(String name, String code, String url, String method, String description, Menu menu) {
+        this.name = name;
+        this.code = code;
+        this.url = url;
+        this.method = method;
+        this.description = description;
+        this.menu = menu;
+    }
+
+    protected void setMenu(Menu menu) {
+        this.menu = menu;
+    }
 }

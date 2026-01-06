@@ -1,6 +1,7 @@
 package com.mok.ddd.application.sys.service;
 
 import com.mok.ddd.application.common.service.BaseServiceImpl;
+import com.mok.ddd.application.exception.NotFoundException;
 import com.mok.ddd.application.sys.dto.menu.MenuDTO;
 import com.mok.ddd.application.sys.dto.menu.MenuOptionDTO;
 import com.mok.ddd.application.sys.dto.permission.PermissionOptionDTO;
@@ -19,6 +20,7 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -35,34 +37,38 @@ public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
     private final TenantPackageService tenantPackageService;
 
     @Transactional
-    @Override
-    public MenuDTO save(@NonNull MenuDTO dto) {
-        Menu menu;
-        if (dto.getId() != null) {
-            menu = menuRepository.findById(dto.getId()).orElse(menuMapper.toEntity(dto));
-            menuMapper.updateEntityFromDto(dto, menu);
-        } else {
-            menu = menuMapper.toEntity(dto);
+    public MenuDTO createMenu(@NonNull MenuDTO dto) {
+        Menu parent = null;
+        if (dto.getParentId() != null) {
+            parent = menuRepository.findById(dto.getParentId()).orElse(null);
         }
+        Menu menu = Menu.create(parent, dto.getName(), dto.getPath(), dto.getComponent(), dto.getIcon(), dto.getSort(), dto.getIsHidden());
+        return menuMapper.toDto(menuRepository.save(menu));
+    }
 
-        if (dto.getPermissionIds() != null) {
-            List<Permission> permissions = permissionRepository.findAllById(dto.getPermissionIds());
-
-            if (menu.getPermissions() != null) {
-                menu.getPermissions().forEach(p -> p.setMenu(null));
-                menu.getPermissions().clear();
-            } else {
-                menu.setPermissions(new HashSet<>());
-            }
-
-            permissions.forEach(p -> {
-                p.setMenu(menu);
-                menu.getPermissions().add(p);
-            });
+    @Transactional
+    public MenuDTO updateMenu(@NonNull MenuDTO dto) {
+        Menu menu = menuRepository.findById(dto.getId()).orElseThrow(NotFoundException::new);
+        Menu parent = null;
+        if (dto.getParentId() != null) {
+            parent = menuRepository.findById(dto.getParentId()).orElse(null);
         }
+        menu.updateInfo(parent, dto.getName(), dto.getPath(), dto.getComponent(), dto.getIcon(), dto.getSort(), dto.getIsHidden());
+        return menuMapper.toDto(menuRepository.save(menu));
+    }
 
-        Menu savedMenu = menuRepository.save(menu);
-        return menuMapper.toDto(savedMenu);
+    @Transactional
+    public void changePermissions(Long menuId, Set<Long> permissionIds) {
+        Menu menu = menuRepository.findById(menuId).orElseThrow(NotFoundException::new);
+        
+        Set<Permission> newPermissions = new HashSet<>();
+        if (!CollectionUtils.isEmpty(permissionIds)) {
+            newPermissions.addAll(permissionRepository.findAllById(permissionIds));
+        }
+        
+        menu.changePermissions(newPermissions);
+        
+        menuRepository.save(menu);
     }
 
     public List<MenuDTO> buildMenuTree(@NonNull List<MenuDTO> flatList) {
@@ -145,7 +151,6 @@ public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
     public List<MenuOptionDTO> buildMenuAndPermissionTree() {
         List<Menu> entities = menuRepository.findAll();
 
-        // 如果不是超级租户，则只能看到套餐内的菜单和权限
         String currentTenantId = TenantContextHolder.getTenantId();
         if (!SysUtil.isSuperTenant(currentTenantId)) {
             Long packageId = tenantRepository.findByTenantId(currentTenantId)
@@ -189,7 +194,6 @@ public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
             return Collections.emptyList();
         }
 
-        // 超级租户逻辑保持不变
         List<MenuOptionDTO> flatList = entities.stream()
                 .map(entity -> {
                     MenuOptionDTO dto = new MenuOptionDTO();
@@ -276,7 +280,7 @@ public class MenuService extends BaseServiceImpl<Menu, Long, MenuDTO> {
 
     @Override
     protected Menu toEntity(@NonNull MenuDTO menuDTO) {
-        return menuMapper.toEntity(menuDTO);
+        throw new UnsupportedOperationException("不支持从DTO创建或更新实体。");
     }
 
     @Override
