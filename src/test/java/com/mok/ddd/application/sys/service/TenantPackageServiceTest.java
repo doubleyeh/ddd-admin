@@ -1,7 +1,9 @@
 package com.mok.ddd.application.sys.service;
 
 import com.mok.ddd.application.exception.BizException;
+import com.mok.ddd.application.sys.dto.tenantPackage.TenantPackageDTO;
 import com.mok.ddd.application.sys.dto.tenantPackage.TenantPackageGrantDTO;
+import com.mok.ddd.application.sys.dto.tenantPackage.TenantPackageOptionDTO;
 import com.mok.ddd.application.sys.dto.tenantPackage.TenantPackageSaveDTO;
 import com.mok.ddd.application.sys.mapper.MenuMapper;
 import com.mok.ddd.application.sys.mapper.PermissionMapper;
@@ -14,20 +16,23 @@ import com.mok.ddd.domain.sys.repository.MenuRepository;
 import com.mok.ddd.domain.sys.repository.PermissionRepository;
 import com.mok.ddd.domain.sys.repository.TenantPackageRepository;
 import com.mok.ddd.domain.sys.repository.TenantRepository;
+import com.querydsl.core.types.Predicate;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,7 +52,9 @@ class TenantPackageServiceTest {
     @Mock
     private TenantRepository tenantRepository;
     @Mock
-    private StringRedisTemplate redisTemplate;
+    private RedisTemplate<String, Object> redisTemplate;
+    @Mock
+    private ValueOperations<String, Object> valueOperations;
     @Mock
     private MenuMapper menuMapper;
     @Mock
@@ -97,6 +104,14 @@ class TenantPackageServiceTest {
             verify(mockEntity).updateInfo(saveDto.getName(), saveDto.getDescription());
             verify(packageRepository).save(mockEntity);
         }
+        
+        @Test
+        void updatePackage_NotFound_ThrowsException() {
+            Long id = 1L;
+            TenantPackageSaveDTO saveDto = new TenantPackageSaveDTO();
+            when(packageRepository.findById(id)).thenReturn(Optional.empty());
+            assertThrows(BizException.class, () -> tenantPackageService.updatePackage(id, saveDto));
+        }
 
         @Test
         void grant_Success() {
@@ -108,6 +123,7 @@ class TenantPackageServiceTest {
             Set<Menu> menus = Set.of(mock(Menu.class));
             Set<Permission> permissions = Set.of(mock(Permission.class));
 
+            when(redisTemplate.delete(any(Set.class))).thenReturn(1L);
             when(packageRepository.findById(id)).thenReturn(Optional.of(mockEntity));
             when(menuRepository.findAllById(grantDto.getMenuIds())).thenReturn(List.copyOf(menus));
             when(permissionRepository.findAllById(grantDto.getPermissionIds())).thenReturn(List.copyOf(permissions));
@@ -117,6 +133,15 @@ class TenantPackageServiceTest {
             verify(mockEntity).changeMenus(new HashSet<>(menus));
             verify(mockEntity).changePermissions(new HashSet<>(permissions));
             verify(packageRepository).save(mockEntity);
+            verify(redisTemplate).delete(any(Set.class));
+        }
+        
+        @Test
+        void grant_NotFound_ThrowsException() {
+            Long id = 1L;
+            TenantPackageGrantDTO grantDto = new TenantPackageGrantDTO();
+            when(packageRepository.findById(id)).thenReturn(Optional.empty());
+            assertThrows(BizException.class, () -> tenantPackageService.grant(id, grantDto));
         }
 
         @Test
@@ -144,6 +169,13 @@ class TenantPackageServiceTest {
             verify(mockEntity).disable();
             verify(packageRepository).save(mockEntity);
         }
+        
+        @Test
+        void updateTenantState_NotFound_ThrowsException() {
+            Long id = 1L;
+            when(packageRepository.findById(id)).thenReturn(Optional.empty());
+            assertThrows(BizException.class, () -> tenantPackageService.updateTenantState(id, Const.TenantPackageState.NORMAL));
+        }
     }
 
     @Nested
@@ -168,6 +200,169 @@ class TenantPackageServiceTest {
             when(tenantRepository.countByPackageId(id)).thenReturn(1L);
 
             assertThrows(BizException.class, () -> tenantPackageService.deleteByVerify(id));
+        }
+        
+        @Test
+        void deleteByVerify_NotFound_ThrowsException() {
+            Long id = 1L;
+            when(packageRepository.findById(id)).thenReturn(Optional.empty());
+            assertThrows(BizException.class, () -> tenantPackageService.deleteByVerify(id));
+        }
+    }
+
+    @Nested
+    @DisplayName("Read Operations")
+    class ReadTests {
+
+        @Test
+        void findOptions_Success() {
+            String name = "test";
+            List<TenantPackage> packages = List.of(mock(TenantPackage.class));
+            List<TenantPackageDTO> dtos = List.of(new TenantPackageDTO());
+            List<TenantPackageOptionDTO> options = List.of(new TenantPackageOptionDTO());
+
+            when(packageRepository.findAll(any(Predicate.class))).thenReturn(packages);
+            when(packageMapper.toDto(any(TenantPackage.class))).thenReturn(new TenantPackageDTO());
+            when(packageMapper.dtoToOptionsDto(anyList())).thenReturn(options);
+
+            List<TenantPackageOptionDTO> result = tenantPackageService.findOptions(name);
+
+            assertNotNull(result);
+            assertFalse(result.isEmpty());
+        }
+
+        @Test
+        void getMenuIdsByPackage_CacheHit() {
+            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+            Long id = 1L;
+            String key = Const.CacheKey.TENANT_PACKAGE_PERMS + ":menus:" + id;
+            Set<Long> cachedIds = Set.of(10L, 20L);
+
+            when(valueOperations.get(key)).thenReturn(cachedIds);
+
+            Set<Long> result = tenantPackageService.getMenuIdsByPackage(id);
+
+            assertEquals(cachedIds, result);
+            verify(packageRepository, never()).findById(any());
+        }
+
+        @Test
+        void getMenuIdsByPackage_CacheMiss() {
+            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+            Long id = 1L;
+            String key = Const.CacheKey.TENANT_PACKAGE_PERMS + ":menus:" + id;
+            TenantPackage mockEntity = mock(TenantPackage.class);
+            Menu menu = mock(Menu.class);
+            when(menu.getId()).thenReturn(10L);
+            when(mockEntity.getMenus()).thenReturn(Set.of(menu));
+
+            when(valueOperations.get(key)).thenReturn(null);
+            when(packageRepository.findById(id)).thenReturn(Optional.of(mockEntity));
+
+            Set<Long> result = tenantPackageService.getMenuIdsByPackage(id);
+
+            assertEquals(Set.of(10L), result);
+            verify(valueOperations).set(key, Set.of(10L));
+        }
+        
+        @Test
+        void getMenuIdsByPackage_NotFoundOrNullMenus() {
+            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+            Long id = 1L;
+            when(valueOperations.get(anyString())).thenReturn(null);
+            when(packageRepository.findById(id)).thenReturn(Optional.empty());
+            assertTrue(tenantPackageService.getMenuIdsByPackage(id).isEmpty());
+
+            TenantPackage mockEntity = mock(TenantPackage.class);
+            when(mockEntity.getMenus()).thenReturn(null);
+            when(packageRepository.findById(id)).thenReturn(Optional.of(mockEntity));
+            assertTrue(tenantPackageService.getMenuIdsByPackage(id).isEmpty());
+        }
+
+        @Test
+        void getPermissionIdsByPackage_CacheHit() {
+            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+            Long id = 1L;
+            String key = Const.CacheKey.TENANT_PACKAGE_PERMS + ":permissions:" + id;
+            Set<Long> cachedIds = Set.of(100L, 200L);
+
+            when(valueOperations.get(key)).thenReturn(cachedIds);
+
+            Set<Long> result = tenantPackageService.getPermissionIdsByPackage(id);
+
+            assertEquals(cachedIds, result);
+            verify(packageRepository, never()).findById(any());
+        }
+
+        @Test
+        void getPermissionIdsByPackage_CacheMiss() {
+            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+            Long id = 1L;
+            String key = Const.CacheKey.TENANT_PACKAGE_PERMS + ":permissions:" + id;
+            TenantPackage mockEntity = mock(TenantPackage.class);
+            Permission permission = mock(Permission.class);
+            when(permission.getId()).thenReturn(100L);
+            when(mockEntity.getPermissions()).thenReturn(Set.of(permission));
+
+            when(valueOperations.get(key)).thenReturn(null);
+            when(packageRepository.findById(id)).thenReturn(Optional.of(mockEntity));
+
+            Set<Long> result = tenantPackageService.getPermissionIdsByPackage(id);
+
+            assertEquals(Set.of(100L), result);
+            verify(valueOperations).set(key, Set.of(100L));
+        }
+        
+        @Test
+        void getPermissionIdsByPackage_NotFoundOrNullPermissions() {
+            when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+            Long id = 1L;
+            when(valueOperations.get(anyString())).thenReturn(null);
+            when(packageRepository.findById(id)).thenReturn(Optional.empty());
+            assertTrue(tenantPackageService.getPermissionIdsByPackage(id).isEmpty());
+
+            TenantPackage mockEntity = mock(TenantPackage.class);
+            when(mockEntity.getPermissions()).thenReturn(null);
+            when(packageRepository.findById(id)).thenReturn(Optional.of(mockEntity));
+            assertTrue(tenantPackageService.getPermissionIdsByPackage(id).isEmpty());
+        }
+
+        @Test
+        void getById_Success() {
+            Long id = 1L;
+            TenantPackage mockEntity = mock(TenantPackage.class);
+            TenantPackageDTO mockDto = new TenantPackageDTO();
+            
+            when(packageRepository.findById(id)).thenReturn(Optional.of(mockEntity));
+            when(packageMapper.toDto(mockEntity)).thenReturn(mockDto);
+            
+            when(mockEntity.getMenus()).thenReturn(Set.of(mock(Menu.class)));
+            when(mockEntity.getPermissions()).thenReturn(Set.of(mock(Permission.class)));
+
+            TenantPackageDTO result = tenantPackageService.getById(id);
+
+            assertNotNull(result);
+            assertNotNull(result.getMenus());
+            assertNotNull(result.getPermissions());
+        }
+        
+        @Test
+        void getById_NullRelations() {
+            Long id = 1L;
+            TenantPackage mockEntity = mock(TenantPackage.class);
+            TenantPackageDTO mockDto = new TenantPackageDTO();
+            
+            when(packageRepository.findById(id)).thenReturn(Optional.of(mockEntity));
+            when(packageMapper.toDto(mockEntity)).thenReturn(mockDto);
+            
+            when(mockEntity.getMenus()).thenReturn(null);
+            when(mockEntity.getPermissions()).thenReturn(null);
+
+            TenantPackageDTO result = tenantPackageService.getById(id);
+
+            assertNotNull(result);
+            assertTrue(result.getMenus().isEmpty());
+            assertTrue(result.getPermissions().isEmpty());
         }
     }
 }

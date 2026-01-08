@@ -18,6 +18,7 @@ import com.mok.ddd.domain.sys.repository.RoleRepository;
 import com.querydsl.core.types.EntityPath;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Predicate;
+import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.junit.jupiter.api.*;
@@ -26,6 +27,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
@@ -34,6 +37,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -250,15 +254,16 @@ class RoleServiceTest {
         @Mock
         private JPAQuery<RoleOptionDTO> jpaQuery;
         @Mock
-        private Pageable pageable;
+        private JPAQuery<RoleDTO> listQuery;
         @Mock
-        private Predicate predicate;
+        private JPQLQuery<RoleDTO> paginatedQuery;
 
         @Test
+        @SuppressWarnings("unchecked")
         void getRoleOptions_Success() {
             RoleQuery roleQuery = new RoleQuery();
             when(roleRepository.getJPAQueryFactory()).thenReturn(queryFactory);
-            doReturn(jpaQuery).when(queryFactory).select(any(Expression.class));
+            when(queryFactory.select((Expression<RoleOptionDTO>) any())).thenReturn(jpaQuery);
             when(jpaQuery.from(any(EntityPath.class))).thenReturn(jpaQuery);
             when(jpaQuery.leftJoin(any(EntityPath.class))).thenReturn(jpaQuery);
             when(jpaQuery.on(any(Predicate.class))).thenReturn(jpaQuery);
@@ -268,6 +273,61 @@ class RoleServiceTest {
             List<RoleOptionDTO> result = roleService.getRoleOptions(roleQuery);
 
             assertFalse(result.isEmpty());
+        }
+
+        @Test
+        @SuppressWarnings("unchecked")
+        void findPage_Success() {
+            Pageable pageable = PageRequest.of(0, 10);
+            Predicate predicate = mock(Predicate.class);
+            RoleDTO roleDTO = new RoleDTO();
+
+            when(roleRepository.getJPAQueryFactory()).thenReturn(queryFactory);
+
+            when(queryFactory.select((Expression<RoleDTO>) any())).thenReturn(listQuery);
+
+            when(listQuery.from(any(EntityPath.class))).thenReturn(listQuery);
+            when(listQuery.leftJoin(any(EntityPath.class))).thenReturn(listQuery);
+            when(listQuery.on(any(Predicate.class))).thenReturn(listQuery);
+            when(listQuery.where(any(Predicate.class))).thenReturn(listQuery);
+
+            org.springframework.data.jpa.repository.support.Querydsl querydsl = mock(org.springframework.data.jpa.repository.support.Querydsl.class);
+            when(roleRepository.getQuerydsl()).thenReturn(querydsl);
+            when(querydsl.applyPagination(any(), eq(listQuery))).thenReturn(paginatedQuery);
+            when(paginatedQuery.fetch()).thenReturn(List.of(roleDTO));
+
+            Page<RoleDTO> result = roleService.findPage(predicate, pageable);
+
+            assertNotNull(result);
+            assertEquals(1, result.getTotalElements());
+        }
+    }
+
+    @Nested
+    @DisplayName("Get Related Entities")
+    class GetRelatedEntitiesTests {
+        @Test
+        void getMenusByRole_Success() {
+            Role mockRole = mock(Role.class);
+            Menu mockMenu = mock(Menu.class);
+            when(roleRepository.findById(1L)).thenReturn(Optional.of(mockRole));
+            when(mockRole.getMenus()).thenReturn(Set.of(mockMenu));
+            when(menuMapper.toDto(mockMenu)).thenReturn(new MenuDTO());
+
+            Set<MenuDTO> result = roleService.getMenusByRole(1L);
+            assertEquals(1, result.size());
+        }
+
+        @Test
+        void getPermissionsByRole_Success() {
+            Role mockRole = mock(Role.class);
+            Permission mockPermission = mock(Permission.class);
+            when(roleRepository.findById(1L)).thenReturn(Optional.of(mockRole));
+            when(mockRole.getPermissions()).thenReturn(Set.of(mockPermission));
+            when(permissionMapper.toDto(mockPermission)).thenReturn(new PermissionDTO());
+
+            Set<PermissionDTO> result = roleService.getPermissionsByRole(1L);
+            assertEquals(1, result.size());
         }
     }
 

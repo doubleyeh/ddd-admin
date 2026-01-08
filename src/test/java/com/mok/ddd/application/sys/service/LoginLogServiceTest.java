@@ -2,6 +2,7 @@ package com.mok.ddd.application.sys.service;
 
 import com.mok.ddd.application.sys.dto.log.LoginLogDTO;
 import com.mok.ddd.application.sys.dto.log.LoginLogQuery;
+import com.mok.ddd.domain.sys.model.LoginLog;
 import com.mok.ddd.domain.sys.repository.LoginLogRepository;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.DisplayName;
@@ -20,8 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("LoginLogService 单元测试")
@@ -33,6 +33,14 @@ class LoginLogServiceTest {
 
     @Mock
     private LoginLogRepository loginLogRepository;
+
+    @Test
+    @DisplayName("创建登录日志成功")
+    void createLoginLog_Success() {
+        LoginLog log = mock(LoginLog.class);
+        loginLogService.createLoginLog(log);
+        verify(loginLogRepository, times(1)).save(log);
+    }
 
     @Nested
     @DisplayName("findPage 分页查询测试")
@@ -60,8 +68,8 @@ class LoginLogServiceTest {
             when(loginLogRepository.getQuerydsl()).thenReturn(querydsl);
 
             when(queryFactory.select(any(com.querydsl.core.types.Expression.class)))
-                    .thenReturn(jpaQuery) // For the main query
-                    .thenReturn(countQuery); // For the count query
+                    .thenReturn(jpaQuery)
+                    .thenReturn(countQuery);
 
             when(jpaQuery.from(any(com.querydsl.core.types.EntityPath.class))).thenReturn(jpaQuery);
             when(jpaQuery.leftJoin(any(com.querydsl.core.types.EntityPath.class))).thenReturn(jpaQuery);

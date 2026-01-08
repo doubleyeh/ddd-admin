@@ -23,10 +23,10 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -130,6 +130,25 @@ class DictServiceTest {
         }
 
         @Test
+        void updateType_SystemNoModifyCode_Success() {
+            DictTypeSaveDTO dto = new DictTypeSaveDTO();
+            dto.setId(1L);
+            dto.setCode("sys_code"); // Code matches existing
+            dto.setName("New Name");
+
+            DictType mockEntity = mock(DictType.class);
+            when(mockEntity.getIsSystem()).thenReturn(true);
+            when(mockEntity.getCode()).thenReturn("sys_code");
+            when(dictTypeRepository.findById(1L)).thenReturn(Optional.of(mockEntity));
+            when(dictTypeRepository.save(mockEntity)).thenReturn(mockEntity);
+
+            dictService.updateType(dto);
+
+            verify(mockEntity).updateInfo(dto.getName(), dto.getSort(), dto.getRemark());
+            verify(dictTypeRepository).save(mockEntity);
+        }
+
+        @Test
         void deleteType_Success() {
             Long id = 1L;
             DictType mockEntity = mock(DictType.class);
@@ -166,6 +185,19 @@ class DictServiceTest {
     @Nested
     @DisplayName("DictData")
     class DictDataTests {
+
+        @Test
+        void getDataByType_Success() {
+            String typeCode = "test_code";
+            DictData mockData = mock(DictData.class);
+            when(dictDataRepository.findByTypeCodeOrderBySortAsc(typeCode)).thenReturn(List.of(mockData));
+            when(dictDataMapper.toDto(mockData)).thenReturn(new DictDataDTO());
+
+            List<DictDataDTO> result = dictService.getDataByType(typeCode);
+
+            assertNotNull(result);
+            assertEquals(1, result.size());
+        }
 
         @Test
         void createData_Success() {
@@ -221,6 +253,7 @@ class DictServiceTest {
             DictData mockEntity = mock(DictData.class);
             DictType mockType = mock(DictType.class);
 
+            // Mock getTypeCode() to return old_code first, then new_code after update
             when(mockEntity.getTypeCode()).thenReturn("old_code", "old_code", "new_code");
 
             when(mockType.getIsSystem()).thenReturn(false);
@@ -233,6 +266,44 @@ class DictServiceTest {
             verify(mockEntity).updateInfo(dto.getLabel(), dto.getValue(), dto.getSort(), dto.getCssClass(), dto.getListClass(), dto.getIsDefault(), dto.getRemark());
             verify(redisTemplate).delete(Const.CacheKey.DICT_DATA + "old_code");
             verify(redisTemplate).delete(Const.CacheKey.DICT_DATA + "new_code");
+        }
+
+        @Test
+        void updateData_NoChangeTypeCode_Success() {
+            DictDataSaveDTO dto = new DictDataSaveDTO();
+            dto.setId(1L);
+            dto.setTypeCode("same_code");
+
+            DictData mockEntity = mock(DictData.class);
+            DictType mockType = mock(DictType.class);
+
+            when(mockEntity.getTypeCode()).thenReturn("same_code");
+
+            when(mockType.getIsSystem()).thenReturn(false);
+            when(dictDataRepository.findById(1L)).thenReturn(Optional.of(mockEntity));
+            when(dictTypeRepository.findByCode("same_code")).thenReturn(Optional.of(mockType));
+            when(dictDataRepository.save(mockEntity)).thenReturn(mockEntity);
+
+            dictService.updateData(dto);
+
+            verify(redisTemplate).delete(Const.CacheKey.DICT_DATA + "same_code");
+            // Should NOT delete any other key
+            verify(redisTemplate, times(1)).delete(anyString());
+        }
+
+        @Test
+        void updateData_System_ThrowsException() {
+            DictDataSaveDTO dto = new DictDataSaveDTO();
+            dto.setId(1L);
+            DictData mockEntity = mock(DictData.class);
+            when(mockEntity.getTypeCode()).thenReturn("sys_code");
+            when(dictDataRepository.findById(1L)).thenReturn(Optional.of(mockEntity));
+
+            DictType mockType = mock(DictType.class);
+            when(mockType.getIsSystem()).thenReturn(true);
+            when(dictTypeRepository.findByCode("sys_code")).thenReturn(Optional.of(mockType));
+
+            assertThrows(BizException.class, () -> dictService.updateData(dto));
         }
 
         @Test

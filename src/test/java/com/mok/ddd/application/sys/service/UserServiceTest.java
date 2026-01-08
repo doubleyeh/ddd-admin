@@ -1,5 +1,7 @@
 package com.mok.ddd.application.sys.service;
 
+import com.mok.ddd.application.sys.dto.auth.AccountInfoDTO;
+import com.mok.ddd.application.sys.dto.menu.MenuDTO;
 import com.mok.ddd.application.sys.dto.user.UserDTO;
 import com.mok.ddd.application.sys.dto.user.UserPasswordDTO;
 import com.mok.ddd.application.sys.dto.user.UserPostDTO;
@@ -8,25 +10,34 @@ import com.mok.ddd.application.sys.mapper.MenuMapper;
 import com.mok.ddd.application.sys.mapper.UserMapper;
 import com.mok.ddd.common.Const;
 import com.mok.ddd.common.SysUtil;
-import com.mok.ddd.domain.sys.model.Role;
-import com.mok.ddd.domain.sys.model.User;
+import com.mok.ddd.domain.sys.model.*;
 import com.mok.ddd.domain.sys.repository.RoleRepository;
 import com.mok.ddd.domain.sys.repository.TenantPackageRepository;
 import com.mok.ddd.domain.sys.repository.TenantRepository;
 import com.mok.ddd.domain.sys.repository.UserRepository;
 import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
+import com.querydsl.core.types.EntityPath;
+import com.querydsl.core.types.Expression;
+import com.querydsl.core.types.Predicate;
+import com.querydsl.jpa.JPQLQuery;
+import com.querydsl.jpa.impl.JPAQuery;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -150,6 +161,19 @@ class UserServiceTest {
             verify(mockUser).updateInfo("newNick", new HashSet<>(List.of(mockRole)));
             verify(userRepository).save(mockUser);
         }
+        
+        @Test
+        void updateNickname_Success() {
+            Long id = 1L;
+            String newNickname = "New Nick";
+            User mockUser = mock(User.class);
+            when(userRepository.findById(id)).thenReturn(Optional.of(mockUser));
+            
+            userService.updateNickname(id, newNickname);
+            
+            verify(mockUser).updateInfo(eq(newNickname), any());
+            verify(userRepository).save(mockUser);
+        }
     }
 
     @Nested
@@ -210,6 +234,124 @@ class UserServiceTest {
             userService.deleteById(1L);
 
             verify(userRepository).deleteById(1L);
+        }
+    }
+
+    @Nested
+    @DisplayName("Read Operations")
+    class ReadTests {
+        @Mock
+        private JPAQueryFactory queryFactory;
+        @Mock
+        private JPAQuery<UserDTO> listQuery;
+        @Mock
+        private JPQLQuery<UserDTO> paginatedQuery;
+
+        @Test
+        @SuppressWarnings("unchecked")
+        void findPage_Success() {
+            Pageable pageable = PageRequest.of(0, 10);
+            Predicate predicate = mock(Predicate.class);
+            UserDTO userDTO = new UserDTO();
+
+            when(userRepository.getJPAQueryFactory()).thenReturn(queryFactory);
+            
+            when(queryFactory.select(any(Expression.class))).thenReturn(listQuery);
+
+            when(listQuery.from(any(EntityPath.class))).thenReturn(listQuery);
+            when(listQuery.leftJoin(any(EntityPath.class))).thenReturn(listQuery);
+            when(listQuery.on(any(Predicate.class))).thenReturn(listQuery);
+            when(listQuery.where(any(Predicate.class))).thenReturn(listQuery);
+
+            org.springframework.data.jpa.repository.support.Querydsl querydsl = mock(org.springframework.data.jpa.repository.support.Querydsl.class);
+            when(userRepository.getQuerydsl()).thenReturn(querydsl);
+            when(querydsl.applyPagination(any(), eq(listQuery))).thenReturn(paginatedQuery);
+            when(paginatedQuery.fetch()).thenReturn(List.of(userDTO));
+
+            // Since we cannot easily mock the lambda for count, we will assume it's not the last page
+            // and the count query is not executed in this test path.
+            Page<UserDTO> result = userService.findPage(predicate, pageable);
+
+            assertNotNull(result);
+            assertFalse(result.getContent().isEmpty());
+        }
+
+        @Test
+        void findByUsername_Success() {
+            String username = "test";
+            User mockUser = mock(User.class);
+            UserDTO mockDto = new UserDTO();
+            when(userRepository.findByUsername(username)).thenReturn(Optional.of(mockUser));
+            when(userMapper.toDto(mockUser)).thenReturn(mockDto);
+
+            UserDTO result = userService.findByUsername(username);
+            assertSame(mockDto, result);
+        }
+
+        @Test
+        void findAccountInfoByUsername_SuperAdmin() {
+            String username = "root";
+            User mockUser = mock(User.class);
+            when(mockUser.getTenantId()).thenReturn("000000");
+            when(userRepository.findByUsername(username)).thenReturn(Optional.of(mockUser));
+            mockedSysUtil.when(() -> SysUtil.isSuperAdmin("000000", username)).thenReturn(true);
+
+            when(menuService.findAll()).thenReturn(List.of(new MenuDTO()));
+            when(permissionService.getAllPermissionCodes()).thenReturn(Set.of("perm1"));
+            when(menuService.buildMenuTree(anyList())).thenReturn(List.of(new MenuDTO()));
+
+            AccountInfoDTO result = userService.findAccountInfoByUsername(username);
+
+            assertNotNull(result);
+            assertTrue(result.getPermissions().contains(Const.SUPER_ADMIN_ROLE_CODE));
+        }
+        
+        @Test
+        void findAccountInfoByUsername_TenantAdmin() {
+            String username = "admin";
+            User mockUser = mock(User.class);
+            when(mockUser.getTenantId()).thenReturn("tenant1");
+            when(mockUser.getIsTenantAdmin()).thenReturn(true);
+            when(userRepository.findByUsername(username)).thenReturn(Optional.of(mockUser));
+            mockedSysUtil.when(() -> SysUtil.isSuperAdmin("tenant1", username)).thenReturn(false);
+            
+            Tenant mockTenant = mock(Tenant.class);
+            when(mockTenant.getPackageId()).thenReturn(1L);
+            when(tenantRepository.findByTenantId("tenant1")).thenReturn(Optional.of(mockTenant));
+            
+            TenantPackage mockPackage = mock(TenantPackage.class);
+            when(tenantPackageRepository.findById(1L)).thenReturn(Optional.of(mockPackage));
+            when(mockPackage.getMenus()).thenReturn(Set.of(mock(Menu.class)));
+            when(mockPackage.getPermissions()).thenReturn(Set.of(mock(Permission.class)));
+            
+            when(menuMapper.toDtoList(any())).thenReturn(List.of(new MenuDTO()));
+            when(menuService.buildMenuTree(anyList())).thenReturn(List.of(new MenuDTO()));
+
+            AccountInfoDTO result = userService.findAccountInfoByUsername(username);
+
+            assertNotNull(result);
+        }
+        
+        @Test
+        void findAccountInfoByUsername_NormalUser() {
+            String username = "user";
+            User mockUser = mock(User.class);
+            when(mockUser.getTenantId()).thenReturn("tenant1");
+            when(mockUser.getIsTenantAdmin()).thenReturn(false);
+            when(userRepository.findByUsername(username)).thenReturn(Optional.of(mockUser));
+            mockedSysUtil.when(() -> SysUtil.isSuperAdmin("tenant1", username)).thenReturn(false);
+            
+            Role mockRole = mock(Role.class);
+            when(mockUser.getRoles()).thenReturn(Set.of(mockRole));
+            when(mockRole.getMenus()).thenReturn(Set.of(mock(Menu.class)));
+            when(mockRole.getPermissions()).thenReturn(Set.of(mock(Permission.class)));
+            
+            when(menuMapper.toDtoList(any())).thenReturn(List.of(new MenuDTO()));
+            when(menuService.buildMenuTree(anyList())).thenReturn(List.of(new MenuDTO()));
+
+            AccountInfoDTO result = userService.findAccountInfoByUsername(username);
+
+            assertNotNull(result);
         }
     }
 }

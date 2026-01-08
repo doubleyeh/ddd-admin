@@ -11,6 +11,12 @@ import com.mok.ddd.common.Const;
 import com.mok.ddd.common.PasswordGenerator;
 import com.mok.ddd.domain.sys.model.Tenant;
 import com.mok.ddd.domain.sys.repository.TenantRepository;
+import com.querydsl.core.types.EntityPath;
+import com.querydsl.core.types.Expression;
+import com.querydsl.core.types.Predicate;
+import com.querydsl.jpa.JPQLQuery;
+import com.querydsl.jpa.impl.JPAQuery;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -19,13 +25,18 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -133,6 +144,17 @@ class TenantServiceTest {
     class UpdateTenantTests {
 
         @Test
+        @DisplayName("更新失败：租户不存在")
+        void updateTenant_NotFound_ThrowsBizException() {
+            Long id = 1L;
+            TenantSaveDTO dto = new TenantSaveDTO();
+            when(tenantRepository.findById(id)).thenReturn(Optional.empty());
+
+            BizException exception = assertThrows(BizException.class, () -> tenantService.updateTenant(id, dto));
+            assertEquals("租户不存在", exception.getMessage());
+        }
+
+        @Test
         @DisplayName("更新失败：尝试修改租户ID")
         void updateTenant_TenantIdChanged_ThrowsBizException() {
             Long existingId = 1L;
@@ -183,6 +205,17 @@ class TenantServiceTest {
     class StateAndDeleteTests {
 
         @Test
+        @DisplayName("更新租户状态失败：租户不存在")
+        void updateTenantState_NotFound_ThrowsBizException() {
+            Long id = 1L;
+            Integer state = Const.TenantState.NORMAL;
+            when(tenantRepository.findById(id)).thenReturn(Optional.empty());
+
+            BizException exception = assertThrows(BizException.class, () -> tenantService.updateTenantState(id, state));
+            assertEquals("租户不存在", exception.getMessage());
+        }
+
+        @Test
         @DisplayName("更新租户状态为禁用成功")
         void updateTenantState_ToDisabled_Success() {
             Long id = 1L;
@@ -219,6 +252,20 @@ class TenantServiceTest {
         }
 
         @Test
+        @DisplayName("更新租户状态失败：无效的状态值")
+        void updateTenantState_InvalidState_ThrowsBizException() {
+            Long id = 1L;
+            Integer invalidState = 999;
+            Tenant tenant = mock(Tenant.class);
+
+            when(tenantRepository.findById(id)).thenReturn(Optional.of(tenant));
+
+            BizException exception = assertThrows(BizException.class, () -> tenantService.updateTenantState(id, invalidState));
+            assertEquals("无效的状态值: " + invalidState, exception.getMessage());
+            verify(tenantRepository, never()).save(any());
+        }
+
+        @Test
         @DisplayName("验证删除租户成功")
         void deleteByVerify_Success() {
             Long id = 1L;
@@ -233,6 +280,18 @@ class TenantServiceTest {
 
             verify(spyService).deleteById(id);
             assertTrue(result);
+        }
+
+        @Test
+        @DisplayName("删除租户失败：租户不存在")
+        void deleteByVerify_NotFound_ThrowsBizException() {
+            Long id = 1L;
+            TenantService spyService = spy(tenantService);
+            doReturn(null).when(spyService).getById(id);
+
+            BizException exception = assertThrows(BizException.class, () -> spyService.deleteByVerify(id));
+            assertEquals("租户不存在", exception.getMessage());
+            verify(spyService, never()).deleteById(any());
         }
 
         @Test
@@ -273,5 +332,74 @@ class TenantServiceTest {
             assertEquals(1, result.size());
             assertEquals("测试租户", result.getFirst().getName());
         }
+
+        @Test
+        @DisplayName("获取租户选项列表成功：名称为空")
+        void findOptions_NullName_Success() {
+            TenantOptionDTO option = new TenantOptionDTO();
+            option.setName("测试租户");
+
+            when(tenantRepository.findAll(any(com.querydsl.core.types.Predicate.class)))
+                    .thenReturn(List.of(mock(Tenant.class)));
+
+            when(tenantMapper.dtoToOptionsDto(any())).thenReturn(List.of(option));
+
+            List<TenantOptionDTO> result = tenantService.findOptions(null);
+
+            assertNotNull(result);
+            assertEquals(1, result.size());
+        }
+
+        @Test
+        @DisplayName("findPage 分页查询测试")
+        void findPage_Success() {
+            Pageable pageable = PageRequest.of(0, 10);
+            Predicate predicate = mock(Predicate.class);
+            TenantDTO tenantDTO = new TenantDTO();
+            tenantDTO.setId(1L);
+
+            JPAQueryFactory listFactory = mock(JPAQueryFactory.class);
+            JPAQueryFactory countFactory = mock(JPAQueryFactory.class);
+            JPAQuery<TenantDTO> listQuery = mock(JPAQuery.class);
+            JPAQuery<Long> countQuery = mock(JPAQuery.class);
+            JPQLQuery<TenantDTO> paginatedQuery = mock(JPQLQuery.class);
+
+            when(tenantRepository.getJPAQueryFactory()).thenReturn(listFactory).thenReturn(countFactory);
+
+            when(listFactory.select(any(Expression.class))).thenReturn(listQuery);
+            when(listQuery.from(any(EntityPath.class))).thenReturn(listQuery);
+            when(listQuery.leftJoin(any(EntityPath.class))).thenReturn(listQuery);
+            when(listQuery.on(any(Predicate.class))).thenReturn(listQuery);
+            when(listQuery.where(any(Predicate.class))).thenReturn(listQuery);
+
+            org.springframework.data.jpa.repository.support.Querydsl querydsl = mock(org.springframework.data.jpa.repository.support.Querydsl.class);
+            when(tenantRepository.getQuerydsl()).thenReturn(querydsl);
+            when(querydsl.applyPagination(any(), eq(listQuery))).thenReturn(paginatedQuery);
+            when(paginatedQuery.fetch()).thenReturn(Collections.singletonList(tenantDTO));
+
+            when(countFactory.select(any(Expression.class))).thenReturn(countQuery);
+            when(countQuery.from(any(EntityPath.class))).thenReturn(countQuery);
+            when(countQuery.where(any(Predicate.class))).thenReturn(countQuery);
+            when(countQuery.fetchOne()).thenReturn(100L);
+
+            Page<TenantDTO> result = tenantService.findPage(predicate, pageable);
+
+            assertNotNull(result);
+            assertEquals(1, result.getContent().size());
+            assertEquals(100L, result.getTotalElements());
+        }
+    }
+    
+    @Test
+    @DisplayName("辅助方法测试")
+    void helperMethods_Test() {
+        assertEquals(tenantRepository, tenantService.getRepository());
+        
+        assertEquals("tenant", tenantService.getEntityAlias());
+        
+        Tenant tenant = mock(Tenant.class);
+        TenantDTO dto = new TenantDTO();
+        when(tenantMapper.toDto(tenant)).thenReturn(dto);
+        assertEquals(dto, tenantService.toDto(tenant));
     }
 }
