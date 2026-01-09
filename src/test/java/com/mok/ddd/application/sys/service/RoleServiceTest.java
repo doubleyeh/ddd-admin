@@ -171,6 +171,25 @@ class RoleServiceTest {
             verify(mockRole, never()).enable();
             verify(roleRepository).save(mockRole);
         }
+
+        @Test
+        void updateState_InvalidState() {
+            Role mockRole = mock(Role.class);
+            when(roleRepository.findById(1L)).thenReturn(Optional.of(mockRole));
+            when(roleRepository.save(mockRole)).thenReturn(mockRole);
+
+            roleService.updateState(1L, 99);
+
+            verify(mockRole, never()).disable();
+            verify(mockRole, never()).enable();
+            verify(roleRepository).save(mockRole);
+        }
+
+        @Test
+        void updateState_NotFound_ThrowsException() {
+            when(roleRepository.findById(1L)).thenReturn(Optional.empty());
+            assertThrows(NotFoundException.class, () -> roleService.updateState(1L, Const.RoleState.NORMAL));
+        }
     }
 
     @Nested
@@ -178,7 +197,7 @@ class RoleServiceTest {
     class GrantTests {
 
         @Test
-        void grant_Success() {
+        void grant_Success_WithBothIds() {
             RoleGrantDTO dto = new RoleGrantDTO();
             dto.setMenuIds(Set.of(10L, 20L));
             dto.setPermissionIds(Set.of(100L, 200L));
@@ -193,10 +212,76 @@ class RoleServiceTest {
 
             roleService.grant(1L, dto);
 
+            verify(mockRole).changeMenus(anySet());
+            verify(mockRole).changePermissions(anySet());
+            verify(roleRepository).save(mockRole);
+            verify(redisTemplate).delete(Const.CacheKey.ROLE_PERMS + ":1");
+        }
+
+        @Test
+        void grant_Success_OnlyMenus() {
+            RoleGrantDTO dto = new RoleGrantDTO();
+            dto.setMenuIds(Set.of(10L));
+            dto.setPermissionIds(null);
+
+            Role mockRole = mock(Role.class);
+            Set<Menu> menus = Set.of(mock(Menu.class));
+
+            when(roleRepository.findById(1L)).thenReturn(Optional.of(mockRole));
+            when(menuRepository.findAllById(dto.getMenuIds())).thenReturn(List.copyOf(menus));
+
+            roleService.grant(1L, dto);
+
             verify(mockRole).changeMenus(eq(new HashSet<>(menus)));
+            verify(mockRole, never()).changePermissions(anySet());
+            verify(roleRepository).save(mockRole);
+            verify(redisTemplate).delete(Const.CacheKey.ROLE_PERMS + ":1");
+        }
+
+        @Test
+        void grant_Success_OnlyPermissions() {
+            RoleGrantDTO dto = new RoleGrantDTO();
+            dto.setMenuIds(null);
+            dto.setPermissionIds(Set.of(100L));
+
+            Role mockRole = mock(Role.class);
+            Set<Permission> permissions = Set.of(mock(Permission.class));
+
+            when(roleRepository.findById(1L)).thenReturn(Optional.of(mockRole));
+            when(permissionRepository.findAllById(dto.getPermissionIds())).thenReturn(List.copyOf(permissions));
+
+            roleService.grant(1L, dto);
+
+            verify(mockRole, never()).changeMenus(anySet());
             verify(mockRole).changePermissions(eq(new HashSet<>(permissions)));
             verify(roleRepository).save(mockRole);
-            verify(redisTemplate).delete(anyString());
+            verify(redisTemplate).delete(Const.CacheKey.ROLE_PERMS + ":1");
+        }
+
+        @Test
+        void grant_Success_NoIds() {
+            RoleGrantDTO dto = new RoleGrantDTO();
+            dto.setMenuIds(null);
+            dto.setPermissionIds(null);
+
+            Role mockRole = mock(Role.class);
+            when(roleRepository.findById(1L)).thenReturn(Optional.of(mockRole));
+
+            roleService.grant(1L, dto);
+
+            verify(mockRole, never()).changeMenus(anySet());
+            verify(mockRole, never()).changePermissions(anySet());
+            verify(roleRepository).save(mockRole);
+            verify(redisTemplate).delete(Const.CacheKey.ROLE_PERMS + ":1");
+        }
+
+
+        @Test
+        void grant_NotFound_ThrowsException() {
+            RoleGrantDTO dto = new RoleGrantDTO();
+            when(roleRepository.findById(1L)).thenReturn(Optional.empty());
+            assertThrows(NotFoundException.class, () -> roleService.grant(1L, dto));
+            verify(roleRepository, never()).save(any());
         }
     }
 
@@ -210,8 +295,8 @@ class RoleServiceTest {
             RoleDTO mockDto = new RoleDTO();
             Set<Menu> menus = Set.of(mock(Menu.class));
             Set<Permission> permissions = Set.of(mock(Permission.class));
-            Set<MenuDTO> menuDtos = menus.stream().map(m -> new MenuDTO()).collect(Collectors.toSet());
-            Set<PermissionDTO> permissionDtos = permissions.stream().map(p -> new PermissionDTO()).collect(Collectors.toSet());
+            Set<MenuDTO> menuDtos = menus.stream().map(_ -> new MenuDTO()).collect(Collectors.toSet());
+            Set<PermissionDTO> permissionDtos = permissions.stream().map(_ -> new PermissionDTO()).collect(Collectors.toSet());
 
             when(roleRepository.findById(1L)).thenReturn(Optional.of(mockRole));
             when(roleMapper.toDto(mockRole)).thenReturn(mockDto);
@@ -223,8 +308,36 @@ class RoleServiceTest {
             RoleDTO result = roleService.getById(1L);
 
             assertSame(mockDto, result);
+            when(permissionMapper.toDto(any(Permission.class))).thenReturn(new PermissionDTO());
+
+            result = roleService.getById(1L);
+
+            assertSame(mockDto, result);
             assertEquals(menuDtos.size(), result.getMenus().size());
             assertEquals(permissionDtos.size(), result.getPermissions().size());
+        }
+
+        @Test
+        void getById_NotFound_ThrowsException() {
+            when(roleRepository.findById(1L)).thenReturn(Optional.empty());
+            assertThrows(NotFoundException.class, () -> roleService.getById(1L));
+        }
+
+        @Test
+        void getById_NoMenusOrPermissions_Success() {
+            Role mockRole = mock(Role.class);
+            RoleDTO mockDto = new RoleDTO();
+
+            when(roleRepository.findById(1L)).thenReturn(Optional.of(mockRole));
+            when(roleMapper.toDto(mockRole)).thenReturn(mockDto);
+            when(mockRole.getMenus()).thenReturn(Collections.emptySet());
+            when(mockRole.getPermissions()).thenReturn(Collections.emptySet());
+
+            RoleDTO result = roleService.getById(1L);
+
+            assertSame(mockDto, result);
+            assertTrue(result.getMenus().isEmpty());
+            assertTrue(result.getPermissions().isEmpty());
         }
     }
 
@@ -281,25 +394,71 @@ class RoleServiceTest {
             Pageable pageable = PageRequest.of(0, 10);
             Predicate predicate = mock(Predicate.class);
             RoleDTO roleDTO = new RoleDTO();
+            long totalCount = 20L;
 
             when(roleRepository.getJPAQueryFactory()).thenReturn(queryFactory);
 
-            when(queryFactory.select((Expression<RoleDTO>) any())).thenReturn(listQuery);
-
+            // Mocking for the main data query
+            when(queryFactory.select(any(Expression.class))).thenReturn(listQuery);
             when(listQuery.from(any(EntityPath.class))).thenReturn(listQuery);
             when(listQuery.leftJoin(any(EntityPath.class))).thenReturn(listQuery);
             when(listQuery.on(any(Predicate.class))).thenReturn(listQuery);
-            when(listQuery.where(any(Predicate.class))).thenReturn(listQuery);
+            when(listQuery.where(predicate)).thenReturn(listQuery);
 
             org.springframework.data.jpa.repository.support.Querydsl querydsl = mock(org.springframework.data.jpa.repository.support.Querydsl.class);
             when(roleRepository.getQuerydsl()).thenReturn(querydsl);
             when(querydsl.applyPagination(any(), eq(listQuery))).thenReturn(paginatedQuery);
             when(paginatedQuery.fetch()).thenReturn(List.of(roleDTO));
 
+            // Mocking for the count query (the lambda)
+            JPAQuery<Long> countQuery = mock(JPAQuery.class);
+            when(queryFactory.select(any(Expression.class))).thenReturn(countQuery, listQuery);
+            when(countQuery.from(any(EntityPath.class))).thenReturn(countQuery);
+            when(countQuery.leftJoin(any(EntityPath.class))).thenReturn(countQuery);
+            when(countQuery.on(any(Predicate.class))).thenReturn(countQuery);
+            when(countQuery.where(predicate)).thenReturn(countQuery);
+            when(countQuery.fetchOne()).thenReturn(totalCount);
+
             Page<RoleDTO> result = roleService.findPage(predicate, pageable);
 
             assertNotNull(result);
-            assertEquals(1, result.getTotalElements());
+            assertEquals(1, result.getContent().size());
+            assertEquals(totalCount, result.getTotalElements());
+        }
+
+        @Test
+        @SuppressWarnings("unchecked")
+        void findPage_CountQueryReturnsNull() {
+            Pageable pageable = PageRequest.of(0, 10);
+            Predicate predicate = mock(Predicate.class);
+
+            when(roleRepository.getJPAQueryFactory()).thenReturn(queryFactory);
+
+            // Mocking for the main data query
+            when(queryFactory.select(any(Expression.class))).thenReturn(listQuery);
+            when(listQuery.from(any(EntityPath.class))).thenReturn(listQuery);
+            when(listQuery.leftJoin(any(EntityPath.class))).thenReturn(listQuery);
+            when(listQuery.on(any(Predicate.class))).thenReturn(listQuery);
+            when(listQuery.where(predicate)).thenReturn(listQuery);
+
+            org.springframework.data.jpa.repository.support.Querydsl querydsl = mock(org.springframework.data.jpa.repository.support.Querydsl.class);
+            when(roleRepository.getQuerydsl()).thenReturn(querydsl);
+            when(querydsl.applyPagination(any(), eq(listQuery))).thenReturn(paginatedQuery);
+            when(paginatedQuery.fetch()).thenReturn(Collections.emptyList());
+
+            // Mocking for the count query (the lambda) to return null
+            JPAQuery<Long> countQuery = mock(JPAQuery.class);
+            when(queryFactory.select(any(Expression.class))).thenReturn(countQuery, listQuery);
+            when(countQuery.from(any(EntityPath.class))).thenReturn(countQuery);
+            when(countQuery.leftJoin(any(EntityPath.class))).thenReturn(countQuery);
+            when(countQuery.on(any(Predicate.class))).thenReturn(countQuery);
+            when(countQuery.where(predicate)).thenReturn(countQuery);
+            when(countQuery.fetchOne()).thenReturn(null);
+
+            Page<RoleDTO> result = roleService.findPage(predicate, pageable);
+
+            assertNotNull(result);
+            assertEquals(0, result.getTotalElements());
         }
     }
 
@@ -319,6 +478,12 @@ class RoleServiceTest {
         }
 
         @Test
+        void getMenusByRole_NotFound_ThrowsException() {
+            when(roleRepository.findById(1L)).thenReturn(Optional.empty());
+            assertThrows(NotFoundException.class, () -> roleService.getMenusByRole(1L));
+        }
+
+        @Test
         void getPermissionsByRole_Success() {
             Role mockRole = mock(Role.class);
             Permission mockPermission = mock(Permission.class);
@@ -328,6 +493,12 @@ class RoleServiceTest {
 
             Set<PermissionDTO> result = roleService.getPermissionsByRole(1L);
             assertEquals(1, result.size());
+        }
+
+        @Test
+        void getPermissionsByRole_NotFound_ThrowsException() {
+            when(roleRepository.findById(1L)).thenReturn(Optional.empty());
+            assertThrows(NotFoundException.class, () -> roleService.getPermissionsByRole(1L));
         }
     }
 
@@ -339,4 +510,8 @@ class RoleServiceTest {
         assertSame(dto, roleService.toDto(entity));
     }
 
+    @Test
+    void testGetRepository() {
+        assertSame(roleRepository, roleService.getRepository());
+    }
 }

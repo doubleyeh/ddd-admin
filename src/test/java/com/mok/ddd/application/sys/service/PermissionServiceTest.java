@@ -80,18 +80,21 @@ class PermissionServiceTest {
         }
 
         @Test
-        @DisplayName("创建权限成功 - 不关联菜单")
-        void createPermission_WithoutMenu_Success() {
+        @DisplayName("创建权限成功 - 关联菜单但菜单不存在")
+        void createPermission_WithNonExistentMenu_Success() {
             PermissionDTO dto = new PermissionDTO();
-            dto.setMenuId(null);
+            dto.setMenuId(1L);
             Permission mockEntity = mock(Permission.class);
 
+            when(menuRepository.findById(1L)).thenReturn(Optional.empty());
             mockedPermission.when(() -> Permission.create(any(), any(), any(), any(), any(), isNull())).thenReturn(mockEntity);
             when(permissionRepository.save(mockEntity)).thenReturn(mockEntity);
 
             permissionService.createPermission(dto);
 
             verify(permissionRepository).save(mockEntity);
+            // 验证创建时传入的 menu 是 null
+            mockedPermission.verify(() -> Permission.create(any(), any(), any(), any(), any(), isNull()));
         }
     }
 
@@ -117,6 +120,40 @@ class PermissionServiceTest {
         }
 
         @Test
+        @DisplayName("更新权限成功 - 不关联菜单")
+        void updatePermission_WithoutMenu_Success() {
+            PermissionDTO dto = new PermissionDTO();
+            dto.setId(1L);
+            dto.setMenuId(null);
+            Permission mockEntity = mock(Permission.class);
+
+            when(permissionRepository.findById(1L)).thenReturn(Optional.of(mockEntity));
+
+            permissionService.updatePermission(dto);
+
+            verify(mockEntity).updateInfo(any(), any(), any(), any(), any(), isNull());
+            verify(permissionRepository).save(mockEntity);
+            verify(menuRepository, never()).findById(any());
+        }
+
+        @Test
+        @DisplayName("更新权限成功 - 关联菜单但菜单不存在")
+        void updatePermission_WithNonExistentMenu_Success() {
+            PermissionDTO dto = new PermissionDTO();
+            dto.setId(1L);
+            dto.setMenuId(2L);
+            Permission mockEntity = mock(Permission.class);
+
+            when(permissionRepository.findById(1L)).thenReturn(Optional.of(mockEntity));
+            when(menuRepository.findById(2L)).thenReturn(Optional.empty());
+
+            permissionService.updatePermission(dto);
+
+            verify(mockEntity).updateInfo(any(), any(), any(), any(), any(), isNull());
+            verify(permissionRepository).save(mockEntity);
+        }
+
+        @Test
         @DisplayName("更新权限失败 - 权限不存在")
         void updatePermission_NotFound_ThrowsException() {
             PermissionDTO dto = new PermissionDTO();
@@ -127,9 +164,41 @@ class PermissionServiceTest {
     }
 
     @Nested
+    @DisplayName("getAllPermissionCodes")
+    class GetAllPermissionCodesTests {
+
+        @Test
+        @DisplayName("获取所有权限代码 - 存在权限")
+        void getAllPermissionCodes_WithPermissions_ReturnsCodes() {
+            Permission p1 = mock(Permission.class);
+            when(p1.getCode()).thenReturn("perm1");
+            Permission p2 = mock(Permission.class);
+            when(p2.getCode()).thenReturn("perm2");
+
+            when(permissionRepository.findAll()).thenReturn(List.of(p1, p2));
+
+            Set<String> codes = permissionService.getAllPermissionCodes();
+
+            assertEquals(2, codes.size());
+            assertTrue(codes.containsAll(Set.of("perm1", "perm2")));
+        }
+
+        @Test
+        @DisplayName("获取所有权限代码 - 不存在权限")
+        void getAllPermissionCodes_NoPermissions_ReturnsEmptySet() {
+            when(permissionRepository.findAll()).thenReturn(Collections.emptyList());
+
+            Set<String> codes = permissionService.getAllPermissionCodes();
+
+            assertTrue(codes.isEmpty());
+        }
+    }
+
+
+    @Nested
     @DisplayName("getPermissionsByRoleIds")
     class GetPermissionsByRoleIdsTests {
-        
+
         @Test
         @DisplayName("通过角色ID获取权限 - 缓存命中")
         void getPermissionsByRoleIds_CacheHit() {
@@ -162,6 +231,44 @@ class PermissionServiceTest {
         }
 
         @Test
+        @DisplayName("通过角色ID获取权限 - 多个角色ID，部分缓存命中，部分DB命中")
+        void getPermissionsByRoleIds_MultipleIds_MixedHit() {
+            when(redisTemplate.opsForList()).thenReturn(listOperations);
+            Set<Long> roleIds = Set.of(1L, 2L, 3L, 4L);
+            String cacheKey1 = Const.CacheKey.ROLE_PERMS + ":1";
+            String cacheKey2 = Const.CacheKey.ROLE_PERMS + ":2";
+            String cacheKey3 = Const.CacheKey.ROLE_PERMS + ":3";
+            String cacheKey4 = Const.CacheKey.ROLE_PERMS + ":4";
+
+            // Role 1: Cache hit
+            when(listOperations.range(cacheKey1, 0, -1)).thenReturn(List.of("perm_cache1", "perm_common"));
+            // Role 2: Cache miss, DB hit
+            when(listOperations.range(cacheKey2, 0, -1)).thenReturn(Collections.emptyList());
+            when(permissionRepository.findCodesByRoleId(2L)).thenReturn(List.of("perm_db2", "perm_common"));
+            // Role 3: Cache miss, DB miss
+            when(listOperations.range(cacheKey3, 0, -1)).thenReturn(Collections.emptyList());
+            when(permissionRepository.findCodesByRoleId(3L)).thenReturn(Collections.emptyList());
+             // Role 4: Cache returns null
+            when(listOperations.range(cacheKey4, 0, -1)).thenReturn(null);
+            when(permissionRepository.findCodesByRoleId(4L)).thenReturn(List.of("perm_db4"));
+
+
+            Set<String> result = permissionService.getPermissionsByRoleIds(roleIds);
+
+            assertEquals(4, result.size());
+            assertTrue(result.containsAll(Set.of("perm_cache1", "perm_common", "perm_db2", "perm_db4")));
+            // 验证DB查询被调用的次数
+            verify(permissionRepository, times(1)).findCodesByRoleId(2L);
+            verify(permissionRepository, times(1)).findCodesByRoleId(3L);
+            verify(permissionRepository, times(1)).findCodesByRoleId(4L);
+            verify(permissionRepository, never()).findCodesByRoleId(1L);
+            // 验证缓存被写入的次数
+            verify(listOperations, times(1)).rightPushAll(cacheKey2, List.of("perm_db2", "perm_common"));
+            verify(listOperations, times(1)).rightPushAll(cacheKey4, List.of("perm_db4"));
+            verify(listOperations, never()).rightPushAll(eq(cacheKey3), anyList());
+        }
+
+        @Test
         @DisplayName("通过角色ID获取权限 - 缓存和数据库均未命中")
         void getPermissionsByRoleIds_CacheMiss_DbMiss() {
             when(redisTemplate.opsForList()).thenReturn(listOperations);
@@ -182,6 +289,14 @@ class PermissionServiceTest {
             Set<String> result = permissionService.getPermissionsByRoleIds(Collections.emptySet());
             assertTrue(result.isEmpty());
             // 验证没有与 Redis 交互
+            verifyNoInteractions(redisTemplate);
+        }
+
+        @Test
+        @DisplayName("通过角色ID获取权限 - roleIds为null")
+        void getPermissionsByRoleIds_NullRoleIds() {
+            Set<String> result = permissionService.getPermissionsByRoleIds(null);
+            assertTrue(result.isEmpty());
             verifyNoInteractions(redisTemplate);
         }
     }
@@ -213,5 +328,18 @@ class PermissionServiceTest {
 
             verify(redisTemplate, never()).delete(anyList());
         }
+    }
+
+    @Test
+    void testToDto() {
+        Permission entity = mock(Permission.class);
+        PermissionDTO dto = new PermissionDTO();
+        when(permissionMapper.toDto(entity)).thenReturn(dto);
+        assertSame(dto, permissionService.toDto(entity));
+    }
+
+    @Test
+    void testGetRepository() {
+        assertSame(permissionRepository, permissionService.getRepository());
     }
 }
