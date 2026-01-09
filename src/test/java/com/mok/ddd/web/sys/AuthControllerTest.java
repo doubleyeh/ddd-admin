@@ -133,4 +133,51 @@ class AuthControllerTest {
 
         verify(jwtTokenProvider, never()).createToken(anyString(), anyString(), any(), anyString(), anyString());
     }
+
+    @Test
+    @Order(3)
+    void logout_success_with_token() throws Exception {
+        String token = "valid-token";
+        mockMvc.perform(post("/api/auth/logout")
+                        .header("Authorization", "Bearer " + token)
+                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk());
+
+        verify(jwtTokenProvider).removeToken(token);
+    }
+
+    @Test
+    @Order(4)
+    void logout_success_without_token() throws Exception {
+        mockMvc.perform(post("/api/auth/logout")
+                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk());
+
+        verify(jwtTokenProvider, never()).removeToken(anyString());
+    }
+
+    @Test
+    @Order(5)
+    void logout_success_with_invalid_header_format() throws Exception {
+        mockMvc.perform(post("/api/auth/logout")
+                        .header("Authorization", "InvalidFormat token")
+                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk());
+
+        verify(jwtTokenProvider, never()).removeToken(anyString());
+    }
+
+    @Test
+    @Order(6)
+    void login_validation_error() throws Exception {
+        LoginRequest req = new LoginRequest();
+        // Missing required fields
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(req))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(400));
+    }
 }

@@ -2,6 +2,8 @@ package com.mok.ddd.web.sys;
 
 import com.mok.ddd.application.exception.BizException;
 import com.mok.ddd.application.sys.dto.tenantPackage.TenantPackageDTO;
+import com.mok.ddd.application.sys.dto.tenantPackage.TenantPackageGrantDTO;
+import com.mok.ddd.application.sys.dto.tenantPackage.TenantPackageOptionDTO;
 import com.mok.ddd.application.sys.dto.tenantPackage.TenantPackageSaveDTO;
 import com.mok.ddd.application.sys.service.TenantPackageService;
 import com.mok.ddd.infrastructure.security.JwtAuthenticationFilter;
@@ -29,6 +31,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -175,5 +179,36 @@ class TenantPackageControllerTest {
         mockMvc.perform(delete("/api/tenant-packages/{id}", id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("套餐正在使用中，不允许删除"));
+    }
+
+    @Test
+    @Order(9)
+    @WithMockUser(authorities = "tenantPackage:update")
+    void grant_ReturnSuccess() throws Exception {
+        Long id = 1L;
+        TenantPackageGrantDTO grantDTO = new TenantPackageGrantDTO();
+        grantDTO.setMenuIds(Set.of(1L));
+
+        mockMvc.perform(put("/api/tenant-packages/{id}/grant", id)
+                        .content(jsonMapper.writeValueAsString(grantDTO))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        verify(packageService).grant(eq(id), any(TenantPackageGrantDTO.class));
+    }
+
+    @Test
+    @Order(10)
+    @WithMockUser
+    void getOptions_ReturnList() throws Exception {
+        TenantPackageOptionDTO option = new TenantPackageOptionDTO();
+        option.setName("Option 1");
+        given(packageService.findOptions("test")).willReturn(List.of(option));
+
+        mockMvc.perform(get("/api/tenant-packages/options")
+                        .param("name", "test")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].name").value("Option 1"));
     }
 }

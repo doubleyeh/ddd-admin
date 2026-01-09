@@ -1,5 +1,6 @@
 package com.mok.ddd.web.sys;
 
+import com.mok.ddd.application.exception.NotFoundException;
 import com.mok.ddd.application.sys.dto.permission.PermissionDTO;
 import com.mok.ddd.application.sys.service.PermissionService;
 import com.mok.ddd.infrastructure.security.JwtAuthenticationFilter;
@@ -26,6 +27,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -117,5 +119,16 @@ class PermissionControllerTest {
                 .andExpect(status().isOk());
 
         verify(permissionService).deleteById(1L);
+    }
+
+    @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
+    void delete_ReturnError_WhenNotFound() throws Exception {
+        doThrow(new NotFoundException("权限不存在")).when(permissionService).deleteById(99L);
+
+        mockMvc.perform(delete("/api/permissions/99"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(500))
+                .andExpect(jsonPath("$.message").value("权限不存在"));
     }
 }

@@ -137,6 +137,25 @@ class TenantPackageServiceTest {
         }
         
         @Test
+        void grant_NullIds_Success() {
+            Long id = 1L;
+            TenantPackageGrantDTO grantDto = new TenantPackageGrantDTO();
+            grantDto.setMenuIds(null);
+            grantDto.setPermissionIds(null);
+            TenantPackage mockEntity = mock(TenantPackage.class);
+
+            when(redisTemplate.delete(any(Set.class))).thenReturn(1L);
+            when(packageRepository.findById(id)).thenReturn(Optional.of(mockEntity));
+
+            tenantPackageService.grant(id, grantDto);
+
+            verify(mockEntity, never()).changeMenus(any());
+            verify(mockEntity, never()).changePermissions(any());
+            verify(packageRepository).save(mockEntity);
+            verify(redisTemplate).delete(any(Set.class));
+        }
+        
+        @Test
         void grant_NotFound_ThrowsException() {
             Long id = 1L;
             TenantPackageGrantDTO grantDto = new TenantPackageGrantDTO();
@@ -226,6 +245,21 @@ class TenantPackageServiceTest {
             when(packageMapper.dtoToOptionsDto(anyList())).thenReturn(options);
 
             List<TenantPackageOptionDTO> result = tenantPackageService.findOptions(name);
+
+            assertNotNull(result);
+            assertFalse(result.isEmpty());
+        }
+        
+        @Test
+        void findOptions_NullName_Success() {
+            List<TenantPackage> packages = List.of(mock(TenantPackage.class));
+            List<TenantPackageOptionDTO> options = List.of(new TenantPackageOptionDTO());
+
+            when(packageRepository.findAll(any(Predicate.class))).thenReturn(packages);
+            when(packageMapper.toDto(any(TenantPackage.class))).thenReturn(new TenantPackageDTO());
+            when(packageMapper.dtoToOptionsDto(anyList())).thenReturn(options);
+
+            List<TenantPackageOptionDTO> result = tenantPackageService.findOptions(null);
 
             assertNotNull(result);
             assertFalse(result.isEmpty());
@@ -363,6 +397,13 @@ class TenantPackageServiceTest {
             assertNotNull(result);
             assertTrue(result.getMenus().isEmpty());
             assertTrue(result.getPermissions().isEmpty());
+        }
+        
+        @Test
+        void getById_NotFound_ThrowsException() {
+            Long id = 1L;
+            when(packageRepository.findById(id)).thenReturn(Optional.empty());
+            assertThrows(BizException.class, () -> tenantPackageService.getById(id));
         }
     }
 }

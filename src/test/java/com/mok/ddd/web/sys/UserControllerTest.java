@@ -8,10 +8,14 @@ import com.mok.ddd.application.sys.service.UserService;
 import com.mok.ddd.infrastructure.security.JwtAuthenticationFilter;
 import com.mok.ddd.infrastructure.security.JwtTokenProvider;
 import com.mok.ddd.infrastructure.sys.security.CustomUserDetailsService;
+import com.mok.ddd.infrastructure.tenant.TenantContextHolder;
 import com.mok.ddd.web.common.GlobalExceptionHandler;
 import jakarta.persistence.EntityManagerFactory;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -35,8 +39,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -76,6 +79,18 @@ class UserControllerTest {
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    private MockedStatic<TenantContextHolder> mockedTenantContext;
+
+    @BeforeEach
+    void setUp() {
+        mockedTenantContext = mockStatic(TenantContextHolder.class);
+    }
+
+    @AfterEach
+    void tearDown() {
+        mockedTenantContext.close();
+    }
+
     @Test
     @Order(1)
     @WithMockUser(username = "root", password = "root", authorities = "user:list")
@@ -98,12 +113,9 @@ class UserControllerTest {
     @Order(2)
     @WithMockUser(username = "root", password = "root", authorities = "user:list")
     void getById_ReturnUserDTO_WhenNotFound() throws Exception {
-        UserDTO user = new UserDTO();
-        user.setId(1L);
-        user.setUsername("root");
-        given(userService.getById(1L)).willReturn(user);
+        given(userService.getById(1L)).willReturn(null);
 
-        mockMvc.perform(get("/api/users/2")
+        mockMvc.perform(get("/api/users/1")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(MockMvcResultHandlers.print())
@@ -210,6 +222,7 @@ class UserControllerTest {
     @WithMockUser(username = "root", password = "root", authorities = "user:delete")
     void deleteById_ReturnSuccess_WhenSuccessful() throws Exception {
         Long userId = 6L;
+        mockedTenantContext.when(TenantContextHolder::getUserId).thenReturn(999L);
 
         mockMvc.perform(delete("/api/users/{id}", userId)
                         .accept(MediaType.APPLICATION_JSON)
@@ -354,5 +367,36 @@ class UserControllerTest {
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content.length()").value(1));
+    }
+    
+    @Test
+    @Order(15)
+    @WithMockUser(username = "root", password = "root", authorities = "user:update")
+    void updateState_ReturnError_WhenDisablingCurrentUser() throws Exception {
+        Long userId = 1L;
+        mockedTenantContext.when(TenantContextHolder::getUserId).thenReturn(userId);
+
+        mockMvc.perform(put("/api/users/{id}/state", userId)
+                        .param("state", "0")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("400"))
+                .andExpect(jsonPath("$.message").value("禁止禁用当前登录用户"));
+    }
+    
+    @Test
+    @Order(16)
+    @WithMockUser(username = "root", password = "root", authorities = "user:delete")
+    void deleteById_ReturnError_WhenDeletingCurrentUser() throws Exception {
+        Long userId = 1L;
+        mockedTenantContext.when(TenantContextHolder::getUserId).thenReturn(userId);
+
+        mockMvc.perform(delete("/api/users/{id}", userId)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("400"))
+                .andExpect(jsonPath("$.message").value("禁止删除当前登录用户"));
     }
 }

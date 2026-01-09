@@ -34,6 +34,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -114,6 +116,29 @@ class UserServiceTest {
             verify(mockUser).changeRoles(new HashSet<>(List.of(mockRole)));
             verify(userRepository).save(mockUser);
         }
+        
+        @Test
+        void create_UsernameExists_ThrowsException() {
+            UserPostDTO dto = new UserPostDTO();
+            dto.setUsername("test");
+            dto.setTenantId("tenantA");
+            
+            mockedTenantContext.when(TenantContextHolder::getTenantId).thenReturn("tenantA");
+            when(userRepository.findByTenantIdAndUsername("tenantA", "test")).thenReturn(Optional.of(mock(User.class)));
+            
+            assertThrows(com.mok.ddd.application.exception.BizException.class, () -> userService.create(dto));
+        }
+        
+        @Test
+        void create_UnauthorizedTenant_ThrowsException() {
+            UserPostDTO dto = new UserPostDTO();
+            dto.setTenantId("tenantB");
+            
+            mockedTenantContext.when(TenantContextHolder::getTenantId).thenReturn("tenantA");
+            mockedSysUtil.when(() -> SysUtil.isSuperTenant("tenantA")).thenReturn(false);
+            
+            assertThrows(com.mok.ddd.application.exception.BizException.class, () -> userService.create(dto));
+        }
 
         @Test
         void createForTenant_Success() {
@@ -137,6 +162,24 @@ class UserServiceTest {
             mockedUser.verify(() -> User.create("testuser", ENCODED_PASSWORD, "Tenant Admin", true));
             verify(mockUser).assignTenant("tenantA");
             verify(userRepository).save(mockUser);
+        }
+        
+        @Test
+        void createForTenant_NullTenantId_ThrowsException() {
+            UserPostDTO dto = new UserPostDTO();
+            dto.setTenantId(null);
+            assertThrows(com.mok.ddd.application.exception.BizException.class, () -> userService.createForTenant(dto));
+        }
+        
+        @Test
+        void createForTenant_UsernameExists_ThrowsException() {
+            UserPostDTO dto = new UserPostDTO();
+            dto.setUsername("test");
+            dto.setTenantId("tenantA");
+            
+            when(userRepository.findByTenantIdAndUsername("tenantA", "test")).thenReturn(Optional.of(mock(User.class)));
+            
+            assertThrows(com.mok.ddd.application.exception.BizException.class, () -> userService.createForTenant(dto));
         }
     }
 
@@ -163,6 +206,14 @@ class UserServiceTest {
         }
         
         @Test
+        void updateUser_NotFound_ThrowsException() {
+            UserPutDTO dto = new UserPutDTO();
+            dto.setId(1L);
+            when(userRepository.findById(1L)).thenReturn(Optional.empty());
+            assertThrows(com.mok.ddd.application.exception.NotFoundException.class, () -> userService.updateUser(dto));
+        }
+        
+        @Test
         void updateNickname_Success() {
             Long id = 1L;
             String newNickname = "New Nick";
@@ -173,6 +224,13 @@ class UserServiceTest {
             
             verify(mockUser).updateInfo(eq(newNickname), any());
             verify(userRepository).save(mockUser);
+        }
+        
+        @Test
+        void updateNickname_NotFound_ThrowsException() {
+            Long id = 1L;
+            when(userRepository.findById(id)).thenReturn(Optional.empty());
+            assertThrows(com.mok.ddd.application.exception.NotFoundException.class, () -> userService.updateNickname(id, "nick"));
         }
     }
 
@@ -196,6 +254,13 @@ class UserServiceTest {
             verify(mockUser).disable();
             verify(userRepository).save(mockUser);
         }
+        
+        @Test
+        void updateUserState_NotFound_ThrowsException() {
+            Long id = 1L;
+            when(userRepository.findById(id)).thenReturn(Optional.empty());
+            assertThrows(com.mok.ddd.application.exception.NotFoundException.class, () -> userService.updateUserState(id, 1));
+        }
     }
 
     @Nested
@@ -216,6 +281,14 @@ class UserServiceTest {
             verify(mockUser).changePassword("newEncoded");
             verify(userRepository).save(mockUser);
         }
+        
+        @Test
+        void updatePassword_NotFound_ThrowsException() {
+            UserPasswordDTO dto = new UserPasswordDTO();
+            dto.setId(1L);
+            when(userRepository.findById(1L)).thenReturn(Optional.empty());
+            assertThrows(com.mok.ddd.application.exception.NotFoundException.class, () -> userService.updatePassword(dto));
+        }
     }
 
     @Nested
@@ -235,6 +308,36 @@ class UserServiceTest {
 
             verify(userRepository).deleteById(1L);
         }
+        
+        @Test
+        void deleteById_NotFound_ThrowsException() {
+            when(userRepository.findById(1L)).thenReturn(Optional.empty());
+            assertThrows(com.mok.ddd.application.exception.NotFoundException.class, () -> userService.deleteById(1L));
+        }
+        
+        @Test
+        void deleteById_SuperAdmin_ThrowsException() {
+            User mockUser = mock(User.class);
+            when(mockUser.getTenantId()).thenReturn("tenantA");
+            when(mockUser.getUsername()).thenReturn("userA");
+            when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+            mockedSysUtil.when(() -> SysUtil.isSuperAdmin("tenantA", "userA")).thenReturn(true);
+            
+            assertThrows(com.mok.ddd.application.exception.BizException.class, () -> userService.deleteById(1L));
+        }
+        
+        @Test
+        void deleteById_TenantAdmin_ThrowsException() {
+            User mockUser = mock(User.class);
+            when(mockUser.getTenantId()).thenReturn("tenantA");
+            when(mockUser.getUsername()).thenReturn("userA");
+            when(mockUser.getIsTenantAdmin()).thenReturn(true);
+            
+            when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+            mockedSysUtil.when(() -> SysUtil.isSuperAdmin("tenantA", "userA")).thenReturn(false);
+            
+            assertThrows(com.mok.ddd.application.exception.BizException.class, () -> userService.deleteById(1L));
+        }
     }
 
     @Nested
@@ -245,6 +348,8 @@ class UserServiceTest {
         @Mock
         private JPAQuery<UserDTO> listQuery;
         @Mock
+        private JPAQuery<Long> countQuery;
+        @Mock
         private JPQLQuery<UserDTO> paginatedQuery;
 
         @Test
@@ -252,11 +357,12 @@ class UserServiceTest {
         void findPage_Success() {
             Pageable pageable = PageRequest.of(0, 10);
             Predicate predicate = mock(Predicate.class);
-            UserDTO userDTO = new UserDTO();
+            List<UserDTO> userDTOs = IntStream.range(0, 10).mapToObj(_ -> new UserDTO()).collect(Collectors.toList());
+            long totalCount = 20L;
 
             when(userRepository.getJPAQueryFactory()).thenReturn(queryFactory);
             
-            when(queryFactory.select(any(Expression.class))).thenReturn(listQuery);
+            when(queryFactory.select(any(Expression.class))).thenReturn(listQuery, countQuery);
 
             when(listQuery.from(any(EntityPath.class))).thenReturn(listQuery);
             when(listQuery.leftJoin(any(EntityPath.class))).thenReturn(listQuery);
@@ -266,14 +372,19 @@ class UserServiceTest {
             org.springframework.data.jpa.repository.support.Querydsl querydsl = mock(org.springframework.data.jpa.repository.support.Querydsl.class);
             when(userRepository.getQuerydsl()).thenReturn(querydsl);
             when(querydsl.applyPagination(any(), eq(listQuery))).thenReturn(paginatedQuery);
-            when(paginatedQuery.fetch()).thenReturn(List.of(userDTO));
+            when(paginatedQuery.fetch()).thenReturn(userDTOs);
 
-            // Since we cannot easily mock the lambda for count, we will assume it's not the last page
-            // and the count query is not executed in this test path.
+            when(countQuery.from(any(EntityPath.class))).thenReturn(countQuery);
+            when(countQuery.leftJoin(any(EntityPath.class))).thenReturn(countQuery);
+            when(countQuery.on(any(Predicate.class))).thenReturn(countQuery);
+            when(countQuery.where(any(Predicate.class))).thenReturn(countQuery);
+            when(countQuery.fetchOne()).thenReturn(totalCount);
+
             Page<UserDTO> result = userService.findPage(predicate, pageable);
 
             assertNotNull(result);
-            assertFalse(result.getContent().isEmpty());
+            assertEquals(10, result.getContent().size());
+            assertEquals(totalCount, result.getTotalElements());
         }
 
         @Test
@@ -286,6 +397,13 @@ class UserServiceTest {
 
             UserDTO result = userService.findByUsername(username);
             assertSame(mockDto, result);
+        }
+        
+        @Test
+        void findByUsername_NotFound_ThrowsException() {
+            String username = "test";
+            when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
+            assertThrows(com.mok.ddd.application.exception.NotFoundException.class, () -> userService.findByUsername(username));
         }
 
         @Test
@@ -333,6 +451,26 @@ class UserServiceTest {
         }
         
         @Test
+        void findAccountInfoByUsername_TenantAdmin_NoPackage() {
+            String username = "admin";
+            User mockUser = mock(User.class);
+            when(mockUser.getTenantId()).thenReturn("tenant1");
+            when(mockUser.getIsTenantAdmin()).thenReturn(true);
+            when(userRepository.findByUsername(username)).thenReturn(Optional.of(mockUser));
+            mockedSysUtil.when(() -> SysUtil.isSuperAdmin("tenant1", username)).thenReturn(false);
+            
+            Tenant mockTenant = mock(Tenant.class);
+            when(mockTenant.getPackageId()).thenReturn(null);
+            when(tenantRepository.findByTenantId("tenant1")).thenReturn(Optional.of(mockTenant));
+            
+            AccountInfoDTO result = userService.findAccountInfoByUsername(username);
+            
+            assertNotNull(result);
+            assertTrue(result.getMenus().isEmpty());
+            assertTrue(result.getPermissions().isEmpty());
+        }
+        
+        @Test
         void findAccountInfoByUsername_NormalUser() {
             String username = "user";
             User mockUser = mock(User.class);
@@ -352,6 +490,13 @@ class UserServiceTest {
             AccountInfoDTO result = userService.findAccountInfoByUsername(username);
 
             assertNotNull(result);
+        }
+        
+        @Test
+        void findAccountInfoByUsername_NotFound_ThrowsException() {
+            String username = "test";
+            when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
+            assertThrows(com.mok.ddd.application.exception.NotFoundException.class, () -> userService.findAccountInfoByUsername(username));
         }
     }
 }

@@ -1,6 +1,8 @@
 package com.mok.ddd.web.sys;
 
+import com.mok.ddd.application.exception.NotFoundException;
 import com.mok.ddd.application.sys.dto.menu.MenuDTO;
+import com.mok.ddd.application.sys.dto.menu.MenuOptionDTO;
 import com.mok.ddd.application.sys.service.MenuService;
 import com.mok.ddd.infrastructure.security.JwtAuthenticationFilter;
 import com.mok.ddd.infrastructure.security.JwtTokenProvider;
@@ -26,8 +28,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -135,5 +136,30 @@ class MenuControllerTest {
         mockMvc.perform(delete("/api/menus/1"))
                 .andExpect(status().isOk());
         verify(menuService).deleteById(1L);
+    }
+
+    @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
+    void delete_ReturnError_WhenNotFound() throws Exception {
+        doThrow(new NotFoundException("菜单不存在")).when(menuService).deleteById(99L);
+
+        mockMvc.perform(delete("/api/menus/99"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(500))
+                .andExpect(jsonPath("$.message").value("菜单不存在"));
+    }
+
+    @Test
+    @WithMockUser
+    void getMenuTreeOptions_ReturnList() throws Exception {
+        MenuOptionDTO option = new MenuOptionDTO();
+        option.setId(1L);
+        option.setName("Option 1");
+        given(menuService.buildMenuAndPermissionTree()).willReturn(List.of(option));
+
+        mockMvc.perform(get("/api/menus/tree-options")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].name").value("Option 1"));
     }
 }

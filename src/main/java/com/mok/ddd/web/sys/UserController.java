@@ -97,6 +97,7 @@ public class UserController {
     }
 
     private boolean isCurrentUser(Long id){
-        return Objects.equals(id, TenantContextHolder.getUserId());
+        Long currentUserId = TenantContextHolder.getUserId();
+        return currentUserId != null && currentUserId.equals(id);
     }
 }

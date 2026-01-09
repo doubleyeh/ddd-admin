@@ -34,6 +34,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -203,8 +204,8 @@ class RoleServiceTest {
             dto.setPermissionIds(Set.of(100L, 200L));
 
             Role mockRole = mock(Role.class);
-            Set<Menu> menus = dto.getMenuIds().stream().map(id -> mock(Menu.class)).collect(Collectors.toSet());
-            Set<Permission> permissions = dto.getPermissionIds().stream().map(id -> mock(Permission.class)).collect(Collectors.toSet());
+            Set<Menu> menus = dto.getMenuIds().stream().map(_ -> mock(Menu.class)).collect(Collectors.toSet());
+            Set<Permission> permissions = dto.getPermissionIds().stream().map(_ -> mock(Permission.class)).collect(Collectors.toSet());
 
             when(roleRepository.findById(1L)).thenReturn(Optional.of(mockRole));
             when(menuRepository.findAllById(dto.getMenuIds())).thenReturn(List.copyOf(menus));
@@ -369,6 +370,8 @@ class RoleServiceTest {
         @Mock
         private JPAQuery<RoleDTO> listQuery;
         @Mock
+        private JPAQuery<Long> countQuery;
+        @Mock
         private JPQLQuery<RoleDTO> paginatedQuery;
 
         @Test
@@ -393,13 +396,13 @@ class RoleServiceTest {
         void findPage_Success() {
             Pageable pageable = PageRequest.of(0, 10);
             Predicate predicate = mock(Predicate.class);
-            RoleDTO roleDTO = new RoleDTO();
+            List<RoleDTO> roleDTOs = IntStream.range(0, 10).mapToObj(_ -> new RoleDTO()).collect(Collectors.toList());
             long totalCount = 20L;
 
             when(roleRepository.getJPAQueryFactory()).thenReturn(queryFactory);
 
-            // Mocking for the main data query
-            when(queryFactory.select(any(Expression.class))).thenReturn(listQuery);
+            when(queryFactory.select(any(Expression.class))).thenReturn(listQuery, countQuery);
+
             when(listQuery.from(any(EntityPath.class))).thenReturn(listQuery);
             when(listQuery.leftJoin(any(EntityPath.class))).thenReturn(listQuery);
             when(listQuery.on(any(Predicate.class))).thenReturn(listQuery);
@@ -408,11 +411,8 @@ class RoleServiceTest {
             org.springframework.data.jpa.repository.support.Querydsl querydsl = mock(org.springframework.data.jpa.repository.support.Querydsl.class);
             when(roleRepository.getQuerydsl()).thenReturn(querydsl);
             when(querydsl.applyPagination(any(), eq(listQuery))).thenReturn(paginatedQuery);
-            when(paginatedQuery.fetch()).thenReturn(List.of(roleDTO));
+            when(paginatedQuery.fetch()).thenReturn(roleDTOs);
 
-            // Mocking for the count query (the lambda)
-            JPAQuery<Long> countQuery = mock(JPAQuery.class);
-            when(queryFactory.select(any(Expression.class))).thenReturn(countQuery, listQuery);
             when(countQuery.from(any(EntityPath.class))).thenReturn(countQuery);
             when(countQuery.leftJoin(any(EntityPath.class))).thenReturn(countQuery);
             when(countQuery.on(any(Predicate.class))).thenReturn(countQuery);
@@ -422,7 +422,7 @@ class RoleServiceTest {
             Page<RoleDTO> result = roleService.findPage(predicate, pageable);
 
             assertNotNull(result);
-            assertEquals(1, result.getContent().size());
+            assertEquals(10, result.getContent().size());
             assertEquals(totalCount, result.getTotalElements());
         }
 
@@ -434,7 +434,6 @@ class RoleServiceTest {
 
             when(roleRepository.getJPAQueryFactory()).thenReturn(queryFactory);
 
-            // Mocking for the main data query
             when(queryFactory.select(any(Expression.class))).thenReturn(listQuery);
             when(listQuery.from(any(EntityPath.class))).thenReturn(listQuery);
             when(listQuery.leftJoin(any(EntityPath.class))).thenReturn(listQuery);
@@ -445,15 +444,6 @@ class RoleServiceTest {
             when(roleRepository.getQuerydsl()).thenReturn(querydsl);
             when(querydsl.applyPagination(any(), eq(listQuery))).thenReturn(paginatedQuery);
             when(paginatedQuery.fetch()).thenReturn(Collections.emptyList());
-
-            // Mocking for the count query (the lambda) to return null
-            JPAQuery<Long> countQuery = mock(JPAQuery.class);
-            when(queryFactory.select(any(Expression.class))).thenReturn(countQuery, listQuery);
-            when(countQuery.from(any(EntityPath.class))).thenReturn(countQuery);
-            when(countQuery.leftJoin(any(EntityPath.class))).thenReturn(countQuery);
-            when(countQuery.on(any(Predicate.class))).thenReturn(countQuery);
-            when(countQuery.where(predicate)).thenReturn(countQuery);
-            when(countQuery.fetchOne()).thenReturn(null);
 
             Page<RoleDTO> result = roleService.findPage(predicate, pageable);
 
