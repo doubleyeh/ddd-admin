@@ -1,0 +1,5 @@
+rate:
+  limit:
+    enabled: false
+    time: 10
+    count: 100

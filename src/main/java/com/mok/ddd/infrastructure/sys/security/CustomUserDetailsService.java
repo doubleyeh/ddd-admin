@@ -53,10 +53,11 @@ public class CustomUserDetailsService implements UserDetailsService {
         if(Objects.equals(0, user.getState())){
             throw new UsernameNotFoundException("用户已被禁用");
         }
+        if (user.getRoles() != null) {
+            roleIds = user.getRoles().stream().map(BaseEntity::getId).collect(Collectors.toSet());
+        }
         if (isSuperAdmin) {
             roleIds.add(0L);
-        } else {
-            roleIds = user.getRoles().stream().map(BaseEntity::getId).collect(Collectors.toSet());
         }
 
         return new CustomUserDetail(user.getId(), user.getUsername(), user.getPassword(), tenantId, roleIds, isSuperAdmin);

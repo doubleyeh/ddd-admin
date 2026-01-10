@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.util.UUID;
@@ -18,7 +19,7 @@ public class TraceIdInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, @NonNull HttpServletResponse response, Object handler) {
         String traceId = request.getHeader(TRACE_ID_HEADER);
-        if (traceId == null || traceId.isEmpty()) {
+        if (!StringUtils.hasLength(traceId)) {
             traceId = UUID.randomUUID().toString().replace("-", "");
         }
         MDC.put(TRACE_ID_MDC_KEY, traceId);
